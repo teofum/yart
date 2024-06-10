@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "cpu-renderer.hpp"
-#include "random.hpp"
 
 namespace yart::cpu {
 using namespace math;
@@ -14,11 +13,16 @@ using namespace math;
 CpuRenderThread::CpuRenderThread(
   Buffer& buffer,
   const Camera& camera,
-  uint32 threadId
+  uint32 threadId,
+  uint32 samples,
+  uint32 maxDepth
 ) noexcept
-  : Renderer(buffer, camera), m_threadId(threadId) {
+  : Renderer(buffer, camera),
+    m_samples(samples),
+    m_maxDepth(maxDepth),
+    m_threadId(threadId) {
   std::random_device rd; // Used to seed thread RNG
-  m_threadRng = std::make_unique<std::mt19937>(std::mt19937(rd()));
+  m_threadRng = std::make_unique<Xoshiro::Xoshiro256PP>(Xoshiro::Xoshiro256PP(rd()));
 }
 
 void CpuRenderThread::render(const yart::Node& root) {
@@ -27,7 +31,7 @@ void CpuRenderThread::render(const yart::Node& root) {
   for (uint32 sample = 0; sample < m_samples; sample++) {
     for (size_t i = 0; i < buffer.width(); i++) {
       for (size_t j = 0; j < buffer.height(); j++) {
-        auto ray = camera.getRay({i, j});
+        auto ray = camera.getRay({i, j}, m_threadRng.get());
         float3 color = rayColor(ray, root);
 
         buffer(i, j) += float4(color, 1.0f);
@@ -230,7 +234,7 @@ ScatterResult CpuRenderThread::scatterImpl(
 ) {
   float4x4 basis = normalToTBN(hit.normal);
   float3 scatterDir = float3(
-    basis * float4(randomCosineVec(m_threadRng.get(), m_rand), 0.0f)
+    basis * float4(random::randomCosineVec(m_threadRng.get()), 0.0f)
   );
   Ray scattered(hit.position, scatterDir);
 
@@ -242,11 +246,19 @@ ScatterResult CpuRenderThread::scatterImpl(
 }
 
 void CpuRenderer::render(const Node& root) {
+  uint32 samplesPerThread = m_samples / m_threadCount;
+
   auto renderFunc = [&](
     Buffer* threadBuffer,
     uint32 threadId
   ) {
-    CpuRenderThread threadRenderer(*threadBuffer, camera, threadId);
+    CpuRenderThread threadRenderer(
+      *threadBuffer,
+      camera,
+      threadId,
+      samplesPerThread,
+      m_maxDepth
+    );
     threadRenderer.backgroundColor = backgroundColor;
     threadRenderer.render(root);
   };

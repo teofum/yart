@@ -88,12 +88,16 @@ public:
     setDirection(target - position, up);
   }
 
-  [[nodiscard]] constexpr Ray getRay(const uint2& pixelCoords) const noexcept {
-    float3 pixelCenter = m_topLeftPixel
-                         + m_pixelDeltaU * float(pixelCoords.x())
-                         + m_pixelDeltaV * float(pixelCoords.y());
+  [[nodiscard]] constexpr Ray getRay(
+    const uint2& pixelCoords,
+    Xoshiro::Xoshiro256PP* rng
+  ) const noexcept {
+    float2 jitter = random::pixelJitterGaussian(rng) + float2(pixelCoords);
+    float3 pixel = m_topLeftPixel
+                   + m_pixelDeltaU * jitter.x()
+                   + m_pixelDeltaV * jitter.y();
 
-    return {m_position, pixelCenter - m_position};
+    return {m_position, pixel - m_position};
   }
 };
 

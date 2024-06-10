@@ -4,6 +4,7 @@
 #include "math_base.hpp"
 #include "vec.hpp"
 #include "mat.hpp"
+#include "random.hpp"
 
 namespace yart::math {
 

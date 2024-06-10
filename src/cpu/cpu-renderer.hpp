@@ -13,12 +13,11 @@ namespace yart::cpu {
 
 class CpuRenderThread : public Renderer {
 private:
-  const uint32 m_maxDepth = 10;
   const uint32 m_samples = 100;
+  const uint32 m_maxDepth = 10;
   const uint32 m_threadId;
 
-  std::unique_ptr<std::mt19937> m_threadRng;
-  std::uniform_real_distribution<float> m_rand;
+  std::unique_ptr<Xoshiro::Xoshiro256PP> m_threadRng;
 
   [[nodiscard]] float3 rayColor(
     const Ray& ray,
@@ -63,7 +62,9 @@ public:
   CpuRenderThread(
     Buffer& buffer,
     const Camera& camera,
-    uint32 threadId
+    uint32 threadId,
+    uint32 samples = 10,
+    uint32 maxDepth = 10
   ) noexcept;
 
   void render(const Node& root) override;
@@ -72,6 +73,8 @@ public:
 class CpuRenderer : public Renderer {
 private:
   uint32 m_threadCount;
+  uint32 m_samples = 100;
+  uint32 m_maxDepth = 10;
 
 public:
   constexpr CpuRenderer(

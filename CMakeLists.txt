@@ -4,7 +4,7 @@ project(yart)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-Wall -fno-objc-arc")
 
-include_directories(src)
+include_directories(src xoshiro-rng)
 
 add_subdirectory(fastgltf)
 include_directories(fastgltf/include)
@@ -28,6 +28,8 @@ add_executable(yart src/main.cpp
         src/cpu/cpu-renderer.hpp
         src/cpu/hit.hpp
         src/core/materials.hpp
-        src/cpu/random.hpp
+        src/math/random.hpp
+        src/math/random.cpp
+        xoshiro-rng/xoshiro.hpp
 )
 target_link_libraries(yart)
