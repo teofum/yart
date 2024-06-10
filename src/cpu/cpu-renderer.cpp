@@ -10,53 +10,121 @@
 namespace yart::cpu {
 using namespace math;
 
-CpuRenderThread::CpuRenderThread(
-  Buffer& buffer,
+CpuRenderer::CpuRenderer(
+  const Buffer& buffer,
   const Camera& camera,
-  uint32 threadId,
-  uint32 samples,
-  uint32 maxDepth
+  uint32_t threadCount
 ) noexcept
   : Renderer(buffer, camera),
-    m_samples(samples),
-    m_maxDepth(maxDepth),
-    m_threadId(threadId) {
-  std::random_device rd; // Used to seed thread RNG
-  m_threadRng = std::make_unique<Xoshiro::Xoshiro256PP>(Xoshiro::Xoshiro256PP(rd()));
+    m_threadCount(threadCount),
+    m_samplesPerThread(m_samples / m_threadCount) {}
+
+CpuRenderer::CpuRenderer(
+  Buffer&& buffer,
+  const Camera& camera,
+  uint32_t threadCount
+) noexcept
+  : Renderer(buffer, camera),
+    m_threadCount(threadCount),
+    m_samplesPerThread(m_samples / m_threadCount) {}
+
+void CpuRenderer::render(const Node& root) {
+  std::vector<std::unique_ptr<std::thread>> threads;
+  std::random_device rd; // Used to initialize thread RNG
+
+  for (uint32_t ti = 0; ti < m_threadCount; ti++) {
+    std::packaged_task<void()> renderTask{[&]() {
+      CpuRenderThread renderThread(this, rd);
+      renderThread(root);
+    }};
+
+    threads.push_back(
+      std::make_unique<std::thread>(std::thread(std::move(renderTask)))
+    );
+  }
+
+  for (auto& thread: threads) thread->join();
+
+  if (onRenderComplete) {
+    auto cb = onRenderComplete.value();
+    cb(m_buffer);
+  }
 }
 
-void CpuRenderThread::render(const yart::Node& root) {
+void CpuRenderer::writeBuffer(const Buffer& src, size_t wave) noexcept {
+  std::unique_lock lock(m_bufferMutex);
+
+  if (wave != m_currentWave) {
+    m_currentWave = wave;
+    m_currentWaveFinishedThreads = 0;
+
+    for (size_t i = 0; i < src.width(); i++) {
+      for (size_t j = 0; j < src.height(); j++) {
+        m_buffer(i, j) = src(i, j) / (float(m_threadCount) * float(wave));
+      }
+    }
+  } else {
+    for (size_t i = 0; i < src.width(); i++) {
+      for (size_t j = 0; j < src.height(); j++) {
+        m_buffer(i, j) += src(i, j) / (float(m_threadCount) * float(wave));
+      }
+    }
+  }
+
+  if (++m_currentWaveFinishedThreads == m_threadCount && onRenderWaveComplete) {
+    auto cb = onRenderWaveComplete.value();
+    cb(m_buffer, wave, m_samplesPerThread);
+  }
+}
+
+
+CpuRenderThread::CpuRenderThread(
+  CpuRenderer* renderer,
+  std::random_device& rd
+) noexcept
+  : m_renderer(renderer),
+    m_threadRng(rd()),
+    m_threadBuffer(renderer->m_buffer.width(), renderer->m_buffer.height()) {
+  m_samples = renderer->m_samplesPerThread;
+  m_maxDepth = renderer->m_maxDepth;
+}
+
+void CpuRenderThread::operator()(const Node& root) noexcept {
   auto start = std::chrono::high_resolution_clock::now();
 
-  for (uint32 sample = 0; sample < m_samples; sample++) {
-    for (size_t i = 0; i < buffer.width(); i++) {
-      for (size_t j = 0; j < buffer.height(); j++) {
-        auto ray = camera.getRay({i, j}, m_threadRng.get());
+  size_t nextWave = 1;
+
+  for (uint32_t sample = 0; sample < m_samples;) {
+    for (size_t i = 0; i < m_threadBuffer.width(); i++) {
+      for (size_t j = 0; j < m_threadBuffer.height(); j++) {
+        auto ray = m_renderer->m_camera.getRay({i, j}, m_threadRng);
         float3 color = rayColor(ray, root);
 
-        buffer(i, j) += float4(color, 1.0f);
+        m_threadBuffer(i, j) += float4(color, 1.0f);
       }
+    }
+
+    if (++sample == nextWave) {
+      m_renderer->writeBuffer(m_threadBuffer, sample);
+      nextWave *= 2;
     }
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto delta = std::chrono::duration_cast<std::chrono::duration<float>>(
     end - start
-  ).count();
+  );
 
-  std::cout << "Thread " << m_threadId << " done in " << delta << " seconds\n";
+  std::cout << "Thread " << std::this_thread::get_id() << " done in " << delta
+            << "\n";
 
-  for (size_t i = 0; i < buffer.width(); i++) {
-    for (size_t j = 0; j < buffer.height(); j++) {
-      buffer(i, j) /= float(m_samples);
-    }
-  }
+  m_renderer->writeBuffer(m_threadBuffer, m_samples);
 }
 
 float3 CpuRenderThread::rayColor(
   const Ray& ray,
   const Node& root,
-  uint32 depth
+  uint32_t depth
 ) {
   if (depth > m_maxDepth) return {0.0f, 0.0f, 0.0f};
 
@@ -65,7 +133,7 @@ float3 CpuRenderThread::rayColor(
     {0.001f, std::numeric_limits<float>::infinity()},
     root
   );
-  if (!hit) return backgroundColor;
+  if (!hit) return m_renderer->backgroundColor;
 
   ScatterResult res = scatter(ray, *hit);
 
@@ -234,7 +302,7 @@ ScatterResult CpuRenderThread::scatterImpl(
 ) {
   float4x4 basis = normalToTBN(hit.normal);
   float3 scatterDir = float3(
-    basis * float4(random::randomCosineVec(m_threadRng.get()), 0.0f)
+    basis * float4(random::randomCosineVec(m_threadRng), 0.0f)
   );
   Ray scattered(hit.position, scatterDir);
 
@@ -251,56 +319,6 @@ ScatterResult CpuRenderThread::scatterImpl(
   const Hit& hit
 ) {
   return Emitted{mat.emission};
-}
-
-void CpuRenderer::render(const Node& root) {
-  uint32 samplesPerThread = m_samples / m_threadCount;
-
-  auto renderFunc = [&](
-    Buffer* threadBuffer,
-    uint32 threadId
-  ) {
-    CpuRenderThread threadRenderer(
-      *threadBuffer,
-      camera,
-      threadId,
-      samplesPerThread,
-      m_maxDepth
-    );
-    threadRenderer.backgroundColor = backgroundColor;
-    threadRenderer.render(root);
-  };
-
-  std::vector<Buffer> threadBuffers;
-  threadBuffers.reserve(m_threadCount);
-  std::vector<std::unique_ptr<std::thread>> threads;
-
-  for (uint32 tid = 0; tid < m_threadCount; tid++) {
-    std::packaged_task<void(Buffer*, uint32)> renderTask{renderFunc};
-    threadBuffers.emplace_back(buffer.width(), buffer.height());
-
-    threads.push_back(
-      std::make_unique<std::thread>(
-        std::thread(std::move(renderTask), &threadBuffers[tid], tid)
-      )
-    );
-  }
-
-  for (uint32 tid = 0; tid < m_threadCount; tid++) {
-    threads[tid]->join();
-
-    for (size_t i = 0; i < buffer.width(); i++) {
-      for (size_t j = 0; j < buffer.height(); j++) {
-        buffer(i, j) += threadBuffers[tid](i, j);
-      }
-    }
-  }
-
-  for (size_t i = 0; i < buffer.width(); i++) {
-    for (size_t j = 0; j < buffer.height(); j++) {
-      buffer(i, j) /= float(m_threadCount);
-    }
-  }
 }
 
 }

@@ -30,23 +30,20 @@ static float myStdNormal(Xoshiro::Xoshiro256PP& e) noexcept {
   return fx * v1;
 }
 
-float2 pixelJitterSquare(Xoshiro::Xoshiro256PP* e) {
+float2 pixelJitterSquare(Xoshiro::Xoshiro256PP& rng) {
   return {
-    uniform(*e) - 0.5f,
-    uniform(*e) - 0.5f
+    uniform(rng) - 0.5f,
+    uniform(rng) - 0.5f
   };
 }
 
-float2 pixelJitterGaussian(Xoshiro::Xoshiro256PP* e) {
-  return {normal(*e), normal(*e)};
+float2 pixelJitterGaussian(Xoshiro::Xoshiro256PP& rng) {
+  return {normal(rng), normal(rng)};
 }
 
-float3 randomCosineVec(Xoshiro::Xoshiro256PP* e) noexcept {
-//  return axis_z<float> +
-//         normalized(float3(myStdNormal(*e), myStdNormal(*e), myStdNormal(*e)));
-
-  const float r1 = uniform(*e);
-  const float r2 = uniform(*e);
+float3 randomCosineVec(Xoshiro::Xoshiro256PP& rng) noexcept {
+  const float r1 = uniform(rng);
+  const float r2 = uniform(rng);
 
   const float phi = r1 * 2.0f * float(pi);
   const float sqrtr2 = std::sqrt(r2);

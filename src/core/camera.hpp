@@ -90,7 +90,7 @@ public:
 
   [[nodiscard]] constexpr Ray getRay(
     const uint2& pixelCoords,
-    Xoshiro::Xoshiro256PP* rng
+    Xoshiro::Xoshiro256PP& rng
   ) const noexcept {
     float2 jitter = random::pixelJitterGaussian(rng) + float2(pixelCoords);
     float3 pixel = m_topLeftPixel

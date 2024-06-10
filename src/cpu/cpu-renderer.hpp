@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <random>
+#include <shared_mutex>
 
 #include <core/core.hpp>
 #include <math/math.hpp>
@@ -11,13 +12,48 @@
 
 namespace yart::cpu {
 
-class CpuRenderThread : public Renderer {
-private:
-  const uint32 m_samples;
-  const uint32 m_maxDepth;
-  const uint32 m_threadId;
+class CpuRenderer : public Renderer {
+public:
+  CpuRenderer(
+    const Buffer& buffer,
+    const Camera& camera,
+    uint32_t threadCount = 1
+  ) noexcept;
 
-  std::unique_ptr<Xoshiro::Xoshiro256PP> m_threadRng;
+  CpuRenderer(
+    Buffer&& buffer,
+    const Camera& camera,
+    uint32_t threadCount = 1
+  ) noexcept;
+
+  void render(const Node& root) override;
+
+  friend class CpuRenderThread;
+
+private:
+  uint32_t m_threadCount;
+  uint32_t m_samples = 100;
+  uint32_t m_maxDepth = 20;
+  uint32_t m_samplesPerThread;
+  uint32_t m_currentWave = 0, m_currentWaveFinishedThreads = 0;
+
+  std::shared_mutex m_bufferMutex;
+
+  void writeBuffer(const Buffer& src, size_t wave) noexcept;
+};
+
+class CpuRenderThread {
+public:
+  CpuRenderThread(CpuRenderer* renderer, std::random_device& rd) noexcept;
+
+  void operator()(const Node& root) noexcept;
+
+private:
+  CpuRenderer* m_renderer;
+
+  uint32_t m_samples, m_maxDepth;
+  Xoshiro::Xoshiro256PP m_threadRng;
+  Buffer m_threadBuffer;
 
   [[nodiscard]] float3 rayColor(
     const Ray& ray,
@@ -63,35 +99,6 @@ private:
     const Ray& ray,
     const Hit& hit
   );
-
-public:
-  CpuRenderThread(
-    Buffer& buffer,
-    const Camera& camera,
-    uint32 threadId,
-    uint32 samples = 10,
-    uint32 maxDepth = 10
-  ) noexcept;
-
-  void render(const Node& root) override;
-};
-
-class CpuRenderer : public Renderer {
-private:
-  uint32 m_threadCount;
-  uint32 m_samples = 100;
-  uint32 m_maxDepth = 20;
-
-public:
-  constexpr CpuRenderer(
-    Buffer& buffer,
-    const Camera& camera,
-    uint32 threadCount = 1
-  ) noexcept: Renderer(buffer, camera), m_threadCount(threadCount) {
-
-  }
-
-  void render(const Node& root) override;
 };
 
 }
