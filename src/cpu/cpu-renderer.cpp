@@ -146,9 +146,9 @@ std::optional<Hit> CpuRenderThread::testTriangle(
   const Mesh& mesh
 ) const {
   const float3&
-    v0 = tri.vertices[0].position,
-    v1 = tri.vertices[1].position,
-    v2 = tri.vertices[2].position;
+    v0 = tri.vertices[0]->position,
+    v1 = tri.vertices[1]->position,
+    v2 = tri.vertices[2]->position;
 
   const float3 edge1 = v1 - v0;
   const float3 edge2 = v2 - v0;
@@ -180,10 +180,10 @@ std::optional<Hit> CpuRenderThread::testTriangle(
   hit.position = ray.at(t);
 
   const float w = 1.0f - u - v;
-  hit.normal = w * tri.vertices[0].normal + u * tri.vertices[1].normal +
-               v * tri.vertices[2].normal;
+  hit.normal = w * tri.vertices[0]->normal + u * tri.vertices[1]->normal +
+               v * tri.vertices[2]->normal;
 
-  hit.material = mesh.material;
+  hit.material = &mesh.material;
   return std::make_optional(hit);
 }
 
@@ -243,6 +243,14 @@ ScatterResult CpuRenderThread::scatterImpl(
     {0.0f, 0.0f, 0.0f},
     scattered
   };
+}
+
+ScatterResult CpuRenderThread::scatterImpl(
+  const Emissive& mat,
+  const Ray& ray,
+  const Hit& hit
+) {
+  return Emitted{mat.emission};
 }
 
 void CpuRenderer::render(const Node& root) {

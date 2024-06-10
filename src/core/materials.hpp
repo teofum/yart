@@ -12,7 +12,11 @@ struct Lambertian {
   float3 albedo;
 };
 
-using Material = std::variant<Lambertian>;
+struct Emissive {
+  float3 emission;
+};
+
+using Material = std::variant<Lambertian, Emissive>;
 
 struct Scattered {
   float3 attenuation;

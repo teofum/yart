@@ -34,7 +34,7 @@ struct Face {
 };
 
 struct Triangle {
-  Vertex vertices[3];
+  const Vertex* vertices[3];
 };
 
 class Mesh {
@@ -48,12 +48,12 @@ public:
   };
 
   FaceCulling faceCulling = FaceCulling::None;
-  const Material* material;
+  Material material;
 
   constexpr Mesh(
     const std::vector<Vertex>& vertices,
     const std::vector<Face>& triangles,
-    const Material* mat
+    const Material& mat
   ) noexcept
     : m_vertices(vertices), m_triangles(triangles), material(mat) {
   }
@@ -61,7 +61,7 @@ public:
   constexpr Mesh(
     std::vector<Vertex>&& vertices,
     std::vector<Face>&& triangles,
-    const Material* mat
+    const Material& mat
   ) noexcept
     : m_vertices(std::move(vertices)), m_triangles(std::move(triangles)),
       material(mat) {
@@ -71,9 +71,9 @@ public:
     return std::views::transform(
       m_triangles, [&](const Face& face) {
         return Triangle{
-          m_vertices[face.indices[0]],
-          m_vertices[face.indices[1]],
-          m_vertices[face.indices[2]],
+          &m_vertices[face.indices[0]],
+          &m_vertices[face.indices[1]],
+          &m_vertices[face.indices[2]],
         };
       }
     );

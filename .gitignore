@@ -2,5 +2,5 @@ cmake-build-*/
 out.*
 profile.json
 fastgltf/
-models/*.blend
+models/*.blend*
 .DS_Store

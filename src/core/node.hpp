@@ -10,7 +10,7 @@ namespace yart {
 class Node {
 private:
   std::unique_ptr<Mesh> m_mesh = nullptr;
-  std::vector<const Node*> m_children;
+  std::vector<std::unique_ptr<Node>> m_children;
 
   float4x4 m_transform = float4x4::identity();
   float4x4 m_inverseTransform = float4x4::identity();
@@ -112,14 +112,14 @@ public:
 
   [[nodiscard]] constexpr auto children() const noexcept {
     return std::views::transform(
-      m_children, [](const Node* child) -> const Node& {
+      m_children, [](const std::unique_ptr<Node>& child) -> const Node& {
         return *child;
       }
     );
   }
 
-  constexpr void appendChild(const Node& child) noexcept {
-    m_children.push_back(&child);
+  constexpr void appendChild(Node&& child) noexcept {
+    m_children.push_back(std::make_unique<Node>(std::move(child)));
 
     m_bounds = combineBoundingBoxes(m_bounds, child.m_transformedBounds);
     updateTransform();

@@ -4,7 +4,7 @@
 
 namespace yart::output {
 
-constexpr float gamma = 2.2f;
+constexpr float gamma = 1.0f / 2.2f;
 
 void writePPM(std::ostream& ostream, const Buffer& buffer) {
   size_t width = buffer.width(), height = buffer.height();

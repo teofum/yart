@@ -13,8 +13,8 @@ namespace yart::cpu {
 
 class CpuRenderThread : public Renderer {
 private:
-  const uint32 m_samples = 100;
-  const uint32 m_maxDepth = 10;
+  const uint32 m_samples;
+  const uint32 m_maxDepth;
   const uint32 m_threadId;
 
   std::unique_ptr<Xoshiro::Xoshiro256PP> m_threadRng;
@@ -58,6 +58,12 @@ private:
     const Hit& hit
   );
 
+  [[nodiscard]] ScatterResult scatterImpl(
+    const Emissive& mat,
+    const Ray& ray,
+    const Hit& hit
+  );
+
 public:
   CpuRenderThread(
     Buffer& buffer,
@@ -74,7 +80,7 @@ class CpuRenderer : public Renderer {
 private:
   uint32 m_threadCount;
   uint32 m_samples = 100;
-  uint32 m_maxDepth = 10;
+  uint32 m_maxDepth = 20;
 
 public:
   constexpr CpuRenderer(

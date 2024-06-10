@@ -1,9 +1,34 @@
 #include "random.hpp"
+#include "math.hpp"
 
 namespace yart::math::random {
 
 std::uniform_real_distribution<float> uniform;
 std::normal_distribution<float> normal(0.0f, 0.5f);
+std::normal_distribution<float> stdNormal(0.0f, 1.0f);
+
+static float myStdNormal(Xoshiro::Xoshiro256PP& e) noexcept {
+  static float cached;
+  static bool hasCached = false;
+
+  if (hasCached) {
+    hasCached = false;
+    return cached;
+  }
+  hasCached = true;
+
+  float v1, v2, sx;
+  for (int i = 0;; ++i) {
+    v1 = 2.0f * uniform(e) - 1.0f;
+    v2 = 2.0f * uniform(e) - 1.0f;
+    sx = v1 * v1 + v2 * v2;
+    if (sx && sx < 1.0f) break;
+  }
+
+  float fx = std::sqrt(-2.0f * std::log(sx) / sx);
+  cached = fx * v2;
+  return fx * v1;
+}
 
 float2 pixelJitterSquare(Xoshiro::Xoshiro256PP* e) {
   return {
@@ -17,6 +42,9 @@ float2 pixelJitterGaussian(Xoshiro::Xoshiro256PP* e) {
 }
 
 float3 randomCosineVec(Xoshiro::Xoshiro256PP* e) noexcept {
+//  return axis_z<float> +
+//         normalized(float3(myStdNormal(*e), myStdNormal(*e), myStdNormal(*e)));
+
   const float r1 = uniform(*e);
   const float r2 = uniform(*e);
 

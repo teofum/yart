@@ -31,5 +31,7 @@ add_executable(yart src/main.cpp
         src/math/random.hpp
         src/math/random.cpp
         xoshiro-rng/xoshiro.hpp
+        src/gltf/gltf.cpp
+        src/gltf/gltf.hpp
 )
-target_link_libraries(yart)
+target_link_libraries(yart fastgltf)
