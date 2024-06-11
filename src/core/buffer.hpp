@@ -31,6 +31,14 @@ public:
   [[nodiscard]] constexpr float4& operator()(size_t x, size_t y) {
     return m_data[y * m_width + x];
   }
+
+  [[nodiscard]] constexpr size_t size() const {
+    return m_data.size();
+  }
+
+  [[nodiscard]] constexpr const float4* data() const {
+    return m_data.data();
+  }
 };
 
 }

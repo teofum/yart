@@ -37,8 +37,7 @@ public:
 
   template<numeric... V>
   requires (sizeof...(V) == N)
-  constexpr vec(V... values) noexcept : m_data{T(values)...} { // NOLINT(*)
-  }
+  constexpr vec(V... values) noexcept : m_data{T(values)...} {} // NOLINT(*)
 
   template<numeric T_lhs, std::size_t N_lhs, typename... V>
   requires (N_lhs < N && N_lhs + sizeof...(V) == N)
@@ -48,8 +47,7 @@ public:
       m_data[i] = i < N_lhs ? T(lhs[i]) : temp[i - N_lhs];
   }
 
-  constexpr vec(const vec<T, N>& other) noexcept: m_data(other.m_data) {
-  }
+  constexpr vec(const vec<T, N>& other) noexcept: m_data(other.m_data) {}
 
   constexpr auto& operator=(const vec<T, N>& other) noexcept {
     m_data = other.m_data;
@@ -149,11 +147,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator+(const T& rhs) const noexcept {
-    return vec<T, N>(*this) += rhs;
+    return vec < T, N > (*this) += rhs;
   }
 
   [[nodiscard]] constexpr auto operator+(const vec<T, N>& rhs) const noexcept {
-    return vec<T, N>(*this) += rhs;
+    return vec < T, N > (*this) += rhs;
   }
 
   constexpr auto operator+=(const T& rhs) noexcept {
@@ -167,11 +165,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator-(const T& rhs) const noexcept {
-    return vec<T, N>(*this) -= rhs;
+    return vec < T, N > (*this) -= rhs;
   }
 
   [[nodiscard]] constexpr auto operator-(const vec<T, N>& rhs) const noexcept {
-    return vec<T, N>(*this) -= rhs;
+    return vec < T, N > (*this) -= rhs;
   }
 
   constexpr auto operator-=(const T& rhs) noexcept {
@@ -185,11 +183,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator*(const T& rhs) const noexcept {
-    return vec<T, N>(*this) *= rhs;
+    return vec < T, N > (*this) *= rhs;
   }
 
   [[nodiscard]] constexpr auto operator*(const vec<T, N>& rhs) const noexcept {
-    return vec<T, N>(*this) *= rhs;
+    return vec < T, N > (*this) *= rhs;
   }
 
   constexpr auto operator*=(const T& rhs) noexcept {
@@ -203,11 +201,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator/(const T& rhs) const noexcept {
-    return vec<T, N>(*this) /= rhs;
+    return vec < T, N > (*this) /= rhs;
   }
 
   [[nodiscard]] constexpr auto operator/(const vec<T, N>& rhs) const noexcept {
-    return vec<T, N>(*this) /= rhs;
+    return vec < T, N > (*this) /= rhs;
   }
 
   constexpr auto operator/=(const T& rhs) noexcept {
@@ -221,7 +219,7 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator-() const noexcept {
-    vec<T, N> ret;
+    vec < T, N > ret;
     for (size_t i = 0; i < N; i++) ret.m_data[i] = -m_data[i];
     return ret;
   }

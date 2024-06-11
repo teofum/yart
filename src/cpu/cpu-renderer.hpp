@@ -1,8 +1,12 @@
 #ifndef YART_CPU_RENDERER_HPP
 #define YART_CPU_RENDERER_HPP
 
+#include <chrono>
+#include <future>
+#include <iostream>
+#include <thread>
+#include <variant>
 #include <vector>
-#include <random>
 #include <shared_mutex>
 
 #include <core/core.hpp>
@@ -36,6 +40,7 @@ private:
   uint32_t m_maxDepth = 20;
   uint32_t m_samplesPerThread;
   uint32_t m_currentWave = 0, m_currentWaveFinishedThreads = 0;
+  std::vector<std::unique_ptr<std::thread>> m_threads;
 
   std::shared_mutex m_bufferMutex;
 

@@ -6,6 +6,7 @@
 #include <output/ppm.hpp>
 #include <cpu/cpu-renderer.hpp>
 #include <gltf/gltf.hpp>
+#include <frontend/metal/app.hpp>
 
 using namespace yart::math;
 
@@ -23,25 +24,7 @@ int main() {
   yart::cpu::CpuRenderer renderer(std::move(buffer), camera, 10);
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
 
-  renderer.onRenderWaveComplete = [](
-    const yart::Buffer& buffer,
-    size_t wave,
-    size_t total
-  ) {
-    std::cout << "Rendered " << wave << "/" << total << " samples\n";
-    std::stringstream filename;
-    filename << "out_" << wave << ".ppm";
-    std::ofstream outFile(filename.str());
-    yart::output::writePPM(outFile, buffer);
-  };
-
-  renderer.onRenderComplete = [](const yart::Buffer& buffer) {
-    std::cout << "Writing to file...\n";
-    std::ofstream outFile("out.ppm");
-    yart::output::writePPM(outFile, buffer);
-  };
-
-  renderer.render(root);
+  yart::frontend::metal::MetalFrontend app(&renderer, &root);
 
   return 0;
 }

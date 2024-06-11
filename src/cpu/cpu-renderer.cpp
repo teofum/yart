@@ -1,10 +1,3 @@
-#include <chrono>
-#include <future>
-#include <iostream>
-#include <thread>
-#include <variant>
-#include <vector>
-
 #include "cpu-renderer.hpp"
 
 namespace yart::cpu {
@@ -29,7 +22,6 @@ CpuRenderer::CpuRenderer(
     m_samplesPerThread(m_samples / m_threadCount) {}
 
 void CpuRenderer::render(const Node& root) {
-  std::vector<std::unique_ptr<std::thread>> threads;
   std::random_device rd; // Used to initialize thread RNG
 
   for (uint32_t ti = 0; ti < m_threadCount; ti++) {
@@ -38,23 +30,17 @@ void CpuRenderer::render(const Node& root) {
       renderThread(root);
     }};
 
-    threads.push_back(
+    m_threads.push_back(
       std::make_unique<std::thread>(std::thread(std::move(renderTask)))
     );
-  }
-
-  for (auto& thread: threads) thread->join();
-
-  if (onRenderComplete) {
-    auto cb = onRenderComplete.value();
-    cb(m_buffer);
   }
 }
 
 void CpuRenderer::writeBuffer(const Buffer& src, size_t wave) noexcept {
   std::unique_lock lock(m_bufferMutex);
 
-  if (wave != m_currentWave) {
+  if (wave < m_currentWave) return;
+  if (wave > m_currentWave) {
     m_currentWave = wave;
     m_currentWaveFinishedThreads = 0;
 
@@ -71,9 +57,16 @@ void CpuRenderer::writeBuffer(const Buffer& src, size_t wave) noexcept {
     }
   }
 
-  if (++m_currentWaveFinishedThreads == m_threadCount && onRenderWaveComplete) {
-    auto cb = onRenderWaveComplete.value();
-    cb(m_buffer, wave, m_samplesPerThread);
+  if (++m_currentWaveFinishedThreads == m_threadCount) {
+    if (onRenderWaveComplete) {
+      auto cb = onRenderWaveComplete.value();
+      cb(m_buffer, wave, m_samplesPerThread);
+    }
+
+    if (m_currentWave == m_samplesPerThread && onRenderComplete) {
+      auto cb = onRenderComplete.value();
+      cb(m_buffer);
+    }
   }
 }
 
@@ -104,7 +97,7 @@ void CpuRenderThread::operator()(const Node& root) noexcept {
       }
     }
 
-    if (++sample == nextWave) {
+    if (++sample == nextWave && nextWave != m_samples) {
       m_renderer->writeBuffer(m_threadBuffer, sample);
       nextWave *= 2;
     }

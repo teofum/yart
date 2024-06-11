@@ -10,13 +10,29 @@ class Renderer {
 public:
   float3 backgroundColor;
   std::optional<std::function<void(const Buffer&)>> onRenderComplete;
-  std::optional<std::function<void(const Buffer&, size_t, size_t)>> onRenderWaveComplete;
+  std::optional<std::function<void(
+    const Buffer&,
+    size_t,
+    size_t
+  )>> onRenderWaveComplete;
 
   constexpr Renderer(const Buffer& buffer, const Camera& camera) noexcept
     : m_buffer(buffer), m_camera(camera) {}
 
   constexpr Renderer(Buffer&& buffer, const Camera& camera) noexcept
     : m_buffer(std::move(buffer)), m_camera(camera) {}
+
+  [[nodiscard]] constexpr uint2 bufferSize() const {
+    return {m_buffer.width(), m_buffer.height()};
+  }
+
+  [[nodiscard]] constexpr uint32_t bufferWidth() const {
+    return m_buffer.width();
+  }
+
+  [[nodiscard]] constexpr uint32_t bufferHeight() const {
+    return m_buffer.height();
+  }
 
   virtual void render(const Node& root) = 0;
 
