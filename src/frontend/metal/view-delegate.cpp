@@ -38,6 +38,17 @@ void ViewDelegate::init(MTL::Device* device, MTK::View* view) {
     );
   };
 
+  m_renderer->onRenderWaveComplete = [&](
+    Renderer::RenderData renderData,
+    Renderer::WaveData waveData
+  ) {
+    std::cout << "Completed wave " << waveData.wave << "\n";
+  };
+
+  m_renderer->onRenderComplete = [&](Renderer::RenderData renderData) {
+    std::cout << "Done!\n";
+  };
+
   m_renderer->render(*m_root);
 }
 

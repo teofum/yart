@@ -98,7 +98,7 @@ private:
 
         size_t threadWave = 0;
 
-        while (m_samplesRemaining > 0) {
+        while (m_waveSamples > 0) {
           while (threadWave == m_currentWave) {
             std::unique_lock tileLock(m_tileMutex);
             if (m_nextTile >= m_queuedTiles.size()) break;
@@ -170,11 +170,6 @@ private:
         );
       }
 
-      if (m_samplesRemaining == 0 && onRenderComplete) {
-        const auto cb = onRenderComplete.value();
-        cb({m_buffer, 0.0f});
-      }
-
       m_samplesRemaining -= m_waveSamples;
       size_t nextWaveSamples = m_currentWave > 0 ? min(
         m_waveSamples * 2,
@@ -182,6 +177,11 @@ private:
       ) : 1;
       m_waveSamples = min(nextWaveSamples, m_samplesRemaining);
       m_currentWave++;
+
+      if (m_waveSamples == 0 && onRenderComplete) {
+        const auto cb = onRenderComplete.value();
+        cb({m_buffer, 0.0f});
+      }
 
       waveLock.unlock();
       m_waveCv.notify_all();
