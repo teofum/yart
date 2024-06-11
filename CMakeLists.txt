@@ -61,7 +61,8 @@ set(SRC_CORE
         src/core/mesh.hpp
         src/core/renderer.hpp
         src/core/node.hpp
-        src/core/materials.hpp)
+        src/core/materials.hpp
+        src/core/integrator.hpp)
 
 set(SRC_IO
         src/output/ppm.cpp
@@ -72,7 +73,10 @@ set(SRC_IO
 set(SRC_CPU
         src/cpu/cpu-renderer.cpp
         src/cpu/cpu-renderer.hpp
-        src/cpu/hit.hpp)
+        src/cpu/hit.hpp
+        src/cpu/tile-renderer.hpp
+        src/cpu/basic-integrator.cpp
+        src/cpu/basic-integrator.hpp)
 
 set(SRC_FRONTEND_METAL
         src/frontend/metal/app-delegate.cpp

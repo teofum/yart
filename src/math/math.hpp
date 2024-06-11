@@ -104,6 +104,21 @@ template<std::floating_point T>
   );
 }
 
+template<std::integral T, std::integral U>
+[[nodiscard]] constexpr T ceilDiv(const T& m, const U& n) {
+  return (m / n) + T(m % n != 0);
+}
+
+template<numeric T, numeric U>
+[[nodiscard]] constexpr T min(const T& m, const U& n) {
+  return m < n ? m : n;
+}
+
+template<numeric T, numeric U>
+[[nodiscard]] constexpr T max(const T& m, const U& n) {
+  return m > n ? m : n;
+}
+
 }
 
 #endif //YART_MATH_HPP

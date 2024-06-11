@@ -24,18 +24,17 @@ void ViewDelegate::init(MTL::Device* device, MTK::View* view) {
   buildBuffers();
   buildShaders();
 
-  m_renderer->onRenderWaveComplete = [&](
-    const Buffer& buf,
-    size_t wave,
-    size_t total
+  m_renderer->onRenderTileComplete = [&](
+    Renderer::RenderData renderData,
+    Renderer::WaveData waveData,
+    Renderer::TileData tileData
   ) {
-    std::cout << "Samples: " << wave << "/" << total << "\n";
-
     m_texture->replaceRegion(
-      {0, 0, buf.width(), buf.height()},
+      {tileData.offset.x(), tileData.offset.y(),
+       tileData.size.x(), tileData.size.y()},
       0,
-      buf.data(),
-      buf.width() * sizeof(float4)
+      renderData.buffer.data(tileData.offset),
+      renderData.buffer.width() * sizeof(float4)
     );
   };
 

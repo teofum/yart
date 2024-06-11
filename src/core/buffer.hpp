@@ -39,6 +39,10 @@ public:
   [[nodiscard]] constexpr const float4* data() const {
     return m_data.data();
   }
+
+  [[nodiscard]] constexpr const float4* data(uint2 offset) const {
+    return m_data.data() + offset.y() * m_width + offset.x();
+  }
 };
 
 }

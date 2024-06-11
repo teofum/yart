@@ -9,5 +9,6 @@
 #include "mesh.hpp"
 #include "node.hpp"
 #include "renderer.hpp"
+#include "integrator.hpp"
 
 #endif //YART_CORE_HPP

@@ -1,132 +1,42 @@
-#include "cpu-renderer.hpp"
+#include "basic-integrator.hpp"
 
 namespace yart::cpu {
-using namespace math;
 
-CpuRenderer::CpuRenderer(
-  const Buffer& buffer,
-  const Camera& camera,
-  uint32_t threadCount
-) noexcept
-  : Renderer(buffer, camera),
-    m_threadCount(threadCount),
-    m_samplesPerThread(m_samples / m_threadCount) {}
-
-CpuRenderer::CpuRenderer(
-  Buffer&& buffer,
-  const Camera& camera,
-  uint32_t threadCount
-) noexcept
-  : Renderer(buffer, camera),
-    m_threadCount(threadCount),
-    m_samplesPerThread(m_samples / m_threadCount) {}
-
-void CpuRenderer::render(const Node& root) {
-  std::random_device rd; // Used to initialize thread RNG
-
-  for (uint32_t ti = 0; ti < m_threadCount; ti++) {
-    std::packaged_task<void()> renderTask{[&]() {
-      CpuRenderThread renderThread(this, rd);
-      renderThread(root);
-    }};
-
-    m_threads.push_back(
-      std::make_unique<std::thread>(std::thread(std::move(renderTask)))
-    );
-  }
+BasicIntegrator::BasicIntegrator(Buffer& buffer, const Camera& camera) noexcept
+  : Integrator(buffer, camera) {
+  // TODO: take rng seed as parameter
+  std::random_device rd;
+  m_rng = Xoshiro::Xoshiro256PP(rd());
 }
 
-void CpuRenderer::writeBuffer(const Buffer& src, size_t wave) noexcept {
-  std::unique_lock lock(m_bufferMutex);
-
-  if (wave < m_currentWave) return;
-  if (wave > m_currentWave) {
-    m_currentWave = wave;
-    m_currentWaveFinishedThreads = 0;
-
-    for (size_t i = 0; i < src.width(); i++) {
-      for (size_t j = 0; j < src.height(); j++) {
-        m_buffer(i, j) = src(i, j) / (float(m_threadCount) * float(wave));
-      }
-    }
-  } else {
-    for (size_t i = 0; i < src.width(); i++) {
-      for (size_t j = 0; j < src.height(); j++) {
-        m_buffer(i, j) += src(i, j) / (float(m_threadCount) * float(wave));
-      }
-    }
-  }
-
-  if (++m_currentWaveFinishedThreads == m_threadCount) {
-    if (onRenderWaveComplete) {
-      auto cb = onRenderWaveComplete.value();
-      cb(m_buffer, wave, m_samplesPerThread);
-    }
-
-    if (m_currentWave == m_samplesPerThread && onRenderComplete) {
-      auto cb = onRenderComplete.value();
-      cb(m_buffer);
-    }
-  }
-}
-
-
-CpuRenderThread::CpuRenderThread(
-  CpuRenderer* renderer,
-  std::random_device& rd
-) noexcept
-  : m_renderer(renderer),
-    m_threadRng(rd()),
-    m_threadBuffer(renderer->m_buffer.width(), renderer->m_buffer.height()) {
-  m_samples = renderer->m_samplesPerThread;
-  m_maxDepth = renderer->m_maxDepth;
-}
-
-void CpuRenderThread::operator()(const Node& root) noexcept {
-  auto start = std::chrono::high_resolution_clock::now();
-
-  size_t nextWave = 1;
-
-  for (uint32_t sample = 0; sample < m_samples;) {
-    for (size_t i = 0; i < m_threadBuffer.width(); i++) {
-      for (size_t j = 0; j < m_threadBuffer.height(); j++) {
-        auto ray = m_renderer->m_camera.getRay({i, j}, m_threadRng);
+void BasicIntegrator::render(const Node& root) {
+  for (size_t i = 0; i < m_target.width(); i++) {
+    for (size_t j = 0; j < m_target.height(); j++) {
+      for (uint32_t sample = 0; sample < samples; sample++) {
+        auto ray = m_camera
+          .getRay({i + samplingOffset.x(), j + samplingOffset.y()}, m_rng);
         float3 color = rayColor(ray, root);
 
-        m_threadBuffer(i, j) += float4(color, 1.0f);
+        if (sample == 0) m_target(i, j) = float4(color, 1.0f) / float(samples);
+        else m_target(i, j) += float4(color, 1.0f) / float(samples);
       }
     }
-
-    if (++sample == nextWave && nextWave != m_samples) {
-      m_renderer->writeBuffer(m_threadBuffer, sample);
-      nextWave *= 2;
-    }
   }
-
-  auto end = std::chrono::high_resolution_clock::now();
-  auto delta = std::chrono::duration_cast<std::chrono::duration<float>>(
-    end - start
-  );
-
-  std::cout << "Thread " << std::this_thread::get_id() << " done in " << delta
-            << "\n";
-
-  m_renderer->writeBuffer(m_threadBuffer, m_samples);
 }
 
-float3 CpuRenderThread::rayColor(
+float3 BasicIntegrator::rayColor(
   const Ray& ray,
   const Node& root,
   uint32_t depth
 ) {
-  if (depth > m_maxDepth) return {0.0f, 0.0f, 0.0f};
+  if (depth > maxDepth) return {0.0f, 0.0f, 0.0f};
 
   auto hit = testNode(
     ray,
     {0.001f, std::numeric_limits<float>::infinity()},
     root
   );
-  if (!hit) return m_renderer->backgroundColor;
+  if (!hit) return {0.0f, 0.0f, 0.0f}; // TODO background color
 
   ScatterResult res = scatter(ray, *hit);
 
@@ -141,7 +51,7 @@ float3 CpuRenderThread::rayColor(
   }
 }
 
-std::optional<Hit> CpuRenderThread::testNode(
+std::optional<Hit> BasicIntegrator::testNode(
   const Ray& ray,
   const interval<float>& tInt,
   const Node& node
@@ -180,7 +90,7 @@ std::optional<Hit> CpuRenderThread::testNode(
   return closest;
 }
 
-std::optional<Hit> CpuRenderThread::testMesh(
+std::optional<Hit> BasicIntegrator::testMesh(
   const Ray& ray,
   const interval<float>& tInt,
   const Mesh& mesh
@@ -200,7 +110,7 @@ std::optional<Hit> CpuRenderThread::testMesh(
 }
 
 // Möller–Trumbore intersection
-std::optional<Hit> CpuRenderThread::testTriangle(
+std::optional<Hit> BasicIntegrator::testTriangle(
   const Ray& ray,
   const interval<float>& tInt,
   const Triangle& tri,
@@ -249,7 +159,7 @@ std::optional<Hit> CpuRenderThread::testTriangle(
 }
 
 // "An Efficient and Robust Ray–Box Intersection Algorithm", Amy Williams
-bool CpuRenderThread::testBoundingBox(
+bool BasicIntegrator::testBoundingBox(
   const Ray& ray,
   const interval<float>& tInt,
   const BoundingBox& bounds
@@ -279,7 +189,7 @@ bool CpuRenderThread::testBoundingBox(
   return tMin < tInt.max && tMax > tInt.min;
 }
 
-ScatterResult CpuRenderThread::scatter(const Ray& ray, const Hit& hit) {
+ScatterResult BasicIntegrator::scatter(const Ray& ray, const Hit& hit) {
   return std::visit(
     [&](const auto& mat) {
       return scatterImpl(mat, ray, hit);
@@ -288,14 +198,14 @@ ScatterResult CpuRenderThread::scatter(const Ray& ray, const Hit& hit) {
   );
 }
 
-ScatterResult CpuRenderThread::scatterImpl(
+ScatterResult BasicIntegrator::scatterImpl(
   const Lambertian& mat,
   const Ray& ray,
   const Hit& hit
 ) {
   float4x4 basis = normalToTBN(hit.normal);
   float3 scatterDir = float3(
-    basis * float4(random::randomCosineVec(m_threadRng), 0.0f)
+    basis * float4(random::randomCosineVec(m_rng), 0.0f)
   );
   Ray scattered(hit.position, scatterDir);
 
@@ -306,7 +216,7 @@ ScatterResult CpuRenderThread::scatterImpl(
   };
 }
 
-ScatterResult CpuRenderThread::scatterImpl(
+ScatterResult BasicIntegrator::scatterImpl(
   const Emissive& mat,
   const Ray& ray,
   const Hit& hit
@@ -315,4 +225,3 @@ ScatterResult CpuRenderThread::scatterImpl(
 }
 
 }
-
