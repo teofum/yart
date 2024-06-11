@@ -129,9 +129,6 @@ private:
   void finishTile(const Tile& tile, const Buffer& threadBuffer) noexcept {
     std::unique_lock bufferLock(m_bufferMutex);
 
-    std::cout << "wave " << m_currentWave << " tile " << tile.index << " ["
-              << tile.offset << "]\n";
-
     size_t takenBefore = m_totalSamples - m_samplesRemaining;
     size_t takenAfter = takenBefore + m_waveSamples;
     float wCurrent = float(takenBefore) / float(takenAfter);

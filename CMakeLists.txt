@@ -71,8 +71,6 @@ set(SRC_IO
         src/gltf/gltf.hpp)
 
 set(SRC_CPU
-        src/cpu/cpu-renderer.cpp
-        src/cpu/cpu-renderer.hpp
         src/cpu/hit.hpp
         src/cpu/tile-renderer.hpp
         src/cpu/basic-integrator.cpp

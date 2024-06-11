@@ -28,7 +28,8 @@ int main() {
     camera
   );
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.threadCount = 1;
+  renderer.samples = 300;
+  renderer.threadCount = 10;
 
   yart::frontend::metal::MetalFrontend app(&renderer, &root);
 
