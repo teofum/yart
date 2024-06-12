@@ -51,7 +51,7 @@ private:
   [[nodiscard]] bool testBoundingBox(
     const Ray& ray,
     const interval<float>& tInt,
-    const BoundingBox& bounds
+    const fbounds3& bounds
   ) const;
 
   [[nodiscard]] ScatterResult scatter(const Ray& ray, const Hit& hit);

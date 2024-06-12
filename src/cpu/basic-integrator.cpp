@@ -58,8 +58,8 @@ bool BasicIntegrator::testNode(
   const Node& node
 ) const {
   const Ray rayObjSpace(
-    float3(node.inverseTransform() * float4(ray.origin, 1.0f)),
-    float3(node.inverseTransform() * float4(ray.dir(), 0.0f))
+    node.transform.inverse(ray.origin, Transform::Type::Point),
+    node.transform.inverse(ray.dir(), Transform::Type::Vector)
   );
 
   if (!testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox()))
@@ -78,8 +78,8 @@ bool BasicIntegrator::testNode(
 
   if (!didHit) return false;
 
-  hit.position = float3(node.transform() * float4(hit.position, 1.0));
-  hit.normal = normalized(node.normalTransform() * hit.normal);
+  hit.position = node.transform(hit.position, Transform::Type::Point);
+  hit.normal = node.transform(hit.normal, Transform::Type::Normal);
   return true;
 }
 
@@ -151,24 +151,24 @@ bool BasicIntegrator::testTriangle(
 bool BasicIntegrator::testBoundingBox(
   const Ray& ray,
   const interval<float>& tInt,
-  const BoundingBox& bounds
+  const fbounds3& bounds
 ) const {
   const float3& invDir = ray.invDir();
   const vec3<uint8>& sign = ray.sign();
 
-  float tMin = (bounds.bounds[sign.x()].x() - ray.origin.x()) * invDir.x();
-  float tMax = (bounds.bounds[1 - sign.x()].x() - ray.origin.x()) * invDir.x();
+  float tMin = (bounds[sign.x()].x() - ray.origin.x()) * invDir.x();
+  float tMax = (bounds[1 - sign.x()].x() - ray.origin.x()) * invDir.x();
 
-  float tyMin = (bounds.bounds[sign.y()].y() - ray.origin.y()) * invDir.y();
-  float tyMax = (bounds.bounds[1 - sign.y()].y() - ray.origin.y()) * invDir.y();
+  float tyMin = (bounds[sign.y()].y() - ray.origin.y()) * invDir.y();
+  float tyMax = (bounds[1 - sign.y()].y() - ray.origin.y()) * invDir.y();
 
   if (tMin > tyMax || tyMin > tMax) return false;
 
   if (tyMin > tMin) tMin = tyMin;
   if (tyMax < tMax) tMax = tyMax;
 
-  float tzMin = (bounds.bounds[sign.z()].z() - ray.origin.z()) * invDir.z();
-  float tzMax = (bounds.bounds[1 - sign.z()].z() - ray.origin.z()) * invDir.z();
+  float tzMin = (bounds[sign.z()].z() - ray.origin.z()) * invDir.z();
+  float tzMax = (bounds[1 - sign.z()].z() - ray.origin.z()) * invDir.z();
 
   if (tMin > tzMax || tzMin > tMax) return false;
 

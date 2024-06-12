@@ -103,7 +103,7 @@ static Node processNode(const fastgltf::Asset& asset, size_t nodeIdx) noexcept {
       rotationFromQuat(trs->rotation) *
       float4x4::scaling(float3(trs->scale));
 
-    node.setTransform(transform);
+    node.transform = Transform(transform);
   }
 
   for (size_t childIdx: gltfNode.children) {

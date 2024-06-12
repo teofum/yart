@@ -50,7 +50,9 @@ set(SRC_MATH
         src/math/math.hpp
         src/math/mat.hpp
         src/math/random.hpp
-        src/math/random.cpp)
+        src/math/random.cpp
+        src/math/bounds.hpp
+        src/math/transform.hpp)
 
 set(SRC_CORE
         src/core/buffer.hpp
