@@ -18,18 +18,26 @@ class Renderer {
 public:
   struct RenderData {
     const Buffer& buffer;
-    float time;
+    size_t samplesTaken, totalSamples;
+    
+    uint64_t totalRays;
+    std::chrono::milliseconds totalTime;
   };
 
   struct WaveData {
-    size_t wave;
-    size_t total;
+    size_t wave, waveSamples;
+
+    uint64_t rays;
+    std::chrono::milliseconds time;
   };
 
   struct TileData {
     uint2 offset;
     uint2 size;
     size_t index, total;
+
+    uint64_t rays;
+    std::chrono::milliseconds time;
   };
 
   float3 backgroundColor;
@@ -37,7 +45,7 @@ public:
   RenderCallback<RenderData> onRenderComplete;
   RenderCallback<RenderData> onRenderAborted;
   RenderCallback<RenderData, WaveData> onRenderWaveComplete;
-  RenderCallback<RenderData, WaveData, TileData> onRenderTileComplete;
+  RenderCallback<RenderData, TileData> onRenderTileComplete;
 
   Renderer(Buffer&& buffer, const Camera& camera) noexcept
     : m_camera(camera), m_buffer(std::move(buffer)) {}

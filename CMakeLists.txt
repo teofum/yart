@@ -62,7 +62,8 @@ set(SRC_CORE
         src/core/renderer.hpp
         src/core/node.hpp
         src/core/materials.hpp
-        src/core/integrator.hpp)
+        src/core/integrator.hpp
+        src/core/utils.hpp)
 
 set(SRC_IO
         src/output/ppm.cpp

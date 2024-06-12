@@ -10,5 +10,6 @@
 #include "node.hpp"
 #include "renderer.hpp"
 #include "integrator.hpp"
+#include "utils.hpp"
 
 #endif //YART_CORE_HPP

@@ -10,6 +10,8 @@ BasicIntegrator::BasicIntegrator(Buffer& buffer, const Camera& camera) noexcept
 }
 
 void BasicIntegrator::render(const Node& root) {
+  m_rayCounter = 0;
+
   for (size_t i = 0; i < m_target.width(); i++) {
     for (size_t j = 0; j < m_target.height(); j++) {
       for (uint32_t sample = 0; sample < samples; sample++) {
@@ -30,6 +32,7 @@ float3 BasicIntegrator::rayColor(
   uint32_t depth
 ) {
   if (depth > maxDepth) return {0.0f, 0.0f, 0.0f};
+  m_rayCounter++;
 
   auto hit = testNode(
     ray,

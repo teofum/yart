@@ -1,3 +1,5 @@
+#include <iomanip>
+
 #include "view-delegate.hpp"
 
 namespace yart::frontend::metal {
@@ -26,7 +28,6 @@ void ViewDelegate::init(MTL::Device* device, MTK::View* view) {
 
   m_renderer->onRenderTileComplete = [&](
     Renderer::RenderData renderData,
-    Renderer::WaveData waveData,
     Renderer::TileData tileData
   ) {
     m_texture->replaceRegion(
@@ -42,11 +43,38 @@ void ViewDelegate::init(MTL::Device* device, MTK::View* view) {
     Renderer::RenderData renderData,
     Renderer::WaveData waveData
   ) {
-    std::cout << "Completed wave " << waveData.wave << "\n";
+    float wavePerf = float(waveData.rays) / float(1000 * waveData.time.count());
+    float perf =
+      float(renderData.totalRays) / float(1000 * renderData.totalTime.count());
+
+    std::cout << "Finished wave " << waveData.wave + 1
+              << " (" << renderData.samplesTaken
+              << "/" << renderData.totalSamples
+              << " samples, "
+              << waveData.waveSamples << " wave samples)\n";
+
+    std::cout << "  Wave:  "
+              << std::setw(8) << waveData.time << ", "
+              << std::setw(12) << waveData.rays << " rays ["
+              << std::setw(6) << std::fixed << std::setprecision(3)
+              << wavePerf << " Mrays/s]\n";
+
+    std::cout << "  Total: "
+              << std::setw(8) << renderData.totalTime << ", "
+              << std::setw(12) << renderData.totalRays << " rays ["
+              << std::setw(6) << std::fixed << std::setprecision(3)
+              << perf << " Mrays/s]\n";
   };
 
   m_renderer->onRenderComplete = [&](Renderer::RenderData renderData) {
+    float perf =
+      float(renderData.totalRays) / float(1000 * renderData.totalTime.count());
     std::cout << "Done!\n";
+    std::cout << "  Total: "
+              << std::setw(8) << renderData.totalTime << ", "
+              << std::setw(12) << renderData.totalRays << " rays ["
+              << std::setw(6) << std::fixed << std::setprecision(3)
+              << perf << " Mrays/s]\n";
   };
 
   m_renderer->render(*m_root);

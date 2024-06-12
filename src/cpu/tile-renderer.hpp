@@ -1,6 +1,7 @@
 #ifndef YART_TILE_RENDERER_HPP
 #define YART_TILE_RENDERER_HPP
 
+#include <chrono>
 #include <thread>
 
 #include <core/core.hpp>
@@ -40,7 +41,16 @@ public:
     renderImpl(root);
 
     for (auto& thread: m_activeThreads) thread->join();
-    return {m_buffer, 0.0f};
+
+    TimePoint now = std::chrono::high_resolution_clock::now();
+    auto totalRenderTime = toMillis(now - m_renderStart);
+    return {
+      m_buffer,
+      m_totalSamples,
+      m_totalSamples,
+      m_totalRays,
+      totalRenderTime
+    };
   }
 
 private:
@@ -50,18 +60,29 @@ private:
     size_t index;
   };
 
+  // Threading state
   std::vector<std::unique_ptr<std::thread>> m_activeThreads;
   bool m_shouldStopRenderInProgress = false;
 
+  // Tile state
   std::vector<Tile> m_queuedTiles;
   size_t m_nextTile = 0, m_finishedTiles = 0;
   std::mutex m_tileMutex;
 
+  // Wave and samples state
   size_t m_samplesRemaining = samples, m_totalSamples = samples;
   size_t m_currentWave = 0, m_waveSamples = 1;
   std::mutex m_waveMutex;
   std::condition_variable m_waveCv;
 
+  // Perf counters
+  using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+  TimePoint m_renderStart, m_waveStart;
+  uint64_t m_totalRays = 0, m_waveRays = 0;
+
+  /**
+   * Render implementation for TileRenderer
+   */
   void renderImpl(const Node& root) {
     // Reset renderer state
     m_activeThreads.clear();
@@ -90,6 +111,9 @@ private:
       }
     }
 
+    m_renderStart = std::chrono::high_resolution_clock::now();
+    m_waveStart = std::chrono::high_resolution_clock::now();
+
     // Start the rendering threads
     for (uint32_t ti = 0; ti < threadCount; ti++) {
       auto threadFunc = [&]() {
@@ -106,11 +130,12 @@ private:
             const Tile& tile = m_queuedTiles[m_nextTile++];
             tileLock.unlock();
 
+            TimePoint tileStart = std::chrono::high_resolution_clock::now();
             integrator.samples = m_waveSamples;
             integrator.samplingOffset = tile.offset;
             integrator.render(root);
 
-            finishTile(tile, threadBuffer);
+            finishTile(tile, threadBuffer, integrator.rayCount(), tileStart);
           }
 
           // Increment current thread wave and sync with other threads
@@ -126,7 +151,26 @@ private:
     }
   }
 
-  void finishTile(const Tile& tile, const Buffer& threadBuffer) noexcept {
+  /**
+   * Called when a tile is completed, updates state and notifies events
+   * @param tile
+   * @param threadBuffer
+   */
+  void finishTile(
+    const Tile& tile,
+    const Buffer& threadBuffer,
+    uint64_t tileRays,
+    TimePoint tileStart
+  ) noexcept {
+    // Perf counters
+    TimePoint now = std::chrono::high_resolution_clock::now();
+    auto tileRenderTime = toMillis(now - tileStart);
+    auto waveRenderTime = toMillis(now - m_waveStart);
+    auto totalRenderTime = toMillis(now - m_renderStart);
+
+    m_waveRays += tileRays;
+    m_totalRays += tileRays;
+
     std::unique_lock bufferLock(m_bufferMutex);
 
     size_t takenBefore = m_totalSamples - m_samplesRemaining;
@@ -150,10 +194,21 @@ private:
     if (onRenderTileComplete) {
       const auto cb = onRenderTileComplete.value();
       cb(
-        {m_buffer, 0.0f},
-        {m_currentWave, 0}, // TODO: wave total
-        {tile.offset, uint2(tile.width, tile.height), m_finishedTiles + 1,
-         m_queuedTiles.size()}
+        {
+          m_buffer,
+          m_totalSamples - m_samplesRemaining,
+          m_totalSamples,
+          m_totalRays,
+          totalRenderTime
+        },
+        {
+          tile.offset,
+          uint2(tile.width, tile.height),
+          m_finishedTiles + 1,
+          m_queuedTiles.size(),
+          tileRays,
+          tileRenderTime,
+        }
       );
     }
 
@@ -162,15 +217,21 @@ private:
       m_nextTile = 0;
       m_finishedTiles = 0;
 
+      m_samplesRemaining -= m_waveSamples;
       if (onRenderWaveComplete) {
         const auto cb = onRenderWaveComplete.value();
         cb(
-          {m_buffer, 0.0f},
-          {m_currentWave, 0} // TODO: wave total
+          {
+            m_buffer,
+            m_totalSamples - m_samplesRemaining,
+            m_totalSamples,
+            m_totalRays,
+            totalRenderTime
+          },
+          {m_currentWave, m_waveSamples, m_waveRays, waveRenderTime}
         );
       }
 
-      m_samplesRemaining -= m_waveSamples;
       size_t nextWaveSamples = m_currentWave > 0 ? min(
         m_waveSamples * 2,
         MAX_WAVE_SAMPLES
@@ -180,9 +241,19 @@ private:
 
       if (m_waveSamples == 0 && onRenderComplete) {
         const auto cb = onRenderComplete.value();
-        cb({m_buffer, 0.0f});
+        cb(
+          {
+            m_buffer,
+            m_totalSamples,
+            m_totalSamples,
+            m_totalRays,
+            totalRenderTime
+          }
+        );
       }
 
+      m_waveStart = std::chrono::high_resolution_clock::now();
+      m_waveRays = 0;
       waveLock.unlock();
       m_waveCv.notify_all();
     }
