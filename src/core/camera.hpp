@@ -2,7 +2,7 @@
 #define YART_CAMERA_HPP
 
 #include <math/math.hpp>
-#include <core/ray.hpp>
+#include "math/ray.hpp"
 
 namespace yart {
 using namespace math;

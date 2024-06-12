@@ -52,11 +52,11 @@ set(SRC_MATH
         src/math/random.hpp
         src/math/random.cpp
         src/math/bounds.hpp
+        src/math/ray.hpp
         src/math/transform.hpp)
 
 set(SRC_CORE
         src/core/buffer.hpp
-        src/core/ray.hpp
         src/core/types.hpp
         src/core/camera.hpp
         src/core/core.hpp

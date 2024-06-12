@@ -57,10 +57,7 @@ bool BasicIntegrator::testNode(
   Hit& hit,
   const Node& node
 ) const {
-  const Ray rayObjSpace(
-    node.transform.inverse(ray.origin, Transform::Type::Point),
-    node.transform.inverse(ray.dir(), Transform::Type::Vector)
-  );
+  const Ray rayObjSpace = node.transform.inverse(ray);
 
   if (!testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox()))
     return false;

@@ -4,7 +4,6 @@
 #include "types.hpp"
 #include "buffer.hpp"
 #include "camera.hpp"
-#include "ray.hpp"
 #include "materials.hpp"
 #include "mesh.hpp"
 #include "node.hpp"
