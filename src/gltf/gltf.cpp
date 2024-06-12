@@ -5,12 +5,12 @@ namespace yart::gltf {
 Material defaultMaterial(Lambertian{float3(0.8f)});
 
 static float4x4 rotationFromQuat(std::array<float, 4> q) noexcept {
-  float q0 = q[0], q1 = q[1], q2 = q[2], q3 = q[3];
+  float qr = q[3], qi = q[0], qj = q[1], qk = q[2];
 
   float4x4 half{
-    0.5f - (q2 * q2 + q3 * q3), (q1 * q2 - q0 * q3), (q1 * q3 + q0 * q2), 0.0f,
-    (q1 * q2 + q0 * q3), 0.5f - (q1 * q1 + q3 * q3), (q2 * q3 - q0 * q1), 0.0f,
-    (q1 * q3 - q0 * q2), (q2 * q3 + q0 * q1), 0.5f - (q1 * q1 + q2 * q2), 0.0f,
+    0.5f - (qj * qj + qk * qk), (qi * qj - qr * qk), (qi * qk + qr * qj), 0.0f,
+    (qi * qj + qr * qk), 0.5f - (qi * qi + qk * qk), (qj * qk - qr * qi), 0.0f,
+    (qi * qk - qr * qj), (qj * qk + qr * qi), 0.5f - (qi * qi + qj * qj), 0.0f,
     0.0f, 0.0f, 0.0f, 0.5f
   };
 
@@ -100,7 +100,6 @@ static Node processNode(const fastgltf::Asset& asset, size_t nodeIdx) noexcept {
   if (trs) {
     const float4x4 transform =
       float4x4::translation(float3(trs->translation)) *
-      float4x4::rotation(pi, axis_x<float>) *
       rotationFromQuat(trs->rotation) *
       float4x4::scaling(float3(trs->scale));
 

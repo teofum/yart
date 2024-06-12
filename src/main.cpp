@@ -21,7 +21,7 @@ int main() {
     {0.0f, 5.0f, 15.0f}
   );
 
-  yart::Node root = yart::gltf::load("models/cornell.glb").value();
+  yart::Node root = yart::gltf::load("models/cornell_gtest.glb").value();
 
   yart::cpu::TileRenderer<yart::cpu::BasicIntegrator> renderer(
     std::move(buffer),
