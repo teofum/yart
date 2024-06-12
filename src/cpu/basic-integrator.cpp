@@ -86,10 +86,30 @@ bool BasicIntegrator::testMesh(
   Hit& hit,
   const Mesh& mesh
 ) const {
-  bool didHit = false;
+  bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
+  if (didHit) hit.material = &mesh.material;
 
-  for (const Triangle& tri: mesh.triangles()) {
-    didHit |= testTriangle(ray, tMin, hit, tri, mesh);
+  return didHit;
+}
+
+bool BasicIntegrator::testBVH(
+  const Ray& ray,
+  float tMin,
+  Hit& hit,
+  const BVH& bvh,
+  size_t nodeIdx
+) const {
+  const BVHNode& node = bvh[nodeIdx];
+  if (!testBoundingBox(ray, {tMin, hit.t}, node.bounds)) return false;
+
+  bool didHit = false;
+  if (node.isLeaf()) {
+    for (size_t i = 0; i < node.span; i++) {
+      didHit |= testTriangle(ray, tMin, hit, bvh.tri(node.first + i));
+    }
+  } else {
+    didHit |= testBVH(ray, tMin, hit, bvh, node.left);
+    didHit |= testBVH(ray, tMin, hit, bvh, node.left + 1);
   }
 
   return didHit;
@@ -100,19 +120,18 @@ bool BasicIntegrator::testTriangle(
   const Ray& ray,
   float tMin,
   Hit& hit,
-  const Triangle& tri,
-  const Mesh& mesh
+  const Triangle& tri
 ) const {
   const float3&
-    v0 = tri.vertices[0]->position,
-    v1 = tri.vertices[1]->position,
-    v2 = tri.vertices[2]->position;
+    v0 = tri.v0.position,
+    v1 = tri.v1.position,
+    v2 = tri.v2.position;
 
   const float3 edge1 = v1 - v0;
   const float3 edge2 = v2 - v0;
 
   // Cramer's Rule
-  const float3 rayEdge2 = cross(ray.dir(), edge2);
+  const float3 rayEdge2 = cross(ray.dir, edge2);
 
   const float det = dot(edge1, rayEdge2);
   // TODO: culling support
@@ -127,20 +146,18 @@ bool BasicIntegrator::testTriangle(
   // Uses the property a.(b×c) = b.(c×a) = c.(a×b)
   // and a×b = b×(-a)
   const float3 bEdge1 = cross(b, edge1);
-  const float v = dot(ray.dir(), bEdge1) * invDet;
+  const float v = dot(ray.dir, bEdge1) * invDet;
   if (v < 0.0f || u + v > 1.0f) return false;
 
   const float t = dot(edge2, bEdge1) * invDet;
   if (t <= tMin || hit.t <= t) return false;
 
   hit.t = t;
-  hit.position = ray.at(t);
+  hit.position = ray(t);
 
   const float w = 1.0f - u - v;
-  hit.normal = w * tri.vertices[0]->normal + u * tri.vertices[1]->normal +
-               v * tri.vertices[2]->normal;
+  hit.normal = w * tri.v0.normal + u * tri.v1.normal + v * tri.v2.normal;
 
-  hit.material = &mesh.material;
   return true;
 }
 
@@ -150,29 +167,23 @@ bool BasicIntegrator::testBoundingBox(
   const interval<float>& tInt,
   const fbounds3& bounds
 ) const {
-  const float3& invDir = ray.invDir();
-  const vec3<uint8>& sign = ray.sign();
+  const float3& invDir = 1.0f / ray.dir;
 
-  float tMin = (bounds[sign.x()].x() - ray.origin.x()) * invDir.x();
-  float tMax = (bounds[1 - sign.x()].x() - ray.origin.x()) * invDir.x();
+  float tx1 = invDir.x() * (bounds.min.x() - ray.origin.x());
+  float tx2 = invDir.x() * (bounds.max.x() - ray.origin.x());
+  float tmin = std::min(tx1, tx2), tmax = std::max(tx1, tx2);
 
-  float tyMin = (bounds[sign.y()].y() - ray.origin.y()) * invDir.y();
-  float tyMax = (bounds[1 - sign.y()].y() - ray.origin.y()) * invDir.y();
+  float ty1 = invDir.y() * (bounds.min.y() - ray.origin.y());
+  float ty2 = invDir.y() * (bounds.max.y() - ray.origin.y());
+  tmin = std::max(tmin, std::min(ty1, ty2));
+  tmax = std::min(tmax, std::max(ty1, ty2));
 
-  if (tMin > tyMax || tyMin > tMax) return false;
+  float tz1 = invDir.z() * (bounds.min.z() - ray.origin.z());
+  float tz2 = invDir.z() * (bounds.max.z() - ray.origin.z());
+  tmin = std::max(tmin, std::min(tz1, tz2));
+  tmax = std::min(tmax, std::max(tz1, tz2));
 
-  if (tyMin > tMin) tMin = tyMin;
-  if (tyMax < tMax) tMax = tyMax;
-
-  float tzMin = (bounds[sign.z()].z() - ray.origin.z()) * invDir.z();
-  float tzMax = (bounds[1 - sign.z()].z() - ray.origin.z()) * invDir.z();
-
-  if (tMin > tzMax || tzMin > tMax) return false;
-
-  if (tzMin > tMin) tMin = tzMin;
-  if (tzMax < tMax) tMax = tzMax;
-
-  return tMin < tInt.max && tMax > tInt.min;
+  return tmax >= tmin && tmin < tInt.max && tmax > tInt.min;
 }
 
 ScatterResult BasicIntegrator::scatter(const Ray& ray, const Hit& hit) {

@@ -91,7 +91,7 @@ public:
   }
 
   [[nodiscard]] constexpr Ray operator()(const Ray& rhs) const noexcept {
-    return {(*this)(rhs.origin, Type::Point), (*this)(rhs.dir())};
+    return {(*this)(rhs.origin, Type::Point), (*this)(rhs.dir)};
   }
 
   [[nodiscard]] constexpr float4 inverse(const float4& rhs) const noexcept {
@@ -107,7 +107,7 @@ public:
   }
 
   [[nodiscard]] constexpr Ray inverse(const Ray& rhs) const noexcept {
-    return {inverse(rhs.origin, Type::Point), inverse(rhs.dir())};
+    return {inverse(rhs.origin, Type::Point), inverse(rhs.dir)};
   }
 
 private:

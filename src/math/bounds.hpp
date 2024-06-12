@@ -20,6 +20,10 @@ public:
     return i == 0 ? min : max;
   }
 
+  [[nodiscard]] constexpr vec<T, N> size() const noexcept {
+    return max - min;
+  }
+
   template<numeric... Ts>
   [[nodiscard]] static constexpr bounds<T, N> join(bounds<Ts, N> ...a) noexcept {
     bounds<T, N> _union;
@@ -51,10 +55,25 @@ public:
   requires std::ranges::random_access_range<range_T>
   [[nodiscard]] static constexpr bounds<T, N> fromPoints(const range_T& points) noexcept {
     bounds<T, N> b;
-    for (const vec<T, N>& vert: points) {
+    for (const vec<T, N>& p: points) {
       for (size_t i = 0; i < N; i++) {
-        if (vert[i] < b.min[i]) b.min[i] = vert[i];
-        if (vert[i] > b.max[i]) b.max[i] = vert[i];
+        if (p[i] < b.min[i]) b.min[i] = p[i];
+        if (p[i] > b.max[i]) b.max[i] = p[i];
+      }
+    }
+    b.min -= float3(0.001);
+    b.max += float3(0.001);
+
+    return b;
+  }
+
+  template<typename... Ts>
+  [[nodiscard]] static constexpr bounds<T, N> fromPoints(const Ts& ...points) noexcept {
+    bounds<T, N> b;
+    for (const vec<T, N>& p: {points...}) {
+      for (size_t i = 0; i < N; i++) {
+        if (p[i] < b.min[i]) b.min[i] = p[i];
+        if (p[i] > b.max[i]) b.max[i] = p[i];
       }
     }
     b.min -= float3(0.001);

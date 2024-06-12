@@ -40,12 +40,19 @@ private:
     const Mesh& mesh
   ) const;
 
+  [[nodiscard]] bool testBVH(
+    const Ray& ray,
+    float tMin,
+    Hit& hit,
+    const BVH& bvh,
+    size_t nodeIdx = 0
+  ) const;
+
   [[nodiscard]] bool testTriangle(
     const Ray& ray,
     float tMin,
     Hit& hit,
-    const Triangle& tri,
-    const Mesh& mesh
+    const Triangle& tri
   ) const;
 
   [[nodiscard]] bool testBoundingBox(

@@ -65,7 +65,9 @@ set(SRC_CORE
         src/core/node.hpp
         src/core/materials.hpp
         src/core/integrator.hpp
-        src/core/utils.hpp)
+        src/core/utils.hpp
+        src/core/bvh.hpp
+        src/core/primitives.hpp)
 
 set(SRC_IO
         src/output/ppm.cpp

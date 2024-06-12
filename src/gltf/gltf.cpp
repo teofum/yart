@@ -87,7 +87,7 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
     );
   }
 
-  return {std::move(meshVertices), std::move(faces), material};
+  return {std::move(meshVertices), faces, material};
 }
 
 static Node processNode(const fastgltf::Asset& asset, size_t nodeIdx) noexcept {

@@ -21,14 +21,14 @@ int main() {
     {0.0f, 5.0f, 15.0f}
   );
 
-  yart::Node root = yart::gltf::load("models/cornell.glb").value();
+  yart::Node root = yart::gltf::load("models/cornell_suzanne.glb").value();
 
   yart::cpu::TileRenderer<yart::cpu::BasicIntegrator> renderer(
     std::move(buffer),
     camera
   );
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 100;
+  renderer.samples = 1000;
 
   yart::frontend::metal::MetalFrontend app(&renderer, &root);
 
