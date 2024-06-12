@@ -34,14 +34,11 @@ float3 BasicIntegrator::rayColor(
   if (depth > maxDepth) return {0.0f, 0.0f, 0.0f};
   m_rayCounter++;
 
-  auto hit = testNode(
-    ray,
-    {0.001f, std::numeric_limits<float>::infinity()},
-    root
-  );
-  if (!hit) return {0.0f, 0.0f, 0.0f}; // TODO background color
+  Hit hit;
+  bool didHit = testNode(ray, 0.001f, hit, root);
+  if (!didHit) return {0.0f, 0.0f, 0.0f}; // TODO background color
 
-  ScatterResult res = scatter(ray, *hit);
+  ScatterResult res = scatter(ray, hit);
 
   if (const Scattered* r = std::get_if<Scattered>(&res)) {
     float3 reflected = rayColor(r->scattered, root, depth + 1) * r->attenuation;
@@ -54,9 +51,10 @@ float3 BasicIntegrator::rayColor(
   }
 }
 
-std::optional<Hit> BasicIntegrator::testNode(
+bool BasicIntegrator::testNode(
   const Ray& ray,
-  const interval<float>& tInt,
+  float tMin,
+  Hit& hit,
   const Node& node
 ) const {
   const Ray rayObjSpace(
@@ -64,58 +62,47 @@ std::optional<Hit> BasicIntegrator::testNode(
     float3(node.inverseTransform() * float4(ray.dir(), 0.0f))
   );
 
-  if (!testBoundingBox(rayObjSpace, tInt, node.boundingBox()))
-    return std::nullopt;
+  if (!testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox()))
+    return false;
 
-  std::optional<Hit> closest = std::nullopt;
-  float tMin = tInt.max;
+  bool didHit = false;
 
   const Mesh* mesh;
   if ((mesh = node.mesh())) {
-    auto hit = testMesh(rayObjSpace, tInt, *mesh);
-    if (hit) {
-      tMin = hit->t;
-      closest = hit;
-    }
+    didHit = testMesh(rayObjSpace, tMin, hit, *mesh);
   }
 
   for (const Node& child: node.children()) {
-    auto hit = testNode(rayObjSpace, {tInt.min, tMin}, child);
-    if (hit) {
-      tMin = hit->t;
-      closest = hit;
-    }
+    didHit |= testNode(rayObjSpace, tMin, hit, child);
   }
 
-  closest->position = float3(node.transform() * float4(closest->position, 1.0));
-  closest->normal = normalized(node.normalTransform() * closest->normal);
+  if (!didHit) return false;
 
-  return closest;
+  hit.position = float3(node.transform() * float4(hit.position, 1.0));
+  hit.normal = normalized(node.normalTransform() * hit.normal);
+  return true;
 }
 
-std::optional<Hit> BasicIntegrator::testMesh(
+bool BasicIntegrator::testMesh(
   const Ray& ray,
-  const interval<float>& tInt,
+  float tMin,
+  Hit& hit,
   const Mesh& mesh
 ) const {
-  std::optional<Hit> closest = std::nullopt;
-  float tMin = tInt.max;
+  bool didHit = false;
 
   for (const Triangle& tri: mesh.triangles()) {
-    auto hit = testTriangle(ray, {tInt.min, tMin}, tri, mesh);
-    if (hit) {
-      tMin = hit->t;
-      closest = hit;
-    }
+    didHit |= testTriangle(ray, tMin, hit, tri, mesh);
   }
 
-  return closest;
+  return didHit;
 }
 
 // Möller–Trumbore intersection
-std::optional<Hit> BasicIntegrator::testTriangle(
+bool BasicIntegrator::testTriangle(
   const Ray& ray,
-  const interval<float>& tInt,
+  float tMin,
+  Hit& hit,
   const Triangle& tri,
   const Mesh& mesh
 ) const {
@@ -132,24 +119,23 @@ std::optional<Hit> BasicIntegrator::testTriangle(
 
   const float det = dot(edge1, rayEdge2);
   // TODO: culling support
-  if (std::abs(det) < epsilon) return std::nullopt;
+  if (std::abs(det) < epsilon) return false;
 
   const float invDet = 1.0f / det;
   const float3 b = ray.origin - v0; // We're solving for Ax = b
 
   const float u = dot(b, rayEdge2) * invDet;
-  if (u < 0.0f || u > 1.0f) return std::nullopt;
+  if (u < 0.0f || u > 1.0f) return false;
 
   // Uses the property a.(b×c) = b.(c×a) = c.(a×b)
   // and a×b = b×(-a)
   const float3 bEdge1 = cross(b, edge1);
   const float v = dot(ray.dir(), bEdge1) * invDet;
-  if (v < 0.0f || u + v > 1.0f) return std::nullopt;
+  if (v < 0.0f || u + v > 1.0f) return false;
 
   const float t = dot(edge2, bEdge1) * invDet;
-  if (t <= tInt.min || tInt.max <= t) return std::nullopt;
+  if (t <= tMin || hit.t <= t) return false;
 
-  Hit hit;
   hit.t = t;
   hit.position = ray.at(t);
 
@@ -158,7 +144,7 @@ std::optional<Hit> BasicIntegrator::testTriangle(
                v * tri.vertices[2]->normal;
 
   hit.material = &mesh.material;
-  return std::make_optional(hit);
+  return true;
 }
 
 // "An Efficient and Robust Ray–Box Intersection Algorithm", Amy Williams

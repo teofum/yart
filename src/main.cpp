@@ -29,7 +29,6 @@ int main() {
   );
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
   renderer.samples = 100;
-  renderer.threadCount = 10;
 
   yart::frontend::metal::MetalFrontend app(&renderer, &root);
 

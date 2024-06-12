@@ -171,8 +171,6 @@ private:
     m_waveRays += tileRays;
     m_totalRays += tileRays;
 
-    std::unique_lock bufferLock(m_bufferMutex);
-
     size_t takenBefore = m_totalSamples - m_samplesRemaining;
     size_t takenAfter = takenBefore + m_waveSamples;
     float wCurrent = float(takenBefore) / float(takenAfter);

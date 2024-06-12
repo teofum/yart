@@ -23,7 +23,6 @@ static constexpr vec<T, 3> axis_z = vec<T, 3>(0.0, 0.0, 1.0);
 /*
  * Matrix-vector math
  */
-
 template<numeric T, std::size_t N, std::size_t M>
 [[nodiscard]] constexpr vec<T, N> col(
   const mat<T, N, M>& m,
@@ -45,7 +44,6 @@ template<numeric T, std::size_t N, std::size_t M>
 }
 
 template<numeric T, std::size_t N, std::size_t M>
-//requires (N < 4 || M < 4)
 [[nodiscard]] constexpr vec<T, N> operator*(
   const mat<T, N, M>& lhs,
   const vec<T, M>& rhs
@@ -58,19 +56,6 @@ template<numeric T, std::size_t N, std::size_t M>
   }
   return res;
 }
-
-//template<numeric T>
-//[[nodiscard]] constexpr vec4<T> operator*(
-//  const mat4x4<T>& lhs,
-//  const vec4<T>& rhs
-//) noexcept {
-//  return {
-//    lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2] + lhs[3] * rhs[3],
-//    lhs[4] * rhs[0] + lhs[5] * rhs[1] + lhs[6] * rhs[2] + lhs[7] * rhs[3],
-//    lhs[8] * rhs[0] + lhs[9] * rhs[1] + lhs[10] * rhs[2] + lhs[11] * rhs[3],
-//    lhs[12] * rhs[0] + lhs[13] * rhs[1] + lhs[14] * rhs[2] + lhs[15] * rhs[3],
-//  };
-//}
 
 template<numeric T, std::size_t N, std::size_t M>
 [[nodiscard]] constexpr vec<T, M> operator*(

@@ -26,21 +26,24 @@ private:
     uint32 depth = 0
   );
 
-  [[nodiscard]] std::optional<Hit> testNode(
+  [[nodiscard]] bool testNode(
     const Ray& ray,
-    const interval<float>& tInt,
+    float tMin,
+    Hit& hit,
     const Node& node
   ) const;
 
-  [[nodiscard]] std::optional<Hit> testMesh(
+  [[nodiscard]] bool testMesh(
     const Ray& ray,
-    const interval<float>& tInt,
+    float tMin,
+    Hit& hit,
     const Mesh& mesh
   ) const;
 
-  [[nodiscard]] std::optional<Hit> testTriangle(
+  [[nodiscard]] bool testTriangle(
     const Ray& ray,
-    const interval<float>& tInt,
+    float tMin,
+    Hit& hit,
     const Triangle& tri,
     const Mesh& mesh
   ) const;
