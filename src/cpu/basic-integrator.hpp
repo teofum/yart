@@ -11,7 +11,7 @@ namespace yart::cpu {
 class BasicIntegrator : public Integrator {
 public:
   uint32_t samples = 1;
-  uint32_t maxDepth = 20;
+  uint32_t maxDepth = 3;
 
   BasicIntegrator(Buffer& buffer, const Camera& camera) noexcept;
 

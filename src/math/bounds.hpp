@@ -24,6 +24,16 @@ public:
     return max - min;
   }
 
+  [[nodiscard]] constexpr float area() const noexcept {
+    float3 size = max - min;
+    return size.x() * size.y() + size.y() * size.z() + size.z() * size.x();
+  }
+
+  constexpr void expandToInclude(const vec<T, N>& point) noexcept {
+    min = math::min(min, point);
+    max = math::max(max, point);
+  }
+
   template<numeric... Ts>
   [[nodiscard]] static constexpr bounds<T, N> join(bounds<Ts, N> ...a) noexcept {
     bounds<T, N> _union;

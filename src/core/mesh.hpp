@@ -14,9 +14,11 @@ using namespace math;
 
 class Mesh {
 private:
+  using BVHType = SahBVH;
+
   std::vector<Vertex> m_vertices;
   std::vector<Triangle> m_triangles;
-  BVH m_bvh;
+  BVHType m_bvh;
 
   constexpr std::vector<Triangle> buildTris(const std::vector<Face>& faces) noexcept {
     std::vector<Triangle> tris;
@@ -65,7 +67,7 @@ public:
   constexpr Mesh& operator=(const Mesh& other) noexcept {
     m_vertices = other.m_vertices;
     m_triangles = other.m_triangles;
-    m_bvh = BVH(other.m_bvh, other.m_triangles);
+    m_bvh = BVHType(other.m_bvh, other.m_triangles);
     material = other.material;
     return *this;
   }
@@ -79,7 +81,7 @@ public:
   constexpr Mesh& operator=(Mesh&& other) noexcept {
     m_vertices = std::move(other.m_vertices);
     m_triangles = std::move(other.m_triangles);
-    m_bvh = BVH(std::move(other.m_bvh), other.m_triangles);
+    m_bvh = BVHType(std::move(other.m_bvh), other.m_triangles);
     material = std::move(other.material);
     return *this;
   }

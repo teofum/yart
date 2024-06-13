@@ -18,17 +18,17 @@ int main() {
   yart::Camera camera(
     {buffer.width(), buffer.height()},
     radians(55.0f),
-    {0.0f, 5.0f, 15.0f}
+    {-7.0f, 5.0f, 0.0f}, axis_x<float>
   );
 
-  yart::Node root = yart::gltf::load("models/cornell_suzanne.glb").value();
+  yart::Node root = yart::gltf::load("models/sponza/greensponza.glb").value();
 
   yart::cpu::TileRenderer<yart::cpu::BasicIntegrator> renderer(
     std::move(buffer),
     camera
   );
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 1000;
+  renderer.samples = 100;
 
   yart::frontend::metal::MetalFrontend app(&renderer, &root);
 

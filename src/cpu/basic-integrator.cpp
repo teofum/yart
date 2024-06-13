@@ -103,7 +103,7 @@ bool BasicIntegrator::testBVH(
   if (!testBoundingBox(ray, {tMin, hit.t}, node.bounds)) return false;
 
   bool didHit = false;
-  if (node.isLeaf()) {
+  if (node.span > 0) {
     for (size_t i = 0; i < node.span; i++) {
       didHit |= testTriangle(ray, tMin, hit, bvh.tri(node.first + i));
     }
@@ -161,13 +161,12 @@ bool BasicIntegrator::testTriangle(
   return true;
 }
 
-// "An Efficient and Robust Ray–Box Intersection Algorithm", Amy Williams
 bool BasicIntegrator::testBoundingBox(
   const Ray& ray,
   const interval<float>& tInt,
   const fbounds3& bounds
 ) const {
-  const float3& invDir = 1.0f / ray.dir;
+  const float3 invDir = 1.0f / ray.dir;
 
   float tx1 = invDir.x() * (bounds.min.x() - ray.origin.x());
   float tx2 = invDir.x() * (bounds.max.x() - ray.origin.x());

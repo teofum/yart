@@ -122,7 +122,8 @@ std::optional<Node> load(const fs::path& path) noexcept {
     &buffer,
     path.parent_path(),
     fastgltf::Options::GenerateMeshIndices |
-    fastgltf::Options::DecomposeNodeMatrices
+    fastgltf::Options::DecomposeNodeMatrices |
+    fastgltf::Options::LoadExternalBuffers
   );
 
   if (result.error() != fastgltf::Error::None) return std::nullopt;

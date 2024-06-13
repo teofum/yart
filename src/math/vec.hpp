@@ -147,11 +147,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator+(const T& rhs) const noexcept {
-    return vec < T, N > (*this) += rhs;
+    return vec<T, N>(*this) += rhs;
   }
 
   [[nodiscard]] constexpr auto operator+(const vec<T, N>& rhs) const noexcept {
-    return vec < T, N > (*this) += rhs;
+    return vec<T, N>(*this) += rhs;
   }
 
   constexpr auto operator+=(const T& rhs) noexcept {
@@ -165,11 +165,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator-(const T& rhs) const noexcept {
-    return vec < T, N > (*this) -= rhs;
+    return vec<T, N>(*this) -= rhs;
   }
 
   [[nodiscard]] constexpr auto operator-(const vec<T, N>& rhs) const noexcept {
-    return vec < T, N > (*this) -= rhs;
+    return vec<T, N>(*this) -= rhs;
   }
 
   constexpr auto operator-=(const T& rhs) noexcept {
@@ -183,11 +183,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator*(const T& rhs) const noexcept {
-    return vec < T, N > (*this) *= rhs;
+    return vec<T, N>(*this) *= rhs;
   }
 
   [[nodiscard]] constexpr auto operator*(const vec<T, N>& rhs) const noexcept {
-    return vec < T, N > (*this) *= rhs;
+    return vec<T, N>(*this) *= rhs;
   }
 
   constexpr auto operator*=(const T& rhs) noexcept {
@@ -201,11 +201,11 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator/(const T& rhs) const noexcept {
-    return vec < T, N > (*this) /= rhs;
+    return vec<T, N>(*this) /= rhs;
   }
 
   [[nodiscard]] constexpr auto operator/(const vec<T, N>& rhs) const noexcept {
-    return vec < T, N > (*this) /= rhs;
+    return vec<T, N>(*this) /= rhs;
   }
 
   constexpr auto operator/=(const T& rhs) noexcept {
@@ -219,7 +219,7 @@ public:
   }
 
   [[nodiscard]] constexpr auto operator-() const noexcept {
-    vec < T, N > ret;
+    vec<T, N> ret;
     for (size_t i = 0; i < N; i++) ret.m_data[i] = -m_data[i];
     return ret;
   }
@@ -384,6 +384,26 @@ template<std::floating_point T>
     normal * -std::sqrt(1.0 - refractedPerp.lengthSquared());
 
   return refractedPerp + refractedParallel;
+}
+
+template<numeric T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> min(
+  const vec<T, N>& lhs,
+  const vec<T, N>& rhs
+) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++) ret[i] = std::min(lhs[i], rhs[i]);
+  return ret;
+}
+
+template<numeric T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> max(
+  const vec<T, N>& lhs,
+  const vec<T, N>& rhs
+) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++) ret[i] = std::max(lhs[i], rhs[i]);
+  return ret;
 }
 
 }
