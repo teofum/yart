@@ -2,6 +2,6 @@ cmake-build-*/
 out*.*
 profile.json
 fastgltf/
-models/*.blend*
+models/
 .DS_Store
 *.metallib
