@@ -18,10 +18,11 @@ int main() {
   yart::Camera camera(
     {buffer.width(), buffer.height()},
     radians(55.0f),
-    {-7.0f, 5.0f, 0.0f}, axis_x<float>
+//    {-7.0f, 5.0f, 0.0f}, axis_x<float> // Sponza
+    {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-  yart::Node root = yart::gltf::load("models/sponza/greensponza.glb").value();
+  yart::Node root = yart::gltf::load("models/cornell_dragon.glb").value();
 
   yart::cpu::TileRenderer<yart::cpu::BasicIntegrator> renderer(
     std::move(buffer),

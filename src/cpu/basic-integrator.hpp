@@ -44,8 +44,7 @@ private:
     const Ray& ray,
     float tMin,
     Hit& hit,
-    const BVH& bvh,
-    size_t nodeIdx = 0
+    const BVH& bvh
   ) const;
 
   [[nodiscard]] bool testTriangle(
@@ -55,7 +54,7 @@ private:
     const Triangle& tri
   ) const;
 
-  [[nodiscard]] bool testBoundingBox(
+  [[nodiscard]] float testBoundingBox(
     const Ray& ray,
     const interval<float>& tInt,
     const fbounds3& bounds

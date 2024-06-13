@@ -4,6 +4,7 @@
 #include <core/core.hpp>
 #include <math/math.hpp>
 #include "primitives.hpp"
+#include "utils.hpp"
 
 namespace yart {
 
@@ -19,6 +20,7 @@ class BVH {
 public:
   constexpr explicit BVH(const std::vector<Triangle>& tris) noexcept
     : m_tris(&tris), m_triIdx(tris.size()), m_nodes(tris.size() * 2 - 1) {
+    m_buildStart = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < m_triIdx.size(); i++) {
       m_triIdx[i] = i;
     }
@@ -56,6 +58,7 @@ protected:
   std::vector<size_t> m_triIdx;
   std::vector<BVHNode> m_nodes;
   size_t m_rootIdx = 0, m_nodesUsed = 1;
+  std::chrono::time_point<std::chrono::high_resolution_clock> m_buildStart;
 
   constexpr void updateBounds(BVHNode& node) {
     size_t first = node.first;
@@ -103,11 +106,7 @@ protected:
     }
 
     size_t leftCount = i - node.first;
-    if (leftCount == 0 || leftCount == node.span) {
-      std::cout << "Degenerate BVH node! " << leftCount << "/" << node.span
-                << "\n";
-      return;
-    }
+    if (leftCount == 0 || leftCount == node.span) return;
 
     size_t leftIdx = m_nodesUsed++;
     size_t rightIdx = m_nodesUsed++;
@@ -130,10 +129,11 @@ protected:
   }
 
   void printStats() const {
-    const BVHNode& root = m_nodes[m_rootIdx];
+    auto buildEnd = std::chrono::high_resolution_clock::now();
+    auto buildTime = toMillis(buildEnd - m_buildStart);
 
-    uint32_t maxDepth, maxSize = 0, leafCount = 0, totalCount = 0;
-    float avgDepth, avgSize;
+    uint32_t maxSize = 0, leafCount = 0, totalCount = 0;
+    float avgSize;
 
     for (size_t i = 0; i < m_nodesUsed; i++) {
       const BVHNode& node = m_nodes[i];
@@ -146,11 +146,12 @@ protected:
 
     avgSize = float(totalCount) / float(leafCount);
 
-    std::cout << "Node count: " << m_nodesUsed << "\n";
-    std::cout << "Leaf count: " << leafCount << "\n";
-    std::cout << "Total primitives: " << totalCount << "\n";
-    std::cout << "Max leaf size: " << maxSize << "\n";
-    std::cout << "Avg leaf size: " << avgSize << "\n";
+    std::cout << "Built in " << buildTime << "\n";
+    std::cout << "  Total primitives: " << totalCount << "\n";
+    std::cout << "  Node count: " << m_nodesUsed << "\n";
+    std::cout << "  Leaf count: " << leafCount << "\n";
+    std::cout << "  Max leaf size: " << maxSize << "\n";
+    std::cout << "  Avg leaf size: " << avgSize << "\n";
     std::cout << "\n";
   }
 
@@ -219,58 +220,75 @@ public:
   ) noexcept: BVH(std::move(other), tris) {}
 
 private:
+  struct Bin {
+    uint32_t count = 0;
+    fbounds3 bounds;
+  };
+
   constexpr bool getSplit(
     const BVHNode& node,
     uint8_t& axis,
     float& splitPos
   ) const noexcept override {
-    float bestCost = std::numeric_limits<float>::infinity();
+    float minCost = std::numeric_limits<float>::infinity();
+    fbounds3 centroidBounds = getCentroidBounds(node.first, node.span);
+
+    constexpr uint32_t nBins = 20;
+    constexpr uint32_t nSplits = nBins - 1;
 
     for (uint8_t a = 0; a < 3; a++) {
-      float bmin = node.bounds.min[a], bsize = node.bounds.size()[a];
+      float bmin = centroidBounds.min[a], bsize = centroidBounds.size()[a];
 
-      for (uint32_t i = 0; i < 100; i++) {
-        float candidate = bmin + float(i) / 100.0f * bsize;
-        float cost = evalSAH(node, a, candidate);
-        if (cost < bestCost) {
-          bestCost = cost;
+      // Initialize bins
+      Bin bins[nBins];
+      float scale = float(nBins) / bsize;
+      for (uint32_t i = 0; i < node.span; i++) {
+        const Triangle& tri = (*m_tris)[m_triIdx[node.first + i]];
+        auto triBounds = fbounds3::fromPoints(
+          tri.v0.position,
+          tri.v1.position,
+          tri.v2.position
+        );
+
+        auto b = std::min(
+          nBins - 1,
+          uint32_t(scale * (tri.centroid[a] - bmin))
+        );
+        bins[b].count++;
+        bins[b].bounds = fbounds3::join(bins[b].bounds, triBounds);
+      }
+
+      // Compute costs for splitting
+      float costs[nSplits] = {0.0f};
+      uint32_t countBelow = 0;
+      fbounds3 boundsBelow;
+      for (uint32_t i = 0; i < nSplits; i++) {
+        boundsBelow = fbounds3::join(boundsBelow, bins[i].bounds);
+        countBelow += bins[i].count;
+        costs[i] += float(countBelow) * boundsBelow.area();
+      }
+
+      uint32_t countAbove = 0;
+      fbounds3 boundsAbove;
+      for (uint32_t i = nSplits; i > 0; i--) {
+        boundsAbove = fbounds3::join(boundsAbove, bins[i].bounds);
+        countAbove += bins[i].count;
+        costs[i - 1] += float(countAbove) * boundsAbove.area();
+      }
+
+      for (uint32_t i = 0; i < nSplits; i++) {
+        if (costs[i] < minCost) {
+          minCost = costs[i];
           axis = a;
-          splitPos = candidate;
+          splitPos = bmin + bsize * (float(i + 1) / nBins);
         }
       }
     }
 
-    float parentCost = (float(node.span) - 0.5f) * node.bounds.area();
-    if (parentCost < bestCost) return false;
+    float leafCost = (float(node.span) - 0.5f) * node.bounds.area();
+    if (leafCost < minCost) return false;
 
     return true;
-  }
-
-  [[nodiscard]] constexpr float evalSAH(
-    const BVHNode& node,
-    uint8_t axis,
-    float candidate
-  ) const noexcept {
-    fbounds3 left, right;
-    uint32_t leftCount = 0, rightCount = 0;
-    for (uint32_t i = 0; i < node.span; i++) {
-      const Triangle& tri = (*m_tris)[m_triIdx[node.first + i]];
-      if (tri.centroid[axis] < candidate) {
-        leftCount++;
-        left.expandToInclude(tri.v0.position);
-        left.expandToInclude(tri.v1.position);
-        left.expandToInclude(tri.v2.position);
-      } else {
-        rightCount++;
-        right.expandToInclude(tri.v0.position);
-        right.expandToInclude(tri.v1.position);
-        right.expandToInclude(tri.v2.position);
-      }
-    }
-
-    float cost = float(leftCount) * left.area()
-                 + float(rightCount) * right.area();
-    return cost > 0.0f ? cost : std::numeric_limits<float>::infinity();
   }
 };
 

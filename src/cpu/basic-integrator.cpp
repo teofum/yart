@@ -59,7 +59,7 @@ bool BasicIntegrator::testNode(
 ) const {
   const Ray rayObjSpace = node.transform.inverse(ray);
 
-  if (!testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox()))
+  if (isinf(testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox())))
     return false;
 
   bool didHit = false;
@@ -96,20 +96,37 @@ bool BasicIntegrator::testBVH(
   const Ray& ray,
   float tMin,
   Hit& hit,
-  const BVH& bvh,
-  size_t nodeIdx
+  const BVH& bvh
 ) const {
-  const BVHNode& node = bvh[nodeIdx];
-  if (!testBoundingBox(ray, {tMin, hit.t}, node.bounds)) return false;
-
+  const BVHNode* node = &bvh[0];
+  const BVHNode* stack[64];
+  uint32_t stackIdx = 0;
   bool didHit = false;
-  if (node.span > 0) {
-    for (size_t i = 0; i < node.span; i++) {
-      didHit |= testTriangle(ray, tMin, hit, bvh.tri(node.first + i));
+
+  while (true) {
+    if (node->span > 0) {
+      for (size_t i = 0; i < node->span; i++) {
+        didHit |= testTriangle(ray, tMin, hit, bvh.tri(node->first + i));
+      }
+      if (stackIdx == 0) break;
+      node = stack[--stackIdx];
+    } else {
+      const BVHNode* child1 = &bvh[node->left];
+      const BVHNode* child2 = &bvh[node->left + 1];
+      float d1 = testBoundingBox(ray, {tMin, hit.t}, child1->bounds);
+      float d2 = testBoundingBox(ray, {tMin, hit.t}, child2->bounds);
+      if (d1 > d2) {
+        std::swap(d1, d2);
+        std::swap(child1, child2);
+      }
+      if (isinf(d1)) {
+        if (stackIdx == 0) break;
+        node = stack[--stackIdx];
+      } else {
+        node = child1;
+        if (!isinf(d2)) stack[stackIdx++] = child2;
+      }
     }
-  } else {
-    didHit |= testBVH(ray, tMin, hit, bvh, node.left);
-    didHit |= testBVH(ray, tMin, hit, bvh, node.left + 1);
   }
 
   return didHit;
@@ -161,7 +178,7 @@ bool BasicIntegrator::testTriangle(
   return true;
 }
 
-bool BasicIntegrator::testBoundingBox(
+float BasicIntegrator::testBoundingBox(
   const Ray& ray,
   const interval<float>& tInt,
   const fbounds3& bounds
@@ -182,7 +199,8 @@ bool BasicIntegrator::testBoundingBox(
   tmin = std::max(tmin, std::min(tz1, tz2));
   tmax = std::min(tmax, std::max(tz1, tz2));
 
-  return tmax >= tmin && tmin < tInt.max && tmax > tInt.min;
+  if (tmax >= tmin && tmin < tInt.max && tmax > tInt.min) return tmin;
+  return std::numeric_limits<float>::infinity();
 }
 
 ScatterResult BasicIntegrator::scatter(const Ray& ray, const Hit& hit) {

@@ -176,6 +176,7 @@ private:
     float wCurrent = float(takenBefore) / float(takenAfter);
     float wWave = float(m_waveSamples) / float(takenAfter);
 
+    std::unique_lock bufferLock(m_bufferMutex);
     for (size_t y = 0; y < tile.height; y++) {
       for (size_t x = 0; x < tile.width; x++) {
         const float4& current = m_buffer(
