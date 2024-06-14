@@ -6,6 +6,7 @@
 
 #include <core/core.hpp>
 #include <math/math.hpp>
+#include "integrator.hpp"
 
 #define DEFAULT_TILE_SIZE 64
 #define DEFAULT_SAMPLE_COUNT 64

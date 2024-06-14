@@ -5,6 +5,7 @@
 #include <math/math.hpp>
 
 #include "hit.hpp"
+#include "integrator.hpp"
 
 namespace yart::cpu {
 

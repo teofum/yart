@@ -66,7 +66,11 @@ set(SRC_CORE
         src/core/materials.hpp
         src/core/utils.hpp
         src/core/bvh.hpp
-        src/core/primitives.hpp)
+        src/core/primitives.hpp
+        src/core/spectrum.hpp
+        src/core/color.hpp
+        src/core/spectrum.cpp
+)
 
 set(SRC_IO
         src/output/ppm.cpp

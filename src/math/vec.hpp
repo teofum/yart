@@ -32,8 +32,11 @@ public:
     m_data.fill(T(scalar));
   }
 
-  constexpr explicit vec(std::array<T, N> values) noexcept: m_data(values) {
-  }
+  constexpr explicit vec(const std::array<T, N>& values) noexcept
+    : m_data(values) {}
+
+  constexpr explicit vec(std::array<T, N>&& values) noexcept
+    : m_data(std::move(values)) {}
 
   template<numeric... V>
   requires (sizeof...(V) == N)

@@ -9,10 +9,11 @@
 #include <gltf/gltf.hpp>
 #include <frontend/metal/app.hpp>
 
-
 using namespace yart::math;
 
 int main() {
+  yart::Spectra::init();
+
   yart::Buffer buffer(800, 600);
 
   yart::Camera camera(
