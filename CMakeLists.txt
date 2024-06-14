@@ -64,7 +64,6 @@ set(SRC_CORE
         src/core/renderer.hpp
         src/core/node.hpp
         src/core/materials.hpp
-        src/core/integrator.hpp
         src/core/utils.hpp
         src/core/bvh.hpp
         src/core/primitives.hpp)
@@ -78,8 +77,12 @@ set(SRC_IO
 set(SRC_CPU
         src/cpu/hit.hpp
         src/cpu/tile-renderer.hpp
-        src/cpu/basic-integrator.cpp
-        src/cpu/basic-integrator.hpp)
+        src/cpu/integrator.hpp
+        src/cpu/integrator.cpp
+        src/cpu/ray-integrator.cpp
+        src/cpu/ray-integrator.hpp
+        src/cpu/naive-integrator.cpp
+        src/cpu/naive-integrator.hpp)
 
 set(SRC_FRONTEND_METAL
         src/frontend/metal/app-delegate.cpp

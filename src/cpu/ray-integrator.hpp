@@ -1,5 +1,5 @@
-#ifndef YART_BASIC_INTEGRATOR_HPP
-#define YART_BASIC_INTEGRATOR_HPP
+#ifndef YART_RAY_INTEGRATOR_HPP
+#define YART_RAY_INTEGRATOR_HPP
 
 #include <core/core.hpp>
 #include <math/math.hpp>
@@ -8,23 +8,23 @@
 
 namespace yart::cpu {
 
-class BasicIntegrator : public Integrator {
+class RayIntegrator : public Integrator {
 public:
-  uint32_t samples = 1;
   uint32_t maxDepth = 3;
 
-  BasicIntegrator(Buffer& buffer, const Camera& camera) noexcept;
+  RayIntegrator(Buffer& buffer, const Camera& camera) noexcept;
 
-  void render(const Node& root) override;
+protected:
+  [[nodiscard]] float4 sample(
+    const Node& node,
+    uint32_t sx,
+    uint32_t sy
+  ) override;
 
-private:
-  Xoshiro::Xoshiro256PP m_rng;
-
-  [[nodiscard]] float3 rayColor(
+  [[nodiscard]] virtual float3 Li(
     const Ray& ray,
-    const Node& root,
-    uint32 depth = 0
-  );
+    const Node& root
+  ) = 0;
 
   [[nodiscard]] bool testNode(
     const Ray& ray,
@@ -59,22 +59,8 @@ private:
     const interval<float>& tInt,
     const fbounds3& bounds
   ) const;
-
-  [[nodiscard]] ScatterResult scatter(const Ray& ray, const Hit& hit);
-
-  [[nodiscard]] ScatterResult scatterImpl(
-    const Lambertian& mat,
-    const Ray& ray,
-    const Hit& hit
-  );
-
-  [[nodiscard]] ScatterResult scatterImpl(
-    const Emissive& mat,
-    const Ray& ray,
-    const Hit& hit
-  );
 };
 
 }
 
-#endif //YART_BASIC_INTEGRATOR_HPP
+#endif //YART_RAY_INTEGRATOR_HPP

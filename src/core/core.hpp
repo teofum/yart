@@ -8,7 +8,7 @@
 #include "mesh.hpp"
 #include "node.hpp"
 #include "renderer.hpp"
-#include "integrator.hpp"
+#include "cpu/integrator.hpp"
 #include "bvh.hpp"
 #include "utils.hpp"
 

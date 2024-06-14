@@ -133,6 +133,11 @@ private:
             TimePoint tileStart = std::chrono::high_resolution_clock::now();
             integrator.samples = m_waveSamples;
             integrator.samplingOffset = tile.offset;
+            integrator.samplingBounds = ubounds2(
+              {0, 0},
+              {tile.width, tile.height}
+            );
+
             integrator.render(root);
 
             finishTile(tile, threadBuffer, integrator.rayCount(), tileStart);

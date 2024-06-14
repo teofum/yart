@@ -1,57 +1,22 @@
-#include "basic-integrator.hpp"
+#include "ray-integrator.hpp"
 
 namespace yart::cpu {
 
-BasicIntegrator::BasicIntegrator(Buffer& buffer, const Camera& camera) noexcept
+RayIntegrator::RayIntegrator(Buffer& buffer, const Camera& camera) noexcept
   : Integrator(buffer, camera) {
   // TODO: take rng seed as parameter
   std::random_device rd;
   m_rng = Xoshiro::Xoshiro256PP(rd());
 }
 
-void BasicIntegrator::render(const Node& root) {
-  m_rayCounter = 0;
+float4 RayIntegrator::sample(const Node& root, uint32_t sx, uint32_t sy) {
+  auto ray = m_camera.getRay({sx, sy}, m_rng);
+  float3 color = Li(ray, root);
 
-  for (size_t i = 0; i < m_target.width(); i++) {
-    for (size_t j = 0; j < m_target.height(); j++) {
-      for (uint32_t sample = 0; sample < samples; sample++) {
-        auto ray = m_camera
-          .getRay({i + samplingOffset.x(), j + samplingOffset.y()}, m_rng);
-        float3 color = rayColor(ray, root);
-
-        if (sample == 0) m_target(i, j) = float4(color, 1.0f) / float(samples);
-        else m_target(i, j) += float4(color, 1.0f) / float(samples);
-      }
-    }
-  }
+  return float4(color, 1.0f);
 }
 
-float3 BasicIntegrator::rayColor(
-  const Ray& ray,
-  const Node& root,
-  uint32_t depth
-) {
-  if (depth > maxDepth) return {0.0f, 0.0f, 0.0f};
-  m_rayCounter++;
-
-  Hit hit;
-  bool didHit = testNode(ray, 0.001f, hit, root);
-  if (!didHit) return {0.0f, 0.0f, 0.0f}; // TODO background color
-
-  ScatterResult res = scatter(ray, hit);
-
-  if (const Scattered* r = std::get_if<Scattered>(&res)) {
-    float3 reflected = rayColor(r->scattered, root, depth + 1) * r->attenuation;
-    return reflected + r->emission;
-  } else if (const Emitted* e = std::get_if<Emitted>(&res)) {
-    return e->emission;
-  } else {
-    // Absorbed
-    return {0.0f, 0.0f, 0.0f};
-  }
-}
-
-bool BasicIntegrator::testNode(
+bool RayIntegrator::testNode(
   const Ray& ray,
   float tMin,
   Hit& hit,
@@ -80,7 +45,7 @@ bool BasicIntegrator::testNode(
   return true;
 }
 
-bool BasicIntegrator::testMesh(
+bool RayIntegrator::testMesh(
   const Ray& ray,
   float tMin,
   Hit& hit,
@@ -92,7 +57,7 @@ bool BasicIntegrator::testMesh(
   return didHit;
 }
 
-bool BasicIntegrator::testBVH(
+bool RayIntegrator::testBVH(
   const Ray& ray,
   float tMin,
   Hit& hit,
@@ -133,7 +98,7 @@ bool BasicIntegrator::testBVH(
 }
 
 // Möller–Trumbore intersection
-bool BasicIntegrator::testTriangle(
+bool RayIntegrator::testTriangle(
   const Ray& ray,
   float tMin,
   Hit& hit,
@@ -178,7 +143,7 @@ bool BasicIntegrator::testTriangle(
   return true;
 }
 
-float BasicIntegrator::testBoundingBox(
+float RayIntegrator::testBoundingBox(
   const Ray& ray,
   const interval<float>& tInt,
   const fbounds3& bounds
@@ -201,41 +166,6 @@ float BasicIntegrator::testBoundingBox(
 
   if (tmax >= tmin && tmin < tInt.max && tmax > tInt.min) return tmin;
   return std::numeric_limits<float>::infinity();
-}
-
-ScatterResult BasicIntegrator::scatter(const Ray& ray, const Hit& hit) {
-  return std::visit(
-    [&](const auto& mat) {
-      return scatterImpl(mat, ray, hit);
-    },
-    *(hit.material)
-  );
-}
-
-ScatterResult BasicIntegrator::scatterImpl(
-  const Lambertian& mat,
-  const Ray& ray,
-  const Hit& hit
-) {
-  float4x4 basis = normalToTBN(hit.normal);
-  float3 scatterDir = float3(
-    basis * float4(random::randomCosineVec(m_rng), 0.0f)
-  );
-  Ray scattered(hit.position, scatterDir);
-
-  return Scattered{
-    mat.albedo,
-    {0.0f, 0.0f, 0.0f},
-    scattered
-  };
-}
-
-ScatterResult BasicIntegrator::scatterImpl(
-  const Emissive& mat,
-  const Ray& ray,
-  const Hit& hit
-) {
-  return Emitted{mat.emission};
 }
 
 }

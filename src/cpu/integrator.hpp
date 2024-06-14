@@ -1,16 +1,22 @@
 #ifndef YART_INTEGRATOR_HPP
 #define YART_INTEGRATOR_HPP
 
-namespace yart {
+#include <core/core.hpp>
+#include <math/math.hpp>
+
+namespace yart::cpu {
+using namespace math;
 
 class Integrator {
 public:
+  ubounds2 samplingBounds;
   uint2 samplingOffset;
+  uint32_t samples = 1;
 
   Integrator(Buffer& buffer, const Camera& camera) noexcept
     : m_camera(camera), m_target(buffer) {}
 
-  virtual void render(const Node& node) = 0;
+  void render(const Node& node);
 
   [[nodiscard]] constexpr uint64_t rayCount() const noexcept {
     return m_rayCounter;
@@ -23,6 +29,12 @@ protected:
 
   // Perf counter
   uint64_t m_rayCounter = 0;
+
+  [[nodiscard]] virtual float4 sample(
+    const Node& node,
+    uint32_t sx,
+    uint32_t sy
+  ) = 0;
 };
 
 }

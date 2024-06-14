@@ -5,7 +5,7 @@
 #include <math/math.hpp>
 #include <output/ppm.hpp>
 #include <cpu/tile-renderer.hpp>
-#include <cpu/basic-integrator.hpp>
+#include <cpu/naive-integrator.hpp>
 #include <gltf/gltf.hpp>
 #include <frontend/metal/app.hpp>
 
@@ -24,7 +24,7 @@ int main() {
 
   yart::Node root = yart::gltf::load("models/cornell_dragon.glb").value();
 
-  yart::cpu::TileRenderer<yart::cpu::BasicIntegrator> renderer(
+  yart::cpu::TileRenderer<yart::cpu::NaiveIntegrator> renderer(
     std::move(buffer),
     camera
   );
