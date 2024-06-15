@@ -8,24 +8,35 @@
 namespace yart {
 using namespace math;
 
-struct Lambertian {
-  float3 albedo;
-};
+class Material {
+public:
+  template<typename D, typename E>
+  requires (std::derived_from<D, Spectrum> && std::derived_from<E, Spectrum>)
+  constexpr Material(D&& diffuse, E&& emissive)
+    : m_diffuse(std::make_unique<D>(std::forward<D&&>(diffuse))),
+      m_emissive(std::make_unique<E>(std::forward<E&&>(emissive))) {}
 
-struct Emissive {
-  float3 emission;
-};
+  [[nodiscard]] constexpr const Spectrum& diffuse() const noexcept {
+    return *m_diffuse;
+  }
 
-using Material = std::variant<Lambertian, Emissive>;
+  [[nodiscard]] constexpr const Spectrum& emissive() const noexcept {
+    return *m_emissive;
+  }
+
+private:
+  std::unique_ptr<Spectrum> m_diffuse = nullptr;
+  std::unique_ptr<Spectrum> m_emissive = nullptr;
+};
 
 struct Scattered {
-  float3 attenuation;
-  float3 emission;
+  SpectrumSample attenuation;
+  SpectrumSample emission;
   Ray scattered;
 };
 
 struct Emitted {
-  float3 emission;
+  SpectrumSample emission;
 };
 
 struct Absorbed {

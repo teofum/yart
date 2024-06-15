@@ -30,16 +30,16 @@ public:
     threadCount = std::thread::hardware_concurrency();
   }
 
-  void render(const Node& root) override {
-    renderImpl(root);
+  void render() override {
+    renderImpl();
   }
 
   void abort() override {
     m_shouldStopRenderInProgress = true;
   }
 
-  RenderData renderSync(const Node& root) override {
-    renderImpl(root);
+  RenderData renderSync() override {
+    renderImpl();
 
     for (auto& thread: m_activeThreads) thread->join();
 
@@ -84,7 +84,7 @@ private:
   /**
    * Render implementation for TileRenderer
    */
-  void renderImpl(const Node& root) {
+  void renderImpl() {
     // Reset renderer state
     m_activeThreads.clear();
     m_currentWave = 0;
@@ -139,7 +139,8 @@ private:
               {tile.width, tile.height}
             );
 
-            integrator.render(root);
+            integrator.scene = scene;
+            integrator.render();
 
             finishTile(tile, threadBuffer, integrator.rayCount(), tileStart);
           }

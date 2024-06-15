@@ -4,6 +4,7 @@
 #include <array>
 #include <string>
 #include <sstream>
+#include <functional>
 
 namespace yart::math {
 
@@ -39,13 +40,40 @@ template<std::integral T, std::integral U>
 }
 
 template<numeric T, numeric U>
-[[nodiscard]] constexpr T min(const T& m, const U& n) {
+[[nodiscard]] constexpr T min(const T& m, const U& n) noexcept {
   return m < n ? m : n;
 }
 
 template<numeric T, numeric U>
-[[nodiscard]] constexpr T max(const T& m, const U& n) {
+[[nodiscard]] constexpr T max(const T& m, const U& n) noexcept {
   return m > n ? m : n;
+}
+
+template<numeric T, numeric C>
+[[nodiscard]] constexpr T evalPolynomial(T t, C c) noexcept { return c; }
+
+template<numeric T, numeric C, numeric... Args>
+[[nodiscard]] constexpr T evalPolynomial(T t, C c, Args... args) noexcept {
+  return t * evalPolynomial(t, args...) + c;
+}
+
+/**
+ * Given a size and a predicate f, returns the first value in the range
+ * [0; size - 1) for which f(x) is true and f(x + 1) is false
+ */
+[[nodiscard]] constexpr int64_t findInterval(
+  int64_t size,
+  const std::function<bool(int64_t)>& f
+) noexcept {
+  int64_t sz = int64_t(size - 2), first = 1;
+
+  while (sz > 0) {
+    int64_t half = sz >> 1, middle = first + half;
+    bool res = f(middle);
+    first = res ? middle + 1 : first;
+    sz = res ? sz - (half + 1) : half;
+  }
+  return std::clamp(first - 1, int64_t(0), size - 2);
 }
 
 }

@@ -122,16 +122,21 @@ public:
   }
 
   constexpr explicit mat(std::array<T, N * M> values) noexcept
-    : m_data(values) {
+    : m_data(values) {}
+
+  template<numeric... V>
+  requires (sizeof...(V) == std::min(N, M))
+  constexpr explicit mat(V... values) noexcept {
+    m_data.fill(T(0));
+    size_t i = 0;
+    ((m_data[M * i + i] = values, i++), ...);
   }
 
   template<numeric... V>
   requires (sizeof...(V) == N * M)
-  constexpr mat(V... values) noexcept : m_data{T(values)...} { // NOLINT(*)
-  }
+  constexpr mat(V... values) noexcept : m_data{T(values)...} {} // NOLINT(*)
 
-  constexpr mat(const mat<T, N, M>& other) noexcept: m_data(other.m_data) {
-  }
+  constexpr mat(const mat<T, N, M>& other) noexcept: m_data(other.m_data) {}
 
   constexpr auto& operator=(const mat<T, N, M>& other) noexcept {
     m_data = other.m_data;

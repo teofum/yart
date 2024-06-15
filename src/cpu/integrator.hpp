@@ -12,11 +12,12 @@ public:
   ubounds2 samplingBounds;
   uint2 samplingOffset;
   uint32_t samples = 1;
+  const Scene* scene = nullptr;
 
   Integrator(Buffer& buffer, const Camera& camera) noexcept
     : m_camera(camera), m_target(buffer) {}
 
-  void render(const Node& node);
+  void render();
 
   [[nodiscard]] constexpr uint64_t rayCount() const noexcept {
     return m_rayCounter;
@@ -30,10 +31,10 @@ protected:
   // Perf counter
   uint64_t m_rayCounter = 0;
 
-  [[nodiscard]] virtual float4 sample(
-    const Node& node,
+  [[nodiscard]] virtual SpectrumSample sample(
     uint32_t sx,
-    uint32_t sy
+    uint32_t sy,
+    Wavelengths& w
   ) = 0;
 };
 

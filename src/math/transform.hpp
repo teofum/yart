@@ -5,7 +5,6 @@
 #include "vec.hpp"
 #include "mat.hpp"
 #include "bounds.hpp"
-#include "ray.hpp"
 
 namespace yart::math {
 
@@ -90,10 +89,6 @@ public:
     return fbounds3::fromPoints(corners);
   }
 
-  [[nodiscard]] constexpr Ray operator()(const Ray& rhs) const noexcept {
-    return {(*this)(rhs.origin, Type::Point), (*this)(rhs.dir)};
-  }
-
   [[nodiscard]] constexpr float4 inverse(const float4& rhs) const noexcept {
     return m_inverseTransform * rhs;
   }
@@ -104,10 +99,6 @@ public:
   ) const noexcept {
     if (type == Type::Normal) return normalized(m_inverseNormalTransform * rhs);
     return float3(m_inverseTransform * float4(rhs, float(type)));
-  }
-
-  [[nodiscard]] constexpr Ray inverse(const Ray& rhs) const noexcept {
-    return {inverse(rhs.origin, Type::Point), inverse(rhs.dir)};
   }
 
 private:

@@ -19,7 +19,7 @@ public:
   struct RenderData {
     const Buffer& buffer;
     size_t samplesTaken, totalSamples;
-    
+
     uint64_t totalRays;
     std::chrono::milliseconds totalTime;
   };
@@ -41,6 +41,7 @@ public:
   };
 
   float3 backgroundColor;
+  const Scene* scene = nullptr;
 
   RenderCallback<RenderData> onRenderComplete;
   RenderCallback<RenderData> onRenderAborted;
@@ -61,9 +62,8 @@ public:
   /**
    * Renders a scene asynchronously, without blocking the calling thread.
    * On completion, notifies the caller via the onRenderComplete callback.
-   * @param root Root node of the scene to be rendered
    */
-  virtual void render(const Node& root) = 0;
+  virtual void render() = 0;
 
   /**
    * Stops a render in progress, if there is one. The render caller will be
@@ -79,7 +79,7 @@ public:
    * @param root Root node of the scene to be rendered
    * @return Data object including the filled buffer and data about the render
    */
-  virtual RenderData renderSync(const Node& root) = 0;
+  virtual RenderData renderSync() = 0;
 
 protected:
   const Camera& m_camera;

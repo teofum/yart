@@ -2,8 +2,6 @@
 
 namespace yart::gltf {
 
-Material defaultMaterial(Lambertian{float3(0.8f)});
-
 static float4x4 rotationFromQuat(std::array<float, 4> q) noexcept {
   float qr = q[3], qi = q[0], qj = q[1], qk = q[2];
 
@@ -19,27 +17,25 @@ static float4x4 rotationFromQuat(std::array<float, 4> q) noexcept {
 
 static Material processMaterial(
   const fastgltf::Asset& asset,
-  size_t materialIdx
+  const fastgltf::Material& gltfMat
 ) noexcept {
-  const auto& gltfMat = asset.materials[materialIdx];
+  const auto base = gltfMat.pbrData.baseColorFactor;
+  const RGB diffuseRGB = RGB(base[0], base[1], base[2]);
+  RGBSpectrum diffuse(colorspace::sRGB(), diffuseRGB);
 
   const auto em = gltfMat.emissiveFactor;
-  const float3 emission =
-    float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength * 10.0f;
-  if (length(emission) > 0.0f) return Material(Emissive{emission});
+  const RGB emissionRGB =
+    RGB(em[0], em[1], em[2]) * gltfMat.emissiveStrength * 10.0f;
+  RGBIlluminantSpectrum emission(colorspace::sRGB(), emissionRGB);
 
-  const auto base = gltfMat.pbrData.baseColorFactor;
-  return Material(Lambertian{float3(base[0], base[1], base[2])});
+  return {std::move(diffuse), std::move(emission)};
 }
 
 static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
   const auto gltfMesh = asset.meshes[meshIdx];
 
   const auto primitives = gltfMesh.primitives;
-  const auto materialIdx = primitives[0].materialIndex;
-
-  Material material = materialIdx ? processMaterial(asset, materialIdx.value())
-                                  : defaultMaterial;
+  size_t materialIdx = primitives[0].materialIndex.value_or(0);
 
   std::vector<Vertex> meshVertices;
   std::vector<size_t> meshIndices;
@@ -87,7 +83,7 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
     );
   }
 
-  return {std::move(meshVertices), faces, material};
+  return {std::move(meshVertices), faces, materialIdx};
 }
 
 static Node processNode(const fastgltf::Asset& asset, size_t nodeIdx) noexcept {
@@ -113,7 +109,7 @@ static Node processNode(const fastgltf::Asset& asset, size_t nodeIdx) noexcept {
   return node;
 }
 
-std::optional<Node> load(const fs::path& path) noexcept {
+std::optional<Scene> load(const fs::path& path) noexcept {
   auto buffer = fastgltf::GltfDataBuffer();
   buffer.loadFromFile(path);
 
@@ -130,14 +126,18 @@ std::optional<Node> load(const fs::path& path) noexcept {
   const fastgltf::Asset& asset = result.get();
 
   size_t sceneIdx = asset.defaultScene.value_or(0);
-  auto scene = asset.scenes[sceneIdx];
+  auto gltfScene = asset.scenes[sceneIdx];
 
   Node root;
-  for (size_t nodeIdx: scene.nodeIndices) {
+  for (size_t nodeIdx: gltfScene.nodeIndices)
     root.appendChild(processNode(asset, nodeIdx));
-  }
 
-  return root;
+  Scene scene(std::move(root));
+
+  for (const auto& material: asset.materials)
+    scene.addMaterial(processMaterial(asset, material));
+
+  return scene;
 }
 
 }

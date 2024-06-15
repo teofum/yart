@@ -9,11 +9,13 @@ RayIntegrator::RayIntegrator(Buffer& buffer, const Camera& camera) noexcept
   m_rng = Xoshiro::Xoshiro256PP(rd());
 }
 
-float4 RayIntegrator::sample(const Node& root, uint32_t sx, uint32_t sy) {
-  auto ray = m_camera.getRay({sx, sy}, m_rng);
-  float3 color = Li(ray, root);
-
-  return float4(color, 1.0f);
+SpectrumSample RayIntegrator::sample(
+  uint32_t sx,
+  uint32_t sy,
+  Wavelengths& w
+) {
+  auto ray = m_camera.getRay({sx, sy}, m_rng, w);
+  return Li(ray);
 }
 
 bool RayIntegrator::testNode(
@@ -22,7 +24,11 @@ bool RayIntegrator::testNode(
   Hit& hit,
   const Node& node
 ) const {
-  const Ray rayObjSpace = node.transform.inverse(ray);
+  const Ray rayObjSpace(
+    node.transform.inverse(ray.origin, Transform::Type::Point),
+    node.transform.inverse(ray.dir, Transform::Type::Vector),
+    ray.wls
+  );
 
   if (isinf(testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox())))
     return false;
@@ -52,7 +58,7 @@ bool RayIntegrator::testMesh(
   const Mesh& mesh
 ) const {
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
-  if (didHit) hit.material = &mesh.material;
+  if (didHit) hit.material = &scene->material(mesh.materialIdx);
 
   return didHit;
 }

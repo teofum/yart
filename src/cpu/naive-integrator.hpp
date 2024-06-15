@@ -13,30 +13,15 @@ public:
   NaiveIntegrator(Buffer& buffer, const Camera& camera) noexcept;
 
 private:
-  [[nodiscard]] float3 Li(
-    const Ray& ray,
-    const Node& root
-  ) override;
+  [[nodiscard]] SpectrumSample Li(const Ray& ray) override;
 
-  [[nodiscard]] float3 LiImpl(
+  [[nodiscard]] SpectrumSample LiImpl(
     const Ray& ray,
     const Node& root,
     uint32_t depth = 0
   );
 
   [[nodiscard]] ScatterResult scatter(const Ray& ray, const Hit& hit);
-
-  [[nodiscard]] ScatterResult scatterImpl(
-    const Lambertian& mat,
-    const Ray& ray,
-    const Hit& hit
-  );
-
-  [[nodiscard]] ScatterResult scatterImpl(
-    const Emissive& mat,
-    const Ray& ray,
-    const Hit& hit
-  );
 };
 
 }

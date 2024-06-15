@@ -36,39 +36,39 @@ public:
   };
 
   FaceCulling faceCulling = FaceCulling::None;
-  Material material;
+  size_t materialIdx = 0;
 
   constexpr Mesh(
     const std::vector<Vertex>& vertices,
     const std::vector<Face>& faces,
-    Material mat
+    size_t materialIdx = 0
   ) noexcept
     : m_vertices(vertices),
       m_triangles(buildTris(faces)),
       m_bvh(m_triangles),
-      material(std::move(mat)) {}
+      materialIdx(materialIdx) {}
 
   constexpr Mesh(
     std::vector<Vertex>&& vertices,
     const std::vector<Face>& faces,
-    Material mat
+    size_t materialIdx = 0
   ) noexcept
     : m_vertices(std::move(vertices)),
       m_triangles(buildTris(faces)),
       m_bvh(m_triangles),
-      material(std::move(mat)) {}
+      materialIdx(materialIdx) {}
 
   constexpr Mesh(const Mesh& other) noexcept
     : m_vertices(other.m_vertices),
       m_triangles(other.m_triangles),
       m_bvh(other.m_bvh, m_triangles),
-      material(other.material) {}
+      materialIdx(other.materialIdx) {}
 
   constexpr Mesh& operator=(const Mesh& other) noexcept {
     m_vertices = other.m_vertices;
     m_triangles = other.m_triangles;
     m_bvh = BVHType(other.m_bvh, other.m_triangles);
-    material = other.material;
+    materialIdx = other.materialIdx;
     return *this;
   }
 
@@ -76,13 +76,13 @@ public:
     : m_vertices(std::move(other.m_vertices)),
       m_triangles(std::move(other.m_triangles)),
       m_bvh(std::move(other.m_bvh), m_triangles),
-      material(std::move(other.material)) {}
+      materialIdx(other.materialIdx) {}
 
   constexpr Mesh& operator=(Mesh&& other) noexcept {
     m_vertices = std::move(other.m_vertices);
     m_triangles = std::move(other.m_triangles);
     m_bvh = BVHType(std::move(other.m_bvh), other.m_triangles);
-    material = std::move(other.material);
+    materialIdx = other.materialIdx;
     return *this;
   }
 

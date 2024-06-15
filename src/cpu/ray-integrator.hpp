@@ -11,21 +11,18 @@ namespace yart::cpu {
 
 class RayIntegrator : public Integrator {
 public:
-  uint32_t maxDepth = 3;
+  uint32_t maxDepth = 5;
 
   RayIntegrator(Buffer& buffer, const Camera& camera) noexcept;
 
 protected:
-  [[nodiscard]] float4 sample(
-    const Node& node,
+  [[nodiscard]] SpectrumSample sample(
     uint32_t sx,
-    uint32_t sy
+    uint32_t sy,
+    Wavelengths& w
   ) override;
 
-  [[nodiscard]] virtual float3 Li(
-    const Ray& ray,
-    const Node& root
-  ) = 0;
+  [[nodiscard]] virtual SpectrumSample Li(const Ray& ray) = 0;
 
   [[nodiscard]] bool testNode(
     const Ray& ray,

@@ -2,13 +2,13 @@
 
 namespace yart::frontend::metal {
 
-MetalFrontend::MetalFrontend(Renderer* renderer, const Node* root) noexcept {
+MetalFrontend::MetalFrontend(Renderer* renderer) noexcept {
   // Autorelease pool used for reference counting
   // https://developer.apple.com/documentation/foundation/nsautoreleasepool
   NS::AutoreleasePool* autoreleasePool = NS::AutoreleasePool::alloc()->init();
 
   AppDelegate del(
-    new ViewDelegate(renderer, root),
+    new ViewDelegate(renderer),
     {renderer->bufferWidth(), renderer->bufferHeight()}
   );
 

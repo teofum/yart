@@ -52,17 +52,18 @@ set(SRC_MATH
         src/math/random.hpp
         src/math/random.cpp
         src/math/bounds.hpp
-        src/math/ray.hpp
+        src/core/ray.hpp
         src/math/transform.hpp)
 
 set(SRC_CORE
+        src/lut/sRGB.cpp
         src/core/buffer.hpp
         src/core/types.hpp
         src/core/camera.hpp
         src/core/core.hpp
         src/core/mesh.hpp
         src/core/renderer.hpp
-        src/core/node.hpp
+        src/core/scene.hpp
         src/core/materials.hpp
         src/core/utils.hpp
         src/core/bvh.hpp
@@ -70,6 +71,7 @@ set(SRC_CORE
         src/core/spectrum.hpp
         src/core/color.hpp
         src/core/spectrum.cpp
+        src/core/color.cpp
 )
 
 set(SRC_IO

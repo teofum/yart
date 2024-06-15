@@ -4,8 +4,8 @@
 
 namespace yart::frontend::metal {
 
-ViewDelegate::ViewDelegate(Renderer* renderer, const Node* root)
-  : MTK::ViewDelegate(), m_renderer(renderer), m_root(root) {}
+ViewDelegate::ViewDelegate(Renderer* renderer)
+  : MTK::ViewDelegate(), m_renderer(renderer) {}
 
 ViewDelegate::~ViewDelegate() {
   m_commandQueue->release();
@@ -77,7 +77,7 @@ void ViewDelegate::init(MTL::Device* device, MTK::View* view) {
               << perf << " Mrays/s]\n";
   };
 
-  m_renderer->render(*m_root);
+  m_renderer->render();
 }
 
 void ViewDelegate::drawInMTKView(MTK::View* view) {

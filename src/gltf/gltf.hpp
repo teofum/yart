@@ -18,7 +18,7 @@ struct fastgltf::ElementTraits<float3>
 
 namespace yart::gltf {
 
-std::optional<Node> load(const fs::path& path) noexcept;
+std::optional<Scene> load(const fs::path& path) noexcept;
 
 }
 

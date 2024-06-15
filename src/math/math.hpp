@@ -6,7 +6,6 @@
 #include "mat.hpp"
 #include "bounds.hpp"
 #include "transform.hpp"
-#include "ray.hpp"
 #include "random.hpp"
 
 namespace yart::math {

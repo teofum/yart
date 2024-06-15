@@ -2,6 +2,7 @@
 #define YART_CAMERA_HPP
 
 #include <math/math.hpp>
+#include "ray.hpp"
 
 namespace yart {
 using namespace math;
@@ -89,14 +90,15 @@ public:
 
   [[nodiscard]] constexpr Ray getRay(
     const uint2& pixelCoords,
-    Xoshiro::Xoshiro256PP& rng
+    Xoshiro::Xoshiro256PP& rng,
+    Wavelengths& wls
   ) const noexcept {
     float2 jitter = random::pixelJitterGaussian(rng) + float2(pixelCoords);
     float3 pixel = m_topLeftPixel
                    + m_pixelDeltaU * jitter.x()
                    + m_pixelDeltaV * jitter.y();
 
-    return {m_position, pixel - m_position};
+    return {m_position, pixel - m_position, wls};
   }
 };
 

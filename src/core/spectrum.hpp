@@ -44,12 +44,26 @@ public:
     m_data.fill(s);
   }
 
+  constexpr explicit SpectrumSample(
+    const std::array<float, nSpectrumSamples>& a
+  ) noexcept: m_data(a) {}
+
   [[nodiscard]] constexpr float operator[](size_t i) const noexcept {
     return m_data[i];
   }
 
   [[nodiscard]] constexpr float& operator[](size_t i) noexcept {
     return m_data[i];
+  }
+
+  [[nodiscard]] constexpr float sum() const noexcept {
+    float sum = 0.0f;
+    for (float s: m_data) sum += s;
+    return sum;
+  }
+
+  [[nodiscard]] constexpr float average() const noexcept {
+    return sum() / float(nSpectrumSamples);
   }
 
   [[nodiscard]] constexpr bool operator==(const SpectrumSample& rhs) const noexcept {
@@ -138,7 +152,7 @@ private:
  */
 class Wavelengths {
 public:
-  [[nodiscard]] constexpr Wavelengths sampleUniform(
+  [[nodiscard]] static constexpr Wavelengths sampleUniform(
     float u,
     float min = minWavelength,
     float max = maxWavelength
@@ -173,8 +187,8 @@ public:
     return m_wavelengths[i];
   }
 
-  [[nodiscard]] constexpr float pdf(size_t i) noexcept {
-    return m_pdfValues[i];
+  [[nodiscard]] constexpr SpectrumSample pdf() const noexcept {
+    return SpectrumSample(m_pdfValues);
   }
 
 private:
@@ -230,7 +244,7 @@ private:
 class DenseSpectrum : public Spectrum {
 public:
   explicit DenseSpectrum(const Spectrum& other) noexcept: m_data() {
-    for (size_t i = 0; i < nSpectrumSamples; i++) {
+    for (size_t i = 0; i < nWavelengths; i++) {
       const float wl = float(i) + minWavelength;
       m_data[i] = other(wl);
     }
@@ -282,7 +296,7 @@ public:
     if (m_wls.empty() || wl < m_wls.front() || wl > m_wls.back()) return 0.0f;
 
     size_t i = 1;
-    while (m_wls[i] <= wl) i++;
+    while (m_wls[i] <= wl && i < m_wls.size() - 1) i++;
     const float t = (wl - m_wls[i - 1]) / (m_wls[i] - m_wls[i - 1]);
     return lerp(m_values[i - 1], m_values[i], t);
   }
@@ -316,13 +330,42 @@ private:
   float m_normFactor;
 };
 
-namespace Spectra {
+class RGBSigmoidPolynomial : public Spectrum {
+public:
+  constexpr RGBSigmoidPolynomial(float c0, float c1, float c2) noexcept
+    : c0(c0), c1(c1), c2(c2) {}
+
+  [[nodiscard]] constexpr float operator()(float wl) const override {
+    return sigmoid(evalPolynomial(wl, c2, c1, c0));
+  }
+
+  [[nodiscard]] constexpr float maxValue() const override {
+    float res = std::max((*this)(minWavelength), (*this)(maxWavelength));
+
+    // Find the maximum of the polynomial by its derivative
+    float wlExt = -c1 / (2 * c0); // 0 = 2x * c0 + c1
+    if (wlExt >= minWavelength && wlExt <= maxWavelength)
+      res = std::max(res, (*this)(wlExt));
+
+    return res;
+  }
+
+private:
+  float c0, c1, c2;
+
+  [[nodiscard]] constexpr static float sigmoid(float x) {
+    if (isinf(x)) return x > 0.0f ? 1.0f : 0.0f;
+    return 0.5f + x / (2.0f * std::sqrt(1.0f + x * x));
+  }
+};
+
+namespace spectra {
 
 static constexpr float CIE_Y_integral = 106.856895f;
 
 void init();
 
-DenseSpectrum D(float temp);
+DenseSpectrum D(float temp, float scale = 0.01f);
 
 const DenseSpectrum& X();
 

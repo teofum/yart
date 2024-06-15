@@ -2,7 +2,9 @@
 
 namespace yart::cpu {
 
-void Integrator::render(const Node& node) {
+void Integrator::render() {
+  if (!scene) return;
+
   m_rayCounter = 0;
 
   uint32_t left = samplingBounds.min.x(), top = samplingBounds.min.y();
@@ -10,13 +12,18 @@ void Integrator::render(const Node& node) {
 
   uint32_t ox = samplingOffset.x(), oy = samplingOffset.y();
 
+  std::uniform_real_distribution<float> uniform;
+
   for (size_t j = top; j < bottom; j++) {
     for (size_t i = left; i < right; i++) {
       for (uint32_t s = 0; s < samples; s++) {
-        float4 sampled = sample(node, i + ox, j + oy) / float(samples);
+        Wavelengths w = Wavelengths::sampleUniform(uniform(m_rng));
+        SpectrumSample sampled = sample(i + ox, j + oy, w);
+        RGB rgbSampled = spectrumSampleToRGB(sampled, w, colorspace::sRGB());
+        rgbSampled /= float(samples);
 
-        if (s == 0) m_target(i, j) = sampled;
-        else m_target(i, j) += sampled;
+        if (s == 0) m_target(i, j) = float4(rgbSampled, 1.0f);
+        else m_target(i, j) += float4(rgbSampled, 1.0f);
       }
     }
   }

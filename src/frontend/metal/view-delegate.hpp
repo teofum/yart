@@ -15,7 +15,7 @@ using namespace math;
 
 class ViewDelegate : public MTK::ViewDelegate {
 public:
-  ViewDelegate(Renderer* renderer, const Node* root);
+  explicit ViewDelegate(Renderer* renderer);
 
   ~ViewDelegate() override;
 
@@ -36,7 +36,6 @@ protected:
 
   uint2 m_viewportSize = {0, 0};
   Renderer* m_renderer;
-  const Node* m_root;
 
   static constexpr const float m_vertexData[][2] = {
     {0, 0},

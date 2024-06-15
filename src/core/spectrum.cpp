@@ -495,7 +495,7 @@ DenseSpectrum* _cieZ;
 
 }
 
-namespace yart::Spectra {
+namespace yart::spectra {
 
 void init() {
   PiecewiseLinearSpectrum cieXpls(CIE_lambda, CIE_X, nCIESamples);
@@ -506,7 +506,7 @@ void init() {
   _cieZ = new DenseSpectrum(cieZpls);
 }
 
-DenseSpectrum D(float temp) {
+DenseSpectrum D(float temp, float scale) {
   // Convert temperature to CCT
   float cct = temp * 1.4388f / 1.4380f;
 
@@ -535,7 +535,7 @@ DenseSpectrum D(float temp) {
 
   std::vector<float> values(nCIES);
   for (int i = 0; i < nCIES; ++i)
-    values[i] = (CIE_S0[i] + CIE_S1[i] * M1 + CIE_S2[i] * M2) * 0.01f;
+    values[i] = (CIE_S0[i] + CIE_S1[i] * M1 + CIE_S2[i] * M2) * scale;
 
   PiecewiseLinearSpectrum dpls(std::span(CIE_S_lambda), values);
   return DenseSpectrum(dpls);

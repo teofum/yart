@@ -7,7 +7,7 @@ namespace yart::frontend::metal {
 
 class MetalFrontend {
 public:
-  MetalFrontend(Renderer* renderer, const Node* root) noexcept;
+  explicit MetalFrontend(Renderer* renderer) noexcept;
 };
 
 }
