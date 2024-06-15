@@ -149,21 +149,14 @@ float RayIntegrator::testBoundingBox(
   const interval<float>& tInt,
   const fbounds3& bounds
 ) const {
-  const float3 invDir = 1.0f / ray.dir;
+  float3 t1 = fma(bounds.min, ray.idir, ray.odir);
+  float3 t2 = fma(bounds.max, ray.idir, ray.odir);
 
-  float tx1 = invDir.x() * (bounds.min.x() - ray.origin.x());
-  float tx2 = invDir.x() * (bounds.max.x() - ray.origin.x());
-  float tmin = std::min(tx1, tx2), tmax = std::max(tx1, tx2);
-
-  float ty1 = invDir.y() * (bounds.min.y() - ray.origin.y());
-  float ty2 = invDir.y() * (bounds.max.y() - ray.origin.y());
-  tmin = std::max(tmin, std::min(ty1, ty2));
-  tmax = std::min(tmax, std::max(ty1, ty2));
-
-  float tz1 = invDir.z() * (bounds.min.z() - ray.origin.z());
-  float tz2 = invDir.z() * (bounds.max.z() - ray.origin.z());
-  tmin = std::max(tmin, std::min(tz1, tz2));
-  tmax = std::min(tmax, std::max(tz1, tz2));
+  float tmin = min(t1.x(), t2.x()), tmax = max(t1.x(), t2.x());
+  tmin = max(tmin, min(t1.y(), t2.y()));
+  tmax = min(tmax, max(t1.y(), t2.y()));
+  tmin = max(tmin, min(t1.z(), t2.z()));
+  tmax = min(tmax, max(t1.z(), t2.z()));
 
   if (tmax >= tmin && tmin < tInt.max && tmax > tInt.min) return tmin;
   return std::numeric_limits<float>::infinity();

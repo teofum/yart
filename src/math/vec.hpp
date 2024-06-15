@@ -326,6 +326,18 @@ template<numeric T, std::size_t N>
 }
 
 template<numeric T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> fma(
+  const vec<T, N>& a,
+  const vec<T, N>& b,
+  const vec<T, N>& c
+) noexcept {
+  vec<T, N> res;
+  for (std::size_t i = 0; i < N; i++)
+    res[i] = a[i] * b[i] + c[i];
+  return res;
+}
+
+template<numeric T, std::size_t N>
 [[nodiscard]] constexpr T length2(const vec <T, N>& vec) noexcept {
   T sum = T(0);
   for (std::size_t i = 0; i < N; i++) sum += vec[i] * vec[i];
