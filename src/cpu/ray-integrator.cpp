@@ -66,32 +66,46 @@ bool RayIntegrator::testBVH(
 ) const {
   const BVHNode* node = &bvh[0];
   const BVHNode* stack[64];
+  float dStack[64] = {std::numeric_limits<float>::infinity()};
+  float d = 0.0f;
   uint32_t stackIdx = 0;
   bool didHit = false;
 
   while (true) {
-    if (node->span > 0) {
-      for (size_t i = 0; i < node->span; i++) {
-        didHit |= testTriangle(ray, tMin, hit, bvh.tri(node->first + i));
-      }
-      if (stackIdx == 0) break;
-      node = stack[--stackIdx];
-    } else {
-      const BVHNode* child1 = &bvh[node->left];
-      const BVHNode* child2 = &bvh[node->left + 1];
-      float d1 = testBoundingBox(ray, {tMin, hit.t}, child1->bounds);
-      float d2 = testBoundingBox(ray, {tMin, hit.t}, child2->bounds);
-      if (d1 > d2) {
-        std::swap(d1, d2);
-        std::swap(child1, child2);
-      }
-      if (isinf(d1)) {
+    if (d < hit.t) {
+      if (node->span > 0) {
+        for (size_t i = 0; i < node->span; i++) {
+          didHit |= testTriangle(ray, tMin, hit, bvh.tri(node->first + i));
+        }
         if (stackIdx == 0) break;
         node = stack[--stackIdx];
+        d = dStack[stackIdx];
       } else {
-        node = child1;
-        if (!isinf(d2)) stack[stackIdx++] = child2;
+        const BVHNode* child1 = &bvh[node->left];
+        const BVHNode* child2 = &bvh[node->left + 1];
+        float d1 = testBoundingBox(ray, {tMin, hit.t}, child1->bounds);
+        float d2 = testBoundingBox(ray, {tMin, hit.t}, child2->bounds);
+        if (d1 > d2) {
+          std::swap(d1, d2);
+          std::swap(child1, child2);
+        }
+        if (isinf(d1)) {
+          if (stackIdx == 0) break;
+          node = stack[--stackIdx];
+          d = dStack[stackIdx];
+        } else {
+          node = child1;
+          d = d1;
+          if (!isinf(d2)) {
+            dStack[stackIdx] = d2;
+            stack[stackIdx++] = child2;
+          }
+        }
       }
+    } else {
+      if (stackIdx == 0) break;
+      node = stack[--stackIdx];
+      d = dStack[stackIdx];
     }
   }
 
