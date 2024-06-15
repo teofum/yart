@@ -10,33 +10,18 @@ using namespace math;
 
 class Material {
 public:
-  template<typename D, typename E>
-  requires (std::derived_from<D, Spectrum> && std::derived_from<E, Spectrum>)
-  constexpr Material(D&& diffuse, E&& emissive)
-    : m_diffuse(std::make_unique<D>(std::forward<D&&>(diffuse))),
-      m_emissive(std::make_unique<E>(std::forward<E&&>(emissive))) {}
-
-  [[nodiscard]] constexpr const Spectrum& diffuse() const noexcept {
-    return *m_diffuse;
-  }
-
-  [[nodiscard]] constexpr const Spectrum& emissive() const noexcept {
-    return *m_emissive;
-  }
-
-private:
-  std::unique_ptr<Spectrum> m_diffuse = nullptr;
-  std::unique_ptr<Spectrum> m_emissive = nullptr;
+  float3 diffuse;
+  float3 emissive;
 };
 
 struct Scattered {
-  SpectrumSample attenuation;
-  SpectrumSample emission;
+  float3 attenuation;
+  float3 emission;
   Ray scattered;
 };
 
 struct Emitted {
-  SpectrumSample emission;
+  float3 emission;
 };
 
 struct Absorbed {

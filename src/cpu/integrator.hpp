@@ -31,11 +31,7 @@ protected:
   // Perf counter
   uint64_t m_rayCounter = 0;
 
-  [[nodiscard]] virtual SpectrumSample sample(
-    uint32_t sx,
-    uint32_t sy,
-    Wavelengths& w
-  ) = 0;
+  [[nodiscard]] virtual float3 sample(uint32_t sx, uint32_t sy) = 0;
 };
 
 }

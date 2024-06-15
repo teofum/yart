@@ -16,13 +16,9 @@ public:
   RayIntegrator(Buffer& buffer, const Camera& camera) noexcept;
 
 protected:
-  [[nodiscard]] SpectrumSample sample(
-    uint32_t sx,
-    uint32_t sy,
-    Wavelengths& w
-  ) override;
+  [[nodiscard]] float3 sample(uint32_t sx, uint32_t sy) override;
 
-  [[nodiscard]] virtual SpectrumSample Li(const Ray& ray) = 0;
+  [[nodiscard]] virtual float3 Li(const Ray& ray) = 0;
 
   [[nodiscard]] bool testNode(
     const Ray& ray,

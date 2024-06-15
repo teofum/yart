@@ -13,9 +13,9 @@ public:
   NaiveIntegrator(Buffer& buffer, const Camera& camera) noexcept;
 
 private:
-  [[nodiscard]] SpectrumSample Li(const Ray& ray) override;
+  [[nodiscard]] float3 Li(const Ray& ray) override;
 
-  [[nodiscard]] SpectrumSample LiImpl(
+  [[nodiscard]] float3 LiImpl(
     const Ray& ray,
     const Node& root,
     uint32_t depth = 0

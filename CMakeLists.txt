@@ -56,7 +56,6 @@ set(SRC_MATH
         src/math/transform.hpp)
 
 set(SRC_CORE
-        src/lut/sRGB.cpp
         src/core/buffer.hpp
         src/core/types.hpp
         src/core/camera.hpp
@@ -68,10 +67,6 @@ set(SRC_CORE
         src/core/utils.hpp
         src/core/bvh.hpp
         src/core/primitives.hpp
-        src/core/spectrum.hpp
-        src/core/color.hpp
-        src/core/spectrum.cpp
-        src/core/color.cpp
 )
 
 set(SRC_IO

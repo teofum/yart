@@ -9,12 +9,8 @@ RayIntegrator::RayIntegrator(Buffer& buffer, const Camera& camera) noexcept
   m_rng = Xoshiro::Xoshiro256PP(rd());
 }
 
-SpectrumSample RayIntegrator::sample(
-  uint32_t sx,
-  uint32_t sy,
-  Wavelengths& w
-) {
-  auto ray = m_camera.getRay({sx, sy}, m_rng, w);
+float3 RayIntegrator::sample(uint32_t sx, uint32_t sy) {
+  auto ray = m_camera.getRay({sx, sy}, m_rng);
   return Li(ray);
 }
 
@@ -26,8 +22,7 @@ bool RayIntegrator::testNode(
 ) const {
   const Ray rayObjSpace(
     node.transform.inverse(ray.origin, Transform::Type::Point),
-    node.transform.inverse(ray.dir, Transform::Type::Vector),
-    ray.wls
+    node.transform.inverse(ray.dir, Transform::Type::Vector)
   );
 
   if (isinf(testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox())))

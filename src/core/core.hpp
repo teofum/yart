@@ -2,8 +2,6 @@
 #define YART_CORE_HPP
 
 #include "types.hpp"
-#include "spectrum.hpp"
-#include "color.hpp"
 #include "buffer.hpp"
 #include "camera.hpp"
 #include "ray.hpp"

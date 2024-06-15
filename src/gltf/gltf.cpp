@@ -20,15 +20,13 @@ static Material processMaterial(
   const fastgltf::Material& gltfMat
 ) noexcept {
   const auto base = gltfMat.pbrData.baseColorFactor;
-  const RGB diffuseRGB = RGB(base[0], base[1], base[2]);
-  RGBSpectrum diffuse(colorspace::sRGB(), diffuseRGB);
+  const float3 diffuse = float3(base[0], base[1], base[2]);
 
   const auto em = gltfMat.emissiveFactor;
-  const RGB emissionRGB =
-    RGB(em[0], em[1], em[2]) * gltfMat.emissiveStrength * 10.0f;
-  RGBIlluminantSpectrum emission(colorspace::sRGB(), emissionRGB);
+  const float3 emission =
+    float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength * 10.0f;
 
-  return {std::move(diffuse), std::move(emission)};
+  return {diffuse, emission};
 }
 
 static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
