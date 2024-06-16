@@ -17,12 +17,12 @@ int main() {
   yart::Camera camera(
     {buffer.width(), buffer.height()},
     radians(55.0f),
-    {-7.0f, 5.0f, 0.0f}, axis_x<float> // Sponza
-//    {0.0f, 5.0f, 15.0f} // Cornell box
+//    {-7.0f, 5.0f, 0.0f}, axis_x<float> // Sponza
+    {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-//  yart::Scene scene = yart::gltf::load("models/cornell_dragon.glb").value();
-  yart::Scene scene = yart::gltf::load("models/sponza/greensponza.glb").value();
+  yart::Scene scene = yart::gltf::load("models/cornell_dragon.glb").value();
+//  yart::Scene scene = yart::gltf::load("models/sponza/greensponza.glb").value();
 
   yart::cpu::TileRenderer<yart::cpu::NaiveIntegrator> renderer(
     std::move(buffer),
@@ -30,7 +30,7 @@ int main() {
   );
   renderer.scene = &scene;
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 100;
+  renderer.samples = 1000;
 
   yart::frontend::metal::MetalFrontend app(&renderer);
 

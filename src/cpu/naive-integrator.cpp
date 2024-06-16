@@ -2,6 +2,8 @@
 
 namespace yart::cpu {
 
+std::uniform_real_distribution<float> test;
+
 NaiveIntegrator::NaiveIntegrator(Buffer& buffer, const Camera& camera) noexcept
   : RayIntegrator(buffer, camera) {}
 
@@ -24,9 +26,11 @@ float3 NaiveIntegrator::LiImpl(
   ScatterResult res = scatter(ray, hit);
 
   if (const Scattered* r = std::get_if<Scattered>(&res)) {
-    float3 reflected =
-      LiImpl(r->scattered, root, depth + 1) * r->attenuation;
-    return reflected + r->emission;
+    float pTerm = std::max(1.0f - sum(r->attenuation), 0.0f);
+    float rand = test(m_rng);
+    if (rand < pTerm) return {};
+
+    return LiImpl(r->scattered, root, depth + 1) * r->attenuation / (1 - pTerm);
   } else if (const Emitted* e = std::get_if<Emitted>(&res)) {
     return e->emission;
   } else {

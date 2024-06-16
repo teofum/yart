@@ -47,6 +47,14 @@ void ViewDelegate::init(MTL::Device* device, MTK::View* view) {
     float perf =
       float(renderData.totalRays) / float(1000 * renderData.totalTime.count());
 
+    size_t nPixels = renderData.buffer.height() * renderData.buffer.width();
+    size_t waveSamples = waveData.waveSamples * nPixels;
+    float waveSamplePerf =
+      float(waveSamples) / float(1000 * waveData.time.count());
+    size_t totalSamples = renderData.samplesTaken * nPixels;
+    float samplePerf =
+      float(totalSamples) / float(1000 * renderData.totalTime.count());
+
     std::cout << "Finished wave " << waveData.wave + 1
               << " (" << renderData.samplesTaken
               << "/" << renderData.totalSamples
@@ -57,13 +65,17 @@ void ViewDelegate::init(MTL::Device* device, MTK::View* view) {
               << std::setw(8) << waveData.time << ", "
               << std::setw(12) << waveData.rays << " rays ["
               << std::setw(6) << std::fixed << std::setprecision(3)
-              << wavePerf << " Mrays/s]\n";
+              << wavePerf << " Mrays/s, "
+              << std::setw(6) << std::fixed << std::setprecision(3)
+              << waveSamplePerf << " Msam/s]\n";
 
     std::cout << "  Total: "
               << std::setw(8) << renderData.totalTime << ", "
               << std::setw(12) << renderData.totalRays << " rays ["
               << std::setw(6) << std::fixed << std::setprecision(3)
-              << perf << " Mrays/s]\n";
+              << perf << " Mrays/s, "
+              << std::setw(6) << std::fixed << std::setprecision(3)
+              << samplePerf << " Msam/s]\n";
   };
 
   m_renderer->onRenderComplete = [&](Renderer::RenderData renderData) {
