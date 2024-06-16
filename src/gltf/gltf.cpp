@@ -15,7 +15,7 @@ static float4x4 rotationFromQuat(std::array<float, 4> q) noexcept {
   return half * 2.0f;
 }
 
-static Material processMaterial(
+static std::unique_ptr<BSDF> processMaterial(
   const fastgltf::Asset& asset,
   const fastgltf::Material& gltfMat
 ) noexcept {
@@ -26,7 +26,7 @@ static Material processMaterial(
   const float3 emission =
     float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength * 10.0f;
 
-  return {diffuse, emission};
+  return std::make_unique<DiffuseBSDF>(DiffuseBSDF(diffuse, emission));
 }
 
 static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {

@@ -10,6 +10,7 @@ namespace yart::math {
 
 constexpr double epsilon = 1e-12;
 constexpr double pi = M_PI;
+constexpr double invPi = 1.0 / pi;
 
 template<typename T>
 concept numeric = std::integral<T> || std::floating_point<T>;

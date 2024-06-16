@@ -5,7 +5,7 @@
 
 #include <math/math.hpp>
 #include <utility>
-#include "materials.hpp"
+#include "bsdf.hpp"
 #include "primitives.hpp"
 #include "bvh.hpp"
 

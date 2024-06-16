@@ -60,24 +60,30 @@ private:
 
 class Scene {
 public:
-  constexpr Scene(Node&& root) noexcept
+  constexpr explicit Scene(Node&& root) noexcept
     : m_root(std::make_unique<Node>(std::move(root))) {}
 
   [[nodiscard]] constexpr const Node& root() const noexcept {
     return *m_root;
   }
 
-  [[nodiscard]] constexpr const Material& material(size_t i) const noexcept {
-    return m_materials[i];
+  [[nodiscard]] constexpr const BSDF& material(size_t i) const noexcept {
+    return *(m_materials[i]);
   }
 
-  constexpr void addMaterial(Material&& material) noexcept {
-    m_materials.push_back(std::move(material));
+  template<typename T>
+  requires std::derived_from<T, BSDF>
+  constexpr void addMaterial(T&& material) noexcept {
+    m_materials.push_back(std::make_unique<T>(std::forward(material)));
+  }
+
+  constexpr void addMaterial(std::unique_ptr<BSDF>&& matPtr) noexcept {
+    m_materials.push_back(std::move(matPtr));
   }
 
 private:
   std::unique_ptr<Node> m_root = nullptr;
-  std::vector<Material> m_materials;
+  std::vector<std::unique_ptr<BSDF>> m_materials;
 };
 
 }

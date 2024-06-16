@@ -7,7 +7,7 @@ class Hit {
 public:
   float t = std::numeric_limits<float>::infinity();
   float3 position, normal;
-  const Material* material;
+  const BSDF* material;
 };
 
 }

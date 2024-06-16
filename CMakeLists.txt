@@ -49,11 +49,12 @@ set(SRC_MATH
         src/math/vec.hpp
         src/math/math.hpp
         src/math/mat.hpp
-        src/math/random.hpp
-        src/math/random.cpp
+        src/math/sampling.hpp
+        src/math/sampling.cpp
         src/math/bounds.hpp
         src/core/ray.hpp
-        src/math/transform.hpp)
+        src/math/transform.hpp
+        src/math/frame.hpp)
 
 set(SRC_CORE
         src/core/buffer.hpp
@@ -63,7 +64,7 @@ set(SRC_CORE
         src/core/mesh.hpp
         src/core/renderer.hpp
         src/core/scene.hpp
-        src/core/materials.hpp
+        src/core/bsdf.hpp
         src/core/utils.hpp
         src/core/bvh.hpp
         src/core/primitives.hpp
@@ -71,6 +72,7 @@ set(SRC_CORE
         src/core/sampler.hpp
         src/core/sampler.cpp
         src/core/rng.cpp
+        src/core/bsdf.cpp
 )
 
 set(SRC_IO

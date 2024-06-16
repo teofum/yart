@@ -92,7 +92,7 @@ public:
     const uint2& pixelCoords,
     const float2& uv
   ) const noexcept {
-    float2 jitter = random::pixelJitterSquare(uv) + float2(pixelCoords);
+    float2 jitter = samplers::pixelJitterGaussian(uv) + float2(pixelCoords);
     float3 pixel = m_topLeftPixel
                    + m_pixelDeltaU * jitter.x()
                    + m_pixelDeltaV * jitter.y();

@@ -24,39 +24,26 @@ float3 NaiveIntegrator::LiImpl(
   bool didHit = testNode(ray, 0.001f, hit, root);
   if (!didHit) return {}; // TODO background color
 
-  ScatterResult res = scatter(ray, hit);
+  BSDFSample res = hit.material->sample(
+    -ray.dir,
+    hit.normal,
+    m_sampler.get2D(),
+    m_sampler.get1D()
+  );
   float rand = m_sampler.get1D();
 
-  if (const Scattered* r = std::get_if<Scattered>(&res)) {
-    float pTerm = std::max(1.0f - sum(r->attenuation), 0.0f);
-    if (rand < pTerm) return {};
-
-    return LiImpl(r->scattered, root, depth + 1) * r->attenuation / (1 - pTerm);
-  } else if (const Emitted* e = std::get_if<Emitted>(&res)) {
-    return e->emission;
-  } else {
-    // Absorbed
-    return {};
+  float3 Li;
+  if (bool(res.scatter & Scatter::Emitted)) {
+    Li += res.Le;
   }
-}
+  if (bool(res.scatter & Scatter::Reflected)) {
+    float3 fcos = res.f * std::abs(dot(res.wi, hit.normal));
 
-ScatterResult NaiveIntegrator::scatter(const Ray& ray, const Hit& hit) {
-  float4x4 basis = normalToTBN(hit.normal);
-  float3 scatterDir = float3(
-    basis * float4(random::randomCosineVec(m_sampler.get2D()), 0.0f)
-  );
-  Ray scattered(hit.position, scatterDir);
-
-  auto emission = hit.material->emissive;
-  if (sum(emission) > 0.0f) {
-    return Emitted{emission};
+    Ray scattered(hit.position, res.wi);
+    Li += LiImpl(scattered, root, depth + 1) * fcos / res.pdf;
   }
 
-  return Scattered{
-    hit.material->diffuse,
-    float3(),
-    scattered
-  };
+  return Li;
 }
 
 }

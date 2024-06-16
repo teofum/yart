@@ -6,21 +6,10 @@
 #include "mat.hpp"
 #include "bounds.hpp"
 #include "transform.hpp"
-#include "random.hpp"
+#include "frame.hpp"
+#include "sampling.hpp"
 
 namespace yart::math {
-
-/*
- * Useful constants
- */
-template<std::floating_point T>
-static constexpr vec<T, 3> axis_x = vec<T, 3>(1.0, 0.0, 0.0);
-
-template<std::floating_point T>
-static constexpr vec<T, 3> axis_y = vec<T, 3>(0.0, 1.0, 0.0);
-
-template<std::floating_point T>
-static constexpr vec<T, 3> axis_z = vec<T, 3>(0.0, 0.0, 1.0);
 
 /*
  * Utilities

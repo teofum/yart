@@ -24,8 +24,6 @@ private:
     const Node& root,
     uint32_t depth = 0
   );
-
-  [[nodiscard]] ScatterResult scatter(const Ray& ray, const Hit& hit);
 };
 
 }

@@ -7,7 +7,7 @@
 #include "rng.hpp"
 #include "sampler.hpp"
 #include "ray.hpp"
-#include "materials.hpp"
+#include "bsdf.hpp"
 #include "mesh.hpp"
 #include "scene.hpp"
 #include "bvh.hpp"
