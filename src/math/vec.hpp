@@ -107,13 +107,11 @@ public:
     return m_data[1];
   }
 
-  [[nodiscard]] constexpr T& z() noexcept {
-    static_assert(N >= 3);
+  [[nodiscard]] constexpr T& z() noexcept requires (N >= 3) {
     return m_data[2];
   }
 
-  [[nodiscard]] constexpr T& w() noexcept {
-    static_assert(N == 4);
+  [[nodiscard]] constexpr T& w() noexcept requires (N >= 4) {
     return m_data[3];
   }
 
@@ -125,13 +123,11 @@ public:
     return m_data[1];
   }
 
-  [[nodiscard]] constexpr const T& z() const noexcept {
-    static_assert(N >= 3);
+  [[nodiscard]] constexpr const T& z() const noexcept requires (N >= 3) {
     return m_data[2];
   }
 
-  [[nodiscard]] constexpr const T& w() const noexcept {
-    static_assert(N == 4);
+  [[nodiscard]] constexpr const T& w() const noexcept requires (N >= 4) {
     return m_data[3];
   }
 

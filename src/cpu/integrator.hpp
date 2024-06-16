@@ -14,8 +14,8 @@ public:
   uint32_t samples = 1;
   const Scene* scene = nullptr;
 
-  Integrator(Buffer& buffer, const Camera& camera) noexcept
-    : m_camera(camera), m_target(buffer) {}
+  Integrator(Buffer& buffer, const Camera& camera, Sampler& sampler) noexcept
+    : m_camera(camera), m_target(buffer), m_sampler(sampler) {}
 
   void render();
 
@@ -26,7 +26,7 @@ public:
 protected:
   const Camera& m_camera;
   Buffer& m_target;
-  Xoshiro::Xoshiro256PP m_rng;
+  Sampler& m_sampler;
 
   // Perf counter
   uint64_t m_rayCounter = 0;

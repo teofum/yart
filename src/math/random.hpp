@@ -8,11 +8,9 @@
 
 namespace yart::math::random {
 
-[[nodiscard]] float2 pixelJitterSquare(Xoshiro::Xoshiro256PP& rng);
+[[nodiscard]] float2 pixelJitterSquare(float2 uv);
 
-[[nodiscard]] float2 pixelJitterGaussian(Xoshiro::Xoshiro256PP& rng);
-
-[[nodiscard]] float3 randomCosineVec(Xoshiro::Xoshiro256PP& rng) noexcept;
+[[nodiscard]] float3 randomCosineVec(float2 uv) noexcept;
 
 }
 

@@ -67,6 +67,10 @@ set(SRC_CORE
         src/core/utils.hpp
         src/core/bvh.hpp
         src/core/primitives.hpp
+        src/core/rng.hpp
+        src/core/sampler.hpp
+        src/core/sampler.cpp
+        src/core/rng.cpp
 )
 
 set(SRC_IO
@@ -83,7 +87,8 @@ set(SRC_CPU
         src/cpu/ray-integrator.cpp
         src/cpu/ray-integrator.hpp
         src/cpu/naive-integrator.cpp
-        src/cpu/naive-integrator.hpp)
+        src/cpu/naive-integrator.hpp
+)
 
 set(SRC_FRONTEND_METAL
         src/frontend/metal/app-delegate.cpp

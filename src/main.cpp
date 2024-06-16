@@ -24,7 +24,7 @@ int main() {
   yart::Scene scene = yart::gltf::load("models/cornell_dragon.glb").value();
 //  yart::Scene scene = yart::gltf::load("models/sponza/greensponza.glb").value();
 
-  yart::cpu::TileRenderer<yart::cpu::NaiveIntegrator> renderer(
+  yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::NaiveIntegrator> renderer(
     std::move(buffer),
     camera
   );

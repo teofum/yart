@@ -10,7 +10,11 @@ namespace yart::cpu {
 
 class NaiveIntegrator : public RayIntegrator {
 public:
-  NaiveIntegrator(Buffer& buffer, const Camera& camera) noexcept;
+  NaiveIntegrator(
+    Buffer& buffer,
+    const Camera& camera,
+    Sampler& sampler
+  ) noexcept;
 
 private:
   [[nodiscard]] float3 Li(const Ray& ray) override;

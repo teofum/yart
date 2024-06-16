@@ -18,7 +18,9 @@ namespace yart::cpu {
  * A renderer that splits the image into tiles
  * @tparam T_Integrator
  */
-template<typename T_Integrator> requires std::derived_from<T_Integrator, Integrator>
+template<typename T_Sampler, typename T_Integrator> requires (
+std::derived_from<T_Integrator, Integrator> &&
+std::derived_from<T_Sampler, Sampler>)
 class TileRenderer : public Renderer {
 public:
   uint32_t samples = DEFAULT_SAMPLE_COUNT;
@@ -119,7 +121,8 @@ private:
     for (uint32_t ti = 0; ti < threadCount; ti++) {
       auto threadFunc = [&]() {
         Buffer threadBuffer(tileSize, tileSize);
-        T_Integrator integrator(threadBuffer, m_camera);
+        T_Sampler sampler;
+        T_Integrator integrator(threadBuffer, m_camera, sampler);
 
         size_t threadWave = 0;
 

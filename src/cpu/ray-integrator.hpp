@@ -13,7 +13,11 @@ class RayIntegrator : public Integrator {
 public:
   uint32_t maxDepth = 5;
 
-  RayIntegrator(Buffer& buffer, const Camera& camera) noexcept;
+  RayIntegrator(
+    Buffer& buffer,
+    const Camera& camera,
+    Sampler& sampler
+  ) noexcept;
 
 protected:
   [[nodiscard]] float3 sample(uint32_t sx, uint32_t sy) override;

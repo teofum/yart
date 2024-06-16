@@ -15,6 +15,8 @@ void Integrator::render() {
   for (size_t j = top; j < bottom; j++) {
     for (size_t i = left; i < right; i++) {
       for (uint32_t s = 0; s < samples; s++) {
+        m_sampler.startPixelSample({i, j}, s);
+        
         float3 sampled = sample(i + ox, j + oy) / float(samples);
 
         if (s == 0) m_target(i, j) = float4(sampled, 1.0f);

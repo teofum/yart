@@ -2,15 +2,14 @@
 
 namespace yart::cpu {
 
-RayIntegrator::RayIntegrator(Buffer& buffer, const Camera& camera) noexcept
-  : Integrator(buffer, camera) {
-  // TODO: take rng seed as parameter
-  std::random_device rd;
-  m_rng = Xoshiro::Xoshiro256PP(rd());
-}
+RayIntegrator::RayIntegrator(
+  Buffer& buffer,
+  const Camera& camera,
+  Sampler& sampler
+) noexcept: Integrator(buffer, camera, sampler) {}
 
 float3 RayIntegrator::sample(uint32_t sx, uint32_t sy) {
-  auto ray = m_camera.getRay({sx, sy}, m_rng);
+  auto ray = m_camera.getRay({sx, sy}, m_sampler.getPixel2D());
   return Li(ray);
 }
 
