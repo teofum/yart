@@ -7,7 +7,8 @@ MetalBSDF::MetalBSDF(
   float roughness,
   float ior
 ) noexcept
-  : m_reflectance(reflectance), m_ior(ior), m_microfacets(roughness) {}
+  : m_reflectance(reflectance), m_ior(ior),
+    m_microfacets(roughness * roughness) {}
 
 float3 MetalBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return {};

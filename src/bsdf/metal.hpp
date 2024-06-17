@@ -16,6 +16,7 @@ public:
   ) noexcept;
 
 private:
+  // Magic fresnel constant
   static constexpr const float kFresnel = 10.0f;
 
   float3 m_reflectance;
