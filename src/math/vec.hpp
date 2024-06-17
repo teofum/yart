@@ -375,28 +375,6 @@ template<numeric T>
   );
 }
 
-template<std::floating_point T>
-[[nodiscard]] constexpr vec3<T> reflect(
-  const vec3<T>& vec,
-  const vec3<T>& normal
-) noexcept {
-  return vec - normal * 2.0 * dot(vec, normal);
-}
-
-template<std::floating_point T>
-[[nodiscard]] constexpr vec3<T> refract(
-  const vec3<T>& vec,
-  const vec3<T>& normal,
-  T iorRatio
-) noexcept {
-  T cosTheta = std::min(T(1.0), dot(-vec, normal));
-  vec3<T> refractedPerp = (vec + normal * cosTheta) * iorRatio;
-  vec3<T> refractedParallel =
-    normal * -std::sqrt(1.0 - refractedPerp.lengthSquared());
-
-  return refractedPerp + refractedParallel;
-}
-
 template<numeric T, std::size_t N>
 [[nodiscard]] constexpr vec<T, N> min(
   const vec<T, N>& lhs,

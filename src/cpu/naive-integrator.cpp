@@ -30,13 +30,18 @@ float3 NaiveIntegrator::LiImpl(
     m_sampler.get2D(),
     m_sampler.get1D()
   );
-  float rand = m_sampler.get1D();
 
   float3 Li;
-  if (bool(res.scatter & Scatter::Emitted)) {
+  if (res.scatter == Scatter::Emitted) {
     Li += res.Le;
   }
-  if (bool(res.scatter & Scatter::Reflected)) {
+  if (res.scatter == Scatter::Reflected) {
+    float3 fcos = res.f * std::abs(dot(res.wi, hit.normal));
+
+    Ray scattered(hit.position, res.wi);
+    Li += LiImpl(scattered, root, depth + 1) * fcos / res.pdf;
+  }
+  if (res.scatter == Scatter::Transmitted) {
     float3 fcos = res.f * std::abs(dot(res.wi, hit.normal));
 
     Ray scattered(hit.position, res.wi);

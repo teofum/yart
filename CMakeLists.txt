@@ -92,6 +92,14 @@ set(SRC_CPU
         src/cpu/naive-integrator.hpp
 )
 
+set(SRC_BSDF
+        src/bsdf/diffuse.cpp
+        src/bsdf/diffuse.hpp
+        src/bsdf/dielectric.cpp
+        src/bsdf/dielectric.hpp
+        src/bsdf/metal.cpp
+        src/bsdf/metal.hpp)
+
 set(SRC_FRONTEND_METAL
         src/frontend/metal/app-delegate.cpp
         src/frontend/metal/app-delegate.hpp
@@ -107,6 +115,7 @@ add_executable(yart src/main.cpp
         ${SRC_MATH}
         ${SRC_IO}
         ${SRC_CPU}
+        ${SRC_BSDF}
         ${SRC_FRONTEND_METAL}
         xoshiro-rng/xoshiro.hpp
         yart.metallib

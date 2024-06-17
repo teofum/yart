@@ -1,4 +1,7 @@
 #include "gltf.hpp"
+#include <bsdf/diffuse.hpp>
+#include <bsdf/dielectric.hpp>
+#include <bsdf/metal.hpp>
 
 namespace yart::gltf {
 
@@ -24,7 +27,15 @@ static std::unique_ptr<BSDF> processMaterial(
 
   const auto em = gltfMat.emissiveFactor;
   const float3 emission =
-    float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength * 10.0f;
+    float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
+
+  if (gltfMat.transmission && gltfMat.transmission->transmissionFactor > 0.0f) {
+    return std::make_unique<DielectricBSDF>(DielectricBSDF(gltfMat.ior));
+  }
+
+  if (gltfMat.pbrData.metallicFactor > 0.0f) {
+    return std::make_unique<MetalBSDF>(MetalBSDF(diffuse, gltfMat.ior));
+  }
 
   return std::make_unique<DiffuseBSDF>(DiffuseBSDF(diffuse, emission));
 }
@@ -111,7 +122,11 @@ std::optional<Scene> load(const fs::path& path) noexcept {
   auto buffer = fastgltf::GltfDataBuffer();
   buffer.loadFromFile(path);
 
-  auto parser = fastgltf::Parser();
+  auto parser = fastgltf::Parser(
+    fastgltf::Extensions::KHR_materials_emissive_strength |
+    fastgltf::Extensions::KHR_materials_transmission |
+    fastgltf::Extensions::KHR_materials_ior
+  );
   auto result = parser.loadGltf(
     &buffer,
     path.parent_path(),

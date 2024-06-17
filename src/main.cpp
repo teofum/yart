@@ -21,7 +21,8 @@ int main() {
     {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-  yart::Scene scene = yart::gltf::load("models/cornell_dragon.glb").value();
+  yart::Scene scene = yart::gltf::load("models/cornell_metaldragon.glb")
+    .value();
 //  yart::Scene scene = yart::gltf::load("models/sponza/greensponza.glb").value();
 
   yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::NaiveIntegrator> renderer(
