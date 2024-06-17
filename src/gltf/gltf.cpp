@@ -34,7 +34,9 @@ static std::unique_ptr<BSDF> processMaterial(
   }
 
   if (gltfMat.pbrData.metallicFactor > 0.0f) {
-    return std::make_unique<MetalBSDF>(MetalBSDF(diffuse, gltfMat.ior));
+    return std::make_unique<MetalBSDF>(
+      MetalBSDF(diffuse, gltfMat.pbrData.roughnessFactor, gltfMat.ior)
+    );
   }
 
   return std::make_unique<DiffuseBSDF>(DiffuseBSDF(diffuse, emission));

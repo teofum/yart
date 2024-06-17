@@ -70,9 +70,10 @@ using complex = std::complex<float>;
   float k
 ) noexcept {
   complex ik(ior, k);
-
+  
+  cosTheta = std::clamp(cosTheta, 0.0f, 1.0f);
   float sin2Theta = (1.0f - cosTheta * cosTheta);
-  complex sin2Theta_t = sin2Theta / ik * ik;
+  complex sin2Theta_t = sin2Theta / (ik * ik);
   complex cosTheta_t = std::sqrt(1.0f - sin2Theta_t);
 
   complex r_prl = (ik * cosTheta - cosTheta_t) / (ik * cosTheta + cosTheta_t);

@@ -9,11 +9,18 @@ using namespace math;
 
 class MetalBSDF : public BSDF {
 public:
-  explicit MetalBSDF(const float3& reflectance, float ior) noexcept;
+  explicit MetalBSDF(
+    const float3& reflectance,
+    float roughness = 0.0f,
+    float ior = 1.5f
+  ) noexcept;
 
 private:
+  static constexpr const float kFresnel = 10.0f;
+
   float3 m_reflectance;
   float m_ior;
+  GGX m_microfacets;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 

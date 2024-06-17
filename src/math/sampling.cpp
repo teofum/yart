@@ -9,8 +9,8 @@ float2 pixelJitterSquare(float2 u) {
   };
 }
 
-float2 pixelJitterGaussian(float2 u) {
-  float a = std::sqrt(-2.0f * log(u.x())) * 0.5f;
+float2 pixelJitterGaussian(float2 u, float stdDev) {
+  float a = std::sqrt(-2.0f * log(u.x())) * stdDev;
   float b = 2.0f * float(pi) * u.y();
 
   return {a * std::cos(b), a * std::sin(b)};
@@ -24,6 +24,13 @@ float3 sampleCosineHemisphere(float2 u) noexcept {
   const float z = std::sqrt(1.0f - u.y());
 
   return {x, y, z};
+}
+
+float2 sampleDiskUniform(float2 u) {
+  const float r = std::sqrt(u.x());
+  const float theta = 2.0f * float(pi) * u.y();
+
+  return {r * std::cos(theta), r * std::sin(theta)};
 }
 
 }

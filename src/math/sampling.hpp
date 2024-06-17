@@ -10,7 +10,9 @@ namespace yart::math::samplers {
 
 [[nodiscard]] float2 pixelJitterSquare(float2 u);
 
-[[nodiscard]] float2 pixelJitterGaussian(float2 uv);
+[[nodiscard]] float2 pixelJitterGaussian(float2 uv, float stdDev);
+
+[[nodiscard]] float2 sampleDiskUniform(float2 u);
 
 [[nodiscard]] float3 sampleCosineHemisphere(float2 u) noexcept;
 
