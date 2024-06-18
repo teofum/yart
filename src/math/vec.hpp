@@ -364,6 +364,14 @@ template<numeric T>
 }
 
 template<numeric T>
+[[nodiscard]] constexpr T absDot(
+  const vec3<T>& lhs,
+  const vec3<T>& rhs
+) noexcept {
+  return std::copysign(dot(lhs, rhs), 1.0f);
+}
+
+template<numeric T>
 [[nodiscard]] constexpr vec3<T> cross(
   const vec3<T>& lhs,
   const vec3<T>& rhs

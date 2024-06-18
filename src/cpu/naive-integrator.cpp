@@ -36,13 +36,13 @@ float3 NaiveIntegrator::LiImpl(
     Li += res.Le;
   }
   if (res.scatter == Scatter::Reflected) {
-    float3 fcos = res.f * std::abs(dot(res.wi, hit.normal));
+    float3 fcos = res.f * absDot(res.wi, hit.normal);
 
     Ray scattered(hit.position, res.wi);
     Li += LiImpl(scattered, root, depth + 1) * fcos / res.pdf;
   }
   if (res.scatter == Scatter::Transmitted) {
-    float3 fcos = res.f * std::abs(dot(res.wi, hit.normal));
+    float3 fcos = res.f * absDot(res.wi, hit.normal);
 
     Ray scattered(hit.position, res.wi);
     Li += LiImpl(scattered, root, depth + 1) * fcos / res.pdf;

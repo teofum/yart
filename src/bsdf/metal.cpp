@@ -20,7 +20,7 @@ float3 MetalBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (length2(wm) == 0.0f) return {};
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
-  const float r = fresnelComplex(std::abs(dot(wo, wm)), m_ior, kFresnel);
+  const float r = fresnelComplex(absDot(wo, wm), m_ior, kFresnel);
   const float reflectionFactor =
     m_microfacets.mdf(wm) * r * m_microfacets.g(wo, wi) /
     (4 * cosTheta_o * cosTheta_i);
@@ -35,7 +35,7 @@ float MetalBSDF::pdf(const float3& wo, const float3& wi) const {
   if (length2(wm) == 0.0f) return 0;
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
-  return m_microfacets.vmdf(wo, wm) / (4 * std::abs(dot(wo, wm)));
+  return m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm));
 }
 
 BSDFSample MetalBSDF::sampleImpl(
@@ -59,10 +59,10 @@ BSDFSample MetalBSDF::sampleImpl(
   float3 wi = reflect(wo, wm);
   if (wo.z() * wi.z() < 0.0f) return {Scatter::Absorbed};
 
-  const float pdf = m_microfacets.vmdf(wo, wm) / (4 * std::abs(dot(wo, wm)));
+  const float pdf = m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm));
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
-  const float r = fresnelComplex(std::abs(dot(wo, wm)), m_ior, kFresnel);
+  const float r = fresnelComplex(absDot(wo, wm), m_ior, kFresnel);
   const float reflectionFactor =
     m_microfacets.mdf(wm) * r * m_microfacets.g(wo, wi) /
     (4 * cosTheta_o * cosTheta_i);

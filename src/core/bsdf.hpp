@@ -107,7 +107,7 @@ public:
     const float3& w,
     const float3& wm
   ) const noexcept {
-    return g1(w) / std::abs(w.z()) * mdf(wm) * std::abs(dot(w, wm));
+    return g1(w) / std::abs(w.z()) * mdf(wm) * absDot(w, wm);
   }
 
   [[nodiscard]] constexpr bool smooth() const noexcept {

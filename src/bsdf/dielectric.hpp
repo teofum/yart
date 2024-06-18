@@ -9,10 +9,11 @@ using namespace math;
 
 class DielectricBSDF : public BSDF {
 public:
-  explicit DielectricBSDF(float ior) noexcept;
+  explicit DielectricBSDF(float roughness = 0.0f, float ior = 1.5f) noexcept;
 
 private:
   float m_ior;
+  GGX m_microfacets;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 

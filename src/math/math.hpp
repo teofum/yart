@@ -36,7 +36,7 @@ using complex = std::complex<float>;
   }
 
   float sin2Theta = (1.0f - cosTheta * cosTheta);
-  float sin2Theta_t = sin2Theta / ior * ior;
+  float sin2Theta_t = sin2Theta / (ior * ior);
   if (sin2Theta_t >= 1.0f) return false;
 
   float cosTheta_t = std::sqrt(1.0f - sin2Theta_t);
@@ -48,13 +48,14 @@ using complex = std::complex<float>;
   float cosTheta,
   float ior
 ) noexcept {
+  cosTheta = std::clamp(cosTheta, -1.0f, 1.0f);
   if (cosTheta < 0.0f) {
     ior = 1.0f / ior;
-    cosTheta *= -1.0f;
+    cosTheta = -cosTheta;
   }
 
   float sin2Theta = (1.0f - cosTheta * cosTheta);
-  float sin2Theta_t = sin2Theta / ior * ior;
+  float sin2Theta_t = sin2Theta / (ior * ior);
   if (sin2Theta_t >= 1.0f) return 1.0f;
 
   float cosTheta_t = std::sqrt(1.0f - sin2Theta_t);
@@ -70,7 +71,7 @@ using complex = std::complex<float>;
   float k
 ) noexcept {
   complex ik(ior, k);
-  
+
   cosTheta = std::clamp(cosTheta, 0.0f, 1.0f);
   float sin2Theta = (1.0f - cosTheta * cosTheta);
   complex sin2Theta_t = sin2Theta / (ik * ik);

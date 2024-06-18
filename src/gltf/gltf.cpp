@@ -30,12 +30,18 @@ static std::unique_ptr<BSDF> processMaterial(
     float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
 
   if (gltfMat.transmission && gltfMat.transmission->transmissionFactor > 0.0f) {
-    return std::make_unique<DielectricBSDF>(DielectricBSDF(gltfMat.ior));
+    float roughness = gltfMat.pbrData.roughnessFactor;
+
+    return std::make_unique<DielectricBSDF>(
+      DielectricBSDF(roughness, gltfMat.ior)
+    );
   }
 
   if (gltfMat.pbrData.metallicFactor > 0.0f) {
+    float roughness = gltfMat.pbrData.roughnessFactor;
+
     return std::make_unique<MetalBSDF>(
-      MetalBSDF(diffuse, gltfMat.pbrData.roughnessFactor, gltfMat.ior)
+      MetalBSDF(diffuse, roughness, gltfMat.ior)
     );
   }
 
@@ -127,7 +133,8 @@ std::optional<Scene> load(const fs::path& path) noexcept {
   auto parser = fastgltf::Parser(
     fastgltf::Extensions::KHR_materials_emissive_strength |
     fastgltf::Extensions::KHR_materials_transmission |
-    fastgltf::Extensions::KHR_materials_ior
+    fastgltf::Extensions::KHR_materials_ior |
+    fastgltf::Extensions::KHR_materials_anisotropy
   );
   auto result = parser.loadGltf(
     &buffer,
