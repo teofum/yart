@@ -6,8 +6,8 @@ namespace yart::cpu {
 class Hit {
 public:
   float t = std::numeric_limits<float>::infinity();
-  float3 position, normal;
-  const BSDF* material;
+  float3 p, n;
+  const BSDF* bsdf;
 };
 
 }

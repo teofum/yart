@@ -14,13 +14,24 @@ public:
     const float3& emissive = float3()
   ) noexcept;
 
+  [[nodiscard]] constexpr const float3* emission() const noexcept override {
+    return m_hasEmission ? &m_emissive : nullptr;
+  }
+
+  [[nodiscard]] constexpr bool specular() const noexcept override {
+    return false;
+  }
+
 private:
   float3 m_reflectance, m_rOverPi, m_emissive;
   bool m_hasEmission;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 
-  [[nodiscard]] float pdf(const float3& wo, const float3& wi) const override;
+  [[nodiscard]] float pdfImpl(
+    const float3& wo,
+    const float3& wi
+  ) const override;
 
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,

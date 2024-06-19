@@ -50,7 +50,6 @@ set(SRC_MATH
         src/math/math.hpp
         src/math/mat.hpp
         src/math/sampling.hpp
-        src/math/sampling.cpp
         src/math/bounds.hpp
         src/core/ray.hpp
         src/math/transform.hpp
@@ -62,6 +61,7 @@ set(SRC_CORE
         src/core/camera.hpp
         src/core/core.hpp
         src/core/mesh.hpp
+        src/core/light.hpp
         src/core/renderer.hpp
         src/core/scene.hpp
         src/core/bsdf.hpp
@@ -73,6 +73,7 @@ set(SRC_CORE
         src/core/sampler.cpp
         src/core/rng.cpp
         src/core/bsdf.cpp
+        src/core/light.cpp
 )
 
 set(SRC_IO
@@ -90,6 +91,8 @@ set(SRC_CPU
         src/cpu/ray-integrator.hpp
         src/cpu/naive-integrator.cpp
         src/cpu/naive-integrator.hpp
+        src/cpu/mis-integrator.cpp
+        src/cpu/mis-integrator.hpp
 )
 
 set(SRC_BSDF

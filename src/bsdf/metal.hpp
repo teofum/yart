@@ -15,6 +15,14 @@ public:
     float ior = 1.5f
   ) noexcept;
 
+  [[nodiscard]] constexpr const float3* emission() const noexcept override {
+    return nullptr;
+  }
+
+  [[nodiscard]] constexpr bool specular() const noexcept override {
+    return m_microfacets.smooth();
+  }
+
 private:
   // Magic fresnel constant
   static constexpr const float kFresnel = 10.0f;
@@ -25,7 +33,10 @@ private:
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 
-  [[nodiscard]] float pdf(const float3& wo, const float3& wi) const override;
+  [[nodiscard]] float pdfImpl(
+    const float3& wo,
+    const float3& wi
+  ) const override;
 
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,

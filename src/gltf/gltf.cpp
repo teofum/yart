@@ -103,7 +103,12 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
   return {std::move(meshVertices), faces, materialIdx};
 }
 
-static Node processNode(const fastgltf::Asset& asset, size_t nodeIdx) noexcept {
+static Node processNode(
+  const fastgltf::Asset& asset,
+  size_t nodeIdx,
+  Scene& scene,
+  const Transform& globalTransform
+) noexcept {
   const auto gltfNode = asset.nodes[nodeIdx];
 
   const auto meshIdx = gltfNode.meshIndex;
@@ -119,8 +124,17 @@ static Node processNode(const fastgltf::Asset& asset, size_t nodeIdx) noexcept {
     node.transform = Transform(transform);
   }
 
+  Transform localTransform = node.transform * globalTransform;
+
   for (size_t childIdx: gltfNode.children) {
-    node.appendChild(processNode(asset, childIdx));
+    node.appendChild(processNode(asset, childIdx, scene, localTransform));
+  }
+
+  const float3* emission;
+  if (node.mesh() &&
+      (emission = scene.material(node.mesh()->materialIdx).emission())) {
+    AreaLight light(node.mesh(), *emission, localTransform);
+    scene.addLight(std::move(light));
   }
 
   return node;
@@ -151,13 +165,13 @@ std::optional<Scene> load(const fs::path& path) noexcept {
   auto gltfScene = asset.scenes[sceneIdx];
 
   Node root;
-  for (size_t nodeIdx: gltfScene.nodeIndices)
-    root.appendChild(processNode(asset, nodeIdx));
-
   Scene scene(std::move(root));
 
   for (const auto& material: asset.materials)
     scene.addMaterial(processMaterial(asset, material));
+
+  for (size_t nodeIdx: gltfScene.nodeIndices)
+    scene.root().appendChild(processNode(asset, nodeIdx, scene, Transform()));
 
   return scene;
 }

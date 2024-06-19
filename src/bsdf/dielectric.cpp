@@ -41,7 +41,7 @@ float3 DielectricBSDF::fImpl(const float3& wo, const float3& wi) const {
   }
 }
 
-float DielectricBSDF::pdf(const float3& wo, const float3& wi) const {
+float DielectricBSDF::pdfImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return 0;
 
   const float cosTheta_o = wo.z(), cosTheta_i = wi.z();

@@ -4,6 +4,7 @@
 #include <ranges>
 
 #include "mesh.hpp"
+#include "light.hpp"
 
 namespace yart {
 
@@ -67,6 +68,10 @@ public:
     return *m_root;
   }
 
+  [[nodiscard]] constexpr Node& root() noexcept {
+    return *m_root;
+  }
+
   [[nodiscard]] constexpr const BSDF& material(size_t i) const noexcept {
     return *(m_materials[i]);
   }
@@ -81,9 +86,36 @@ public:
     m_materials.push_back(std::move(matPtr));
   }
 
+  [[nodiscard]] constexpr size_t nLights() const noexcept {
+    return m_lights.size();
+  }
+
+  [[nodiscard]] constexpr const Light& light(size_t i) const noexcept {
+    return *(m_lights[i]);
+  }
+
+  [[nodiscard]] constexpr auto lights() const noexcept {
+    return std::views::transform(
+      m_lights, [&](const std::unique_ptr<Light>& lightPtr) -> const Light& {
+        return *lightPtr;
+      }
+    );
+  }
+
+  template<typename T>
+  requires std::derived_from<T, Light>
+  constexpr void addLight(T&& light) noexcept {
+    m_lights.push_back(std::make_unique<T>(std::move(light)));
+  }
+
+  constexpr void addLight(std::unique_ptr<Light>&& lightPtr) noexcept {
+    m_lights.push_back(std::move(lightPtr));
+  }
+
 private:
   std::unique_ptr<Node> m_root = nullptr;
   std::vector<std::unique_ptr<BSDF>> m_materials;
+  std::vector<std::unique_ptr<Light>> m_lights;
 };
 
 }

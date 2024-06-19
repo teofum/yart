@@ -13,7 +13,10 @@ enum class Scatter : uint8_t {
   Absorbed = 0,
   Emitted = 1,
   Reflected = 2,
-  Transmitted = 4
+  Transmitted = 4,
+  Diffuse = 8,
+  Glossy = 16,
+  Specular = 32
 };
 
 constexpr Scatter operator|(Scatter lhs, Scatter rhs) noexcept {
@@ -32,11 +35,21 @@ struct BSDFSample {
   float3 Le;
   float3 wi;
   float pdf;
+
+  [[nodiscard]] constexpr bool is(Scatter flag) const noexcept {
+    return bool(scatter & flag);
+  }
 };
 
 class BSDF {
 public:
   [[nodiscard]] float3 f(
+    const float3& wo,
+    const float3& wi,
+    const float3& n
+  ) const;
+
+  [[nodiscard]] float pdf(
     const float3& wo,
     const float3& wi,
     const float3& n
@@ -49,13 +62,20 @@ public:
     float uc
   ) const;
 
+  [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
+
+  [[nodiscard]] constexpr virtual bool specular() const noexcept = 0;
+
 protected:
   [[nodiscard]] virtual float3 fImpl(
     const float3& wo,
     const float3& wi
   ) const = 0;
 
-  [[nodiscard]] virtual float pdf(const float3& wo, const float3& wi) const = 0;
+  [[nodiscard]] virtual float pdfImpl(
+    const float3& wo,
+    const float3& wi
+  ) const = 0;
 
   [[nodiscard]] virtual BSDFSample sampleImpl(
     const float3& wo,

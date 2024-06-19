@@ -403,6 +403,24 @@ template<numeric T, std::size_t N>
   return ret;
 }
 
+template<std::floating_point T>
+[[nodiscard]] constexpr T angleBetween(
+  const vec<T, 3>& lhs,
+  const vec<T, 3>& rhs
+) noexcept {
+  if (dot(lhs, rhs) < 0.0f)
+    return T(pi) - T(2.0) * std::asin(T(0.5) * length(lhs + rhs));
+  return T(2.0) * std::asin(T(0.5) * length(rhs - lhs));
+}
+
+template<std::floating_point T>
+[[nodiscard]] constexpr vec<T, 3> gramSchmidt(
+  vec<T, 3> v,
+  vec<T, 3> w
+) noexcept {
+  return v - dot(v, w) * w;
+}
+
 }
 
 #endif //YART_VEC_HPP

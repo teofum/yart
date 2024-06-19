@@ -40,8 +40,8 @@ bool RayIntegrator::testNode(
 
   if (!didHit) return false;
 
-  hit.position = node.transform(hit.position, Transform::Type::Point);
-  hit.normal = node.transform(hit.normal, Transform::Type::Normal);
+  hit.p = node.transform(hit.p, Transform::Type::Point);
+  hit.n = node.transform(hit.n, Transform::Type::Normal);
   return true;
 }
 
@@ -52,7 +52,7 @@ bool RayIntegrator::testMesh(
   const Mesh& mesh
 ) const {
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
-  if (didHit) hit.material = &scene->material(mesh.materialIdx);
+  if (didHit) hit.bsdf = &scene->material(mesh.materialIdx);
 
   return didHit;
 }
@@ -149,10 +149,10 @@ bool RayIntegrator::testTriangle(
   if (t <= tMin || hit.t <= t) return false;
 
   hit.t = t;
-  hit.position = ray(t);
+  hit.p = ray(t);
 
   const float w = 1.0f - u - v;
-  hit.normal = w * tri.v0.normal + u * tri.v1.normal + v * tri.v2.normal;
+  hit.n = w * tri.v0.normal + u * tri.v1.normal + v * tri.v2.normal;
 
   return true;
 }

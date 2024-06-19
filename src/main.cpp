@@ -5,7 +5,7 @@
 #include <math/math.hpp>
 #include <output/ppm.hpp>
 #include <cpu/tile-renderer.hpp>
-#include <cpu/naive-integrator.hpp>
+#include <cpu/mis-integrator.hpp>
 #include <gltf/gltf.hpp>
 #include <frontend/metal/app.hpp>
 
@@ -21,17 +21,17 @@ int main() {
     {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-  yart::Scene scene = yart::gltf::load("models/cornell_glassdragon.glb")
+  yart::Scene scene = yart::gltf::load("models/cornell_metaldragon.glb")
     .value();
 //  yart::Scene scene = yart::gltf::load("models/sponza/greensponza.glb").value();
 
-  yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::NaiveIntegrator> renderer(
+  yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::MISIntegrator> renderer(
     std::move(buffer),
     camera
   );
   renderer.scene = &scene;
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 1000;
+  renderer.samples = 1024;
 
   yart::frontend::metal::MetalFrontend app(&renderer);
 

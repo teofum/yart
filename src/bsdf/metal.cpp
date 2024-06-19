@@ -28,7 +28,7 @@ float3 MetalBSDF::fImpl(const float3& wo, const float3& wi) const {
   return m_reflectance * reflectionFactor;
 }
 
-float MetalBSDF::pdf(const float3& wo, const float3& wi) const {
+float MetalBSDF::pdfImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return 0;
 
   float3 wm = wo + wi;

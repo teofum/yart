@@ -9,6 +9,7 @@
 #include "ray.hpp"
 #include "bsdf.hpp"
 #include "mesh.hpp"
+#include "light.hpp"
 #include "scene.hpp"
 #include "bvh.hpp"
 #include "renderer.hpp"

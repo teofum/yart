@@ -14,7 +14,7 @@ float3 DiffuseBSDF::fImpl(const float3& wo, const float3& wi) const {
   return m_rOverPi;
 }
 
-float DiffuseBSDF::pdf(const float3& wo, const float3& wi) const {
+float DiffuseBSDF::pdfImpl(const float3& wo, const float3& wi) const {
   if (wo.z() * wi.z() < 0) return 0;
 
   return std::abs(wi.z()) * float(invPi); // wi.z = cos(theta)
