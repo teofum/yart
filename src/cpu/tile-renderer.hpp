@@ -24,6 +24,8 @@ std::derived_from<T_Sampler, Sampler>)
 class TileRenderer : public Renderer {
 public:
   uint32_t samples = DEFAULT_SAMPLE_COUNT;
+  uint32_t firstWaveSamples = 1;
+  uint32_t maxWaveSamples = MAX_WAVE_SAMPLES;
   uint32_t tileSize = DEFAULT_TILE_SIZE;
   uint32_t threadCount;
 
@@ -74,7 +76,7 @@ private:
 
   // Wave and samples state
   size_t m_samplesRemaining = samples, m_totalSamples = samples;
-  size_t m_currentWave = 0, m_waveSamples = 1;
+  size_t m_currentWave, m_waveSamples;
   std::mutex m_waveMutex;
   std::condition_variable m_waveCv;
 
@@ -90,7 +92,7 @@ private:
     // Reset renderer state
     m_activeThreads.clear();
     m_currentWave = 0;
-    m_waveSamples = 1;
+    m_waveSamples = firstWaveSamples;
     m_totalSamples = samples;
     m_samplesRemaining = samples;
 
@@ -241,9 +243,9 @@ private:
         );
       }
 
-      size_t nextWaveSamples = m_currentWave > 0 ? min(
+      size_t nextWaveSamples = (m_currentWave > 0 || m_waveSamples > 1) ? min(
         m_waveSamples * 2,
-        MAX_WAVE_SAMPLES
+        maxWaveSamples
       ) : 1;
       m_waveSamples = min(nextWaveSamples, m_samplesRemaining);
       m_currentWave++;
