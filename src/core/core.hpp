@@ -11,6 +11,7 @@
 #include "mesh.hpp"
 #include "light.hpp"
 #include "scene.hpp"
+#include "light-sampler.hpp"
 #include "bvh.hpp"
 #include "renderer.hpp"
 #include "utils.hpp"

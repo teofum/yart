@@ -75,6 +75,8 @@ set(SRC_CORE
         src/core/rng.cpp
         src/core/bsdf.cpp
         src/core/light.cpp
+        src/core/light-sampler.cpp
+        src/core/light-sampler.hpp
 )
 
 set(SRC_IO

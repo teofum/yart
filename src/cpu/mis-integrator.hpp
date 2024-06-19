@@ -17,6 +17,10 @@ public:
   ) noexcept;
 
 private:
+  UniformLightSampler m_lightSampler;
+
+  void setup() override;
+
   [[nodiscard]] float3 Li(const Ray& ray) override;
 
   [[nodiscard]] float3 Ld(const float3& wo, const Hit& hit);

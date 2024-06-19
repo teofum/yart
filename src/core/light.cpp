@@ -1,7 +1,4 @@
 #include "core.hpp"
-#include "light.hpp"
-
-#include <utility>
 
 namespace yart {
 
@@ -27,8 +24,18 @@ AreaLight::AreaLight(
   m_triAreas.reserve(triangles.size());
   m_triCumulativeAreas.reserve(triangles.size());
 
+  const auto transformedTriangles = std::views::transform(
+    triangles, [&](const Triangle& tri) {
+      Triangle transformed(tri);
+      transformed.v0.p = transform(transformed.v0.p, Transform::Type::Point);
+      transformed.v1.p = transform(transformed.v1.p, Transform::Type::Point);
+      transformed.v2.p = transform(transformed.v2.p, Transform::Type::Point);
+      return transformed;
+    }
+  );
+
   m_area = 0.0f;
-  for (const Triangle& tri: triangles) {
+  for (const Triangle& tri: transformedTriangles) {
     const float triArea = tri.area();
     m_triAreas.push_back(triArea);
     m_triCumulativeAreas.push_back(m_area + triArea);
@@ -66,7 +73,7 @@ LightSample AreaLight::sample(
   ts.normal = m_transform(ts.normal, Transform::Type::Normal);
 
   float3 wi = normalized(ts.pos - p);
-  float pdf = ts.pdf * m_triAreas[triIdx] / m_area;
+  float pdf = 1.0f / m_area;
 
   return {
     m_emission,

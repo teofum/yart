@@ -6,6 +6,7 @@ void Integrator::render() {
   if (!scene) return;
 
   m_rayCounter = 0;
+  setup();
 
   uint32_t left = samplingBounds.min.x(), top = samplingBounds.min.y();
   uint32_t right = samplingBounds.max.x(), bottom = samplingBounds.max.y();
@@ -16,7 +17,7 @@ void Integrator::render() {
     for (size_t i = left; i < right; i++) {
       for (uint32_t s = 0; s < samples; s++) {
         m_sampler.startPixelSample({i, j}, s);
-        
+
         float3 sampled = sample(i + ox, j + oy) / float(samples);
 
         if (s == 0) m_target(i, j) = float4(sampled, 1.0f);
@@ -25,5 +26,7 @@ void Integrator::render() {
     }
   }
 }
+
+void Integrator::setup() {}
 
 }

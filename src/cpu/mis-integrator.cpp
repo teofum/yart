@@ -26,7 +26,6 @@ float3 MISIntegrator::Li(const Ray& r) {
     // Sample the BSDF to get the next ray direction
     float uc = m_sampler.get1D();
     float2 u = m_sampler.get2D();
-
     BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc);
 
     // Calculate indirect lighting (ie, if the ray happens to hit a light)
@@ -34,8 +33,8 @@ float3 MISIntegrator::Li(const Ray& r) {
       if (depth == 0 || specularBounce) {
         L += attenuation * res.Le * absDot(res.wi, hit.n);
       } else if (hit.light) {
-        float pdfLight =
-          lightPdf(lastHit, ray.dir, *hit.light) / float(scene->nLights());
+        float pdfLight = lightPdf(lastHit, ray.dir, *hit.light) /
+                         m_lightSampler.p(hit.p, hit.n, *hit.light);
         float wBSDF = lastPdf / (lastPdf + pdfLight);
         L += attenuation * wBSDF * res.Le * absDot(res.wi, hit.n);
       }
@@ -65,7 +64,9 @@ float3 MISIntegrator::Li(const Ray& r) {
     }
   }
 
-  return min(L, float3(1.0f));
+//  L = min(L, float3(1.0f));
+//  L /= L + 1.0f;
+  return L;
 }
 
 /**
@@ -77,23 +78,19 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   float2 u = m_sampler.get2D();
 
   // Pick a random light for sampling
-  auto lightIdx = size_t(uc * (float(scene->nLights()) - 0.01f));
-  const Light& light = scene->light(lightIdx);
-  const float pLight = 1.0f / float(scene->nLights());
+  float uLight = m_sampler.get1D();
+  SampledLight l = m_lightSampler.sample(hit.p, hit.n, uLight);
 
   // Sample the light
-  LightSample ls = light.sample(hit.p, hit.n, u, uc);
+  LightSample ls = l.light.sample(hit.p, hit.n, u, uc);
 
   float3 f = hit.bsdf->f(wo, ls.wi, hit.n);
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};
 
   float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n);
-  float pdfLight =
-    pLight * ls.pdf * length2(hit.p - ls.p) / absDot(ls.n, -ls.wi);
+  float pdfLight = l.p * ls.pdf * length2(hit.p - ls.p) / absDot(ls.n, -ls.wi);
 
-  float wLight = pdfLight / (pdfBSDF + pdfLight);
-
-  return wLight * ls.Li * f * absDot(ls.wi, hit.n) / pdfLight;
+  return ls.Li * f * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);
 }
 
 float MISIntegrator::lightPdf(
@@ -119,6 +116,10 @@ bool MISIntegrator::unoccluded(const float3& from, const float3& to) const {
   Hit occlusionHit;
   occlusionHit.t = length(to - from) - 0.001f;
   return !testNode(occlusionRay, 0.001f, occlusionHit, scene->root());
+}
+
+void MISIntegrator::setup() {
+  m_lightSampler.init(scene);
 }
 
 }

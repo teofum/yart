@@ -32,6 +32,8 @@ protected:
   uint64_t m_rayCounter = 0;
 
   [[nodiscard]] virtual float3 sample(uint32_t sx, uint32_t sy) = 0;
+
+  virtual void setup();
 };
 
 }
