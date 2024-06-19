@@ -53,7 +53,8 @@ set(SRC_MATH
         src/math/bounds.hpp
         src/core/ray.hpp
         src/math/transform.hpp
-        src/math/frame.hpp)
+        src/math/frame.hpp
+        src/math/complex.hpp)
 
 set(SRC_CORE
         src/core/buffer.hpp

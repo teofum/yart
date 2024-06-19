@@ -2,6 +2,7 @@
 #define YART_MATH_HPP
 
 #include "math_base.hpp"
+#include "complex.hpp"
 #include "vec.hpp"
 #include "mat.hpp"
 #include "bounds.hpp"
@@ -9,11 +10,7 @@
 #include "frame.hpp"
 #include "sampling.hpp"
 
-#include <complex>
-
 namespace yart::math {
-
-using complex = std::complex<float>;
 
 [[nodiscard]] constexpr float3 reflect(
   const float3& wo,
@@ -75,11 +72,11 @@ using complex = std::complex<float>;
   cosTheta = std::clamp(cosTheta, 0.0f, 1.0f);
   float sin2Theta = (1.0f - cosTheta * cosTheta);
   complex sin2Theta_t = sin2Theta / (ik * ik);
-  complex cosTheta_t = std::sqrt(1.0f - sin2Theta_t);
+  complex cosTheta_t = sqrt(1.0f - sin2Theta_t);
 
   complex r_prl = (ik * cosTheta - cosTheta_t) / (ik * cosTheta + cosTheta_t);
   complex r_per = (cosTheta - ik * cosTheta_t) / (cosTheta + ik * cosTheta_t);
-  return (std::norm(r_prl) + std::norm(r_per)) * 0.5f;
+  return (norm(r_prl) + norm(r_per)) * 0.5f;
 }
 
 }
