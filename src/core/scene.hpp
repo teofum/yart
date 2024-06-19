@@ -25,6 +25,10 @@ public:
     return m_mesh.get();
   }
 
+  [[nodiscard]] constexpr Mesh* mesh() noexcept {
+    return m_mesh.get();
+  }
+
   [[nodiscard]] constexpr const fbounds3& boundingBox() const noexcept {
     return m_bounds;
   }

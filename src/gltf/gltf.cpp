@@ -133,6 +133,7 @@ static Node processNode(
   const float3* emission;
   if (node.mesh() &&
       (emission = scene.material(node.mesh()->materialIdx).emission())) {
+    node.mesh()->lightIdx = int64_t(scene.nLights());
     AreaLight light(node.mesh(), *emission, localTransform);
     scene.addLight(std::move(light));
   }

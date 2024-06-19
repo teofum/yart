@@ -29,17 +29,13 @@ float3 MISIntegrator::Li(const Ray& r) {
 
     BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc);
 
-    // Calculate direct lighting
-    if (!res.is(BSDFSample::Emitted | BSDFSample::Specular))
-      L += attenuation * Ld(-ray.dir, hit);
-
     // Calculate indirect lighting (ie, if the ray happens to hit a light)
     if (res.is(BSDFSample::Emitted)) {
       if (depth == 0 || specularBounce) {
         L += attenuation * res.Le * absDot(res.wi, hit.n);
-      } else {
+      } else if (hit.light) {
         float pdfLight =
-          lightPdf(lastHit, ray.dir, scene->light(0)) / float(scene->nLights());
+          lightPdf(lastHit, ray.dir, *hit.light) / float(scene->nLights());
         float wBSDF = lastPdf / (lastPdf + pdfLight);
         L += attenuation * wBSDF * res.Le * absDot(res.wi, hit.n);
       }
@@ -48,6 +44,11 @@ float3 MISIntegrator::Li(const Ray& r) {
     if (!res.is(BSDFSample::Reflected | BSDFSample::Transmitted))
       break;
 
+    // Calculate direct lighting
+    if (!res.is(BSDFSample::Emitted | BSDFSample::Specular))
+      L += attenuation * Ld(-ray.dir, hit);
+
+    // Update state variables
     float3 fcos = res.f * absDot(res.wi, hit.n);
     specularBounce = res.is(BSDFSample::Specular);
     attenuation *= fcos / res.pdf;
@@ -56,6 +57,7 @@ float3 MISIntegrator::Li(const Ray& r) {
     lastHit = hit.p;
     depth++;
 
+    // Russian roulette
     if (depth > 1 && maxComponent(attenuation) < 1.0f) {
       float q = std::max(0.0f, 1.0f - maxComponent(attenuation));
       if (m_sampler.get1D() < q) break;

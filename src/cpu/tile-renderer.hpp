@@ -61,8 +61,8 @@ public:
 private:
   struct Tile {
     uint2 offset;
-    uint32_t width, height;
-    size_t index;
+    uint32_t width = 0, height = 0;
+    size_t index = 0;
   };
 
   // Threading state
@@ -76,7 +76,7 @@ private:
 
   // Wave and samples state
   size_t m_samplesRemaining = samples, m_totalSamples = samples;
-  size_t m_currentWave, m_waveSamples;
+  size_t m_currentWave = 0, m_waveSamples = 1;
   std::mutex m_waveMutex;
   std::condition_variable m_waveCv;
 

@@ -37,6 +37,7 @@ public:
 
   FaceCulling faceCulling = FaceCulling::None;
   size_t materialIdx = 0;
+  int64_t lightIdx = -1;
 
   constexpr Mesh(
     const std::vector<Vertex>& vertices,

@@ -23,7 +23,7 @@ int main() {
     {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-  yart::Scene scene = load("models/cornell_metaldragon.glb").value();
+  yart::Scene scene = load("models/cornell_dragon_lights.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
   yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::MISIntegrator> renderer(
