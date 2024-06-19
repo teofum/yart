@@ -52,10 +52,11 @@ protected:
     const Triangle& tri
   ) const;
 
-  [[nodiscard]] float testBoundingBox(
+  [[nodiscard]] bool testBoundingBox(
     const Ray& ray,
     const interval<float>& tInt,
-    const fbounds3& bounds
+    const fbounds3& bounds,
+    float* d
   ) const;
 };
 

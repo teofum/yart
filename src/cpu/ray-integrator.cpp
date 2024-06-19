@@ -24,7 +24,9 @@ bool RayIntegrator::testNode(
     node.transform.inverse(ray.dir, Transform::Type::Vector)
   );
 
-  if (hit.t < testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox()))
+  float d;
+  if (!testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox(), &d) ||
+      hit.t < d)
     return false;
 
   bool didHit = false;
@@ -66,9 +68,11 @@ bool RayIntegrator::testBVH(
   const BVHNode* node = &bvh[0];
   const BVHNode* stack[64];
   float dStack[64] = {std::numeric_limits<float>::infinity()};
-  float d = testBoundingBox(ray, {tMin, hit.t}, node->bounds);
+  float d;
   uint32_t stackIdx = 0;
   bool didHit = false;
+
+  if (!testBoundingBox(ray, {tMin, hit.t}, node->bounds, &d)) return false;
 
   while (true) {
     if (d < hit.t) {
@@ -82,23 +86,27 @@ bool RayIntegrator::testBVH(
       } else {
         const BVHNode* child1 = &bvh[node->left];
         const BVHNode* child2 = &bvh[node->left + 1];
-        float d1 = testBoundingBox(ray, {tMin, hit.t}, child1->bounds);
-        float d2 = testBoundingBox(ray, {tMin, hit.t}, child2->bounds);
-        if (d1 > d2) {
-          std::swap(d1, d2);
-          std::swap(child1, child2);
-        }
-        if (isinf(d1)) {
-          if (stackIdx == 0) break;
-          node = stack[--stackIdx];
-          d = dStack[stackIdx];
-        } else {
-          node = child1;
-          d = d1;
-          if (!isinf(d2)) {
+        float d1, d2;
+        bool hit1 = testBoundingBox(ray, {tMin, hit.t}, child1->bounds, &d1);
+        bool hit2 = testBoundingBox(ray, {tMin, hit.t}, child2->bounds, &d2);
+        if (hit1) {
+          if (hit2) {
+            if (d1 > d2) {
+              std::swap(d1, d2);
+              std::swap(child1, child2);
+            }
             dStack[stackIdx] = d2;
             stack[stackIdx++] = child2;
           }
+          node = child1;
+          d = d1;
+        } else if (hit2) {
+          node = child2;
+          d = d2;
+        } else {
+          if (stackIdx == 0) break;
+          node = stack[--stackIdx];
+          d = dStack[stackIdx];
         }
       }
     } else {
@@ -152,10 +160,11 @@ bool RayIntegrator::testTriangle(
   return true;
 }
 
-float RayIntegrator::testBoundingBox(
+bool RayIntegrator::testBoundingBox(
   const Ray& ray,
   const interval<float>& tInt,
-  const fbounds3& bounds
+  const fbounds3& bounds,
+  float* d
 ) const {
   float3 bmin(
     bounds[ray.sign[0]][0],
@@ -179,8 +188,8 @@ float RayIntegrator::testBoundingBox(
   t1 = min(tmax[1], t1);
   t1 = min(tmax[2], t1);
 
-  if (t1 >= t0) return t0;
-  return std::numeric_limits<float>::infinity();
+  *d = t0;
+  return t1 >= t0;
 }
 
 }
