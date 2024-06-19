@@ -15,10 +15,6 @@ public:
     return nullptr;
   }
 
-  [[nodiscard]] constexpr bool specular() const noexcept override {
-    return m_microfacets.smooth();
-  }
-
 private:
   float m_ior;
   GGX m_microfacets;

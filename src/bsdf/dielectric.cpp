@@ -84,7 +84,7 @@ BSDFSample DielectricBSDF::sampleImpl(
       float3 wi(-wo.x(), -wo.y(), wo.z());
 
       return {
-        Scatter::Reflected,
+        BSDFSample::Reflected | BSDFSample::Specular,
         float3(F / std::abs(wi.z())),
         float3(),
         wi,
@@ -92,10 +92,10 @@ BSDFSample DielectricBSDF::sampleImpl(
       };
     } else {
       float3 wi;
-      if (!refract(wo, axis_z<float>, m_ior, wi)) return {Scatter::Absorbed};
+      if (!refract(wo, axis_z<float>, m_ior, wi)) return {BSDFSample::Absorbed};
 
       return {
-        Scatter::Transmitted,
+        BSDFSample::Transmitted | BSDFSample::Specular,
         float3(T / std::abs(wi.z())),
         float3(),
         wi,
@@ -111,7 +111,7 @@ BSDFSample DielectricBSDF::sampleImpl(
   if (uc < F) {
     const float3 wi = reflect(wo, wm);
     const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
-    if (wo.z() * wi.z() < 0.0f) return {Scatter::Absorbed};
+    if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
     const float pdf = m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm)) * F;
     const float reflectionFactor =
@@ -119,7 +119,7 @@ BSDFSample DielectricBSDF::sampleImpl(
       (4 * cosTheta_o * cosTheta_i);
 
     return {
-      Scatter::Reflected,
+      BSDFSample::Reflected | BSDFSample::Glossy,
       float3(reflectionFactor),
       float3(),
       wi,
@@ -129,7 +129,7 @@ BSDFSample DielectricBSDF::sampleImpl(
     float3 wi;
     const bool tir = !refract(wo, wm, m_ior, wi);
     if (tir || wo.z() * wi.z() > 0.0f || wi.z() == 0.0f)
-      return {Scatter::Absorbed};
+      return {BSDFSample::Absorbed};
 
     const float ior = wo.z() > 0.0f ? m_ior : 1.0f / m_ior;
     const float temp = dot(wi, wm) + dot(wo, wm) / ior;
@@ -140,7 +140,7 @@ BSDFSample DielectricBSDF::sampleImpl(
       absDot(wi, wm) * absDot(wo, wm) / (wi.z() * wo.z() * temp * temp);
 
     return {
-      Scatter::Transmitted,
+      BSDFSample::Transmitted | BSDFSample::Glossy,
       float3(transmissionFactor),
       float3(),
       wi,

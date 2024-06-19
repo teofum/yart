@@ -9,35 +9,25 @@
 namespace yart {
 using namespace math;
 
-enum class Scatter : uint8_t {
-  Absorbed = 0,
-  Emitted = 1,
-  Reflected = 2,
-  Transmitted = 4,
-  Diffuse = 8,
-  Glossy = 16,
-  Specular = 32
-};
-
-constexpr Scatter operator|(Scatter lhs, Scatter rhs) noexcept {
-  return static_cast<Scatter>(static_cast<uint8_t>(lhs) |
-                              static_cast<uint8_t>(lhs));
-}
-
-constexpr Scatter operator&(Scatter lhs, Scatter rhs) noexcept {
-  return static_cast<Scatter>(static_cast<uint8_t>(lhs) &
-                              static_cast<uint8_t>(lhs));
-}
-
 struct BSDFSample {
-  Scatter scatter;
+  enum Scatter {
+    Absorbed = 0,
+    Emitted = 1,
+    Reflected = 2,
+    Transmitted = 4,
+    Diffuse = 8,
+    Glossy = 16,
+    Specular = 32
+  };
+
+  int scatter;
   float3 f;
   float3 Le;
   float3 wi;
   float pdf;
 
-  [[nodiscard]] constexpr bool is(Scatter flag) const noexcept {
-    return bool(scatter & flag);
+  [[nodiscard]] constexpr bool is(int flag) const noexcept {
+    return scatter & flag;
   }
 };
 
@@ -63,8 +53,6 @@ public:
   ) const;
 
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
-
-  [[nodiscard]] constexpr virtual bool specular() const noexcept = 0;
 
 protected:
   [[nodiscard]] virtual float3 fImpl(

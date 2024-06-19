@@ -18,10 +18,6 @@ public:
     return m_hasEmission ? &m_emissive : nullptr;
   }
 
-  [[nodiscard]] constexpr bool specular() const noexcept override {
-    return false;
-  }
-
 private:
   float3 m_reflectance, m_rOverPi, m_emissive;
   bool m_hasEmission;

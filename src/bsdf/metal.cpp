@@ -47,7 +47,7 @@ BSDFSample MetalBSDF::sampleImpl(
     const float r = fresnelComplex(wo.z(), m_ior, kFresnel);
 
     return {
-      Scatter::Reflected,
+      BSDFSample::Reflected | BSDFSample::Specular,
       float3(m_reflectance * r / std::abs(wo.z())),
       float3(),
       float3(-wo.x(), -wo.y(), wo.z()),
@@ -57,7 +57,7 @@ BSDFSample MetalBSDF::sampleImpl(
 
   float3 wm = m_microfacets.sampleVisibleMicrofacet(wo, u);
   float3 wi = reflect(wo, wm);
-  if (wo.z() * wi.z() < 0.0f) return {Scatter::Absorbed};
+  if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
   const float pdf = m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm));
 
@@ -68,7 +68,7 @@ BSDFSample MetalBSDF::sampleImpl(
     (4 * cosTheta_o * cosTheta_i);
 
   return {
-    Scatter::Reflected,
+    BSDFSample::Reflected | BSDFSample::Glossy,
     m_reflectance * reflectionFactor,
     float3(),
     wi,

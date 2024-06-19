@@ -19,10 +19,6 @@ public:
     return nullptr;
   }
 
-  [[nodiscard]] constexpr bool specular() const noexcept override {
-    return m_microfacets.smooth();
-  }
-
 private:
   // Magic fresnel constant
   static constexpr const float kFresnel = 10.0f;

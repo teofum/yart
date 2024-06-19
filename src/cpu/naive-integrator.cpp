@@ -32,16 +32,16 @@ float3 NaiveIntegrator::LiImpl(
   );
 
   float3 Li;
-  if (res.scatter == Scatter::Emitted) {
+  if (res.scatter == BSDFSample::Emitted) {
     Li += res.Le;
   }
-  if (res.scatter == Scatter::Reflected) {
+  if (res.scatter == BSDFSample::Reflected) {
     float3 fcos = res.f * absDot(res.wi, hit.n);
 
     Ray scattered(hit.p, res.wi);
     Li += LiImpl(scattered, root, depth + 1) * fcos / res.pdf;
   }
-  if (res.scatter == Scatter::Transmitted) {
+  if (res.scatter == BSDFSample::Transmitted) {
     float3 fcos = res.f * absDot(res.wi, hit.n);
 
     Ray scattered(hit.p, res.wi);

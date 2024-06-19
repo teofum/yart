@@ -23,17 +23,18 @@ float3 MISIntegrator::Li(const Ray& r) {
     bool didHit = testNode(ray, 0.001f, hit, scene->root());
     if (!didHit) break; // TODO background color
 
-    // Calculate direct lighting
-    if (!hit.bsdf->specular() && !hit.bsdf->emission())
-      L += attenuation * Ld(-ray.dir, hit);
-
     // Sample the BSDF to get the next ray direction
     float uc = m_sampler.get1D();
     float2 u = m_sampler.get2D();
 
     BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc);
 
-    if (res.scatter == Scatter::Emitted) {
+    // Calculate direct lighting
+    if (!res.is(BSDFSample::Emitted | BSDFSample::Specular))
+      L += attenuation * Ld(-ray.dir, hit);
+
+    // Calculate indirect lighting (ie, if the ray happens to hit a light)
+    if (res.is(BSDFSample::Emitted)) {
       if (depth == 0 || specularBounce) {
         L += attenuation * res.Le * absDot(res.wi, hit.n);
       } else {
@@ -44,10 +45,11 @@ float3 MISIntegrator::Li(const Ray& r) {
       }
     }
 
-    if (!res.is(Scatter::Reflected) && !res.is(Scatter::Transmitted)) break;
+    if (!res.is(BSDFSample::Reflected | BSDFSample::Transmitted))
+      break;
 
     float3 fcos = res.f * absDot(res.wi, hit.n);
-    specularBounce = hit.bsdf->specular();
+    specularBounce = res.is(BSDFSample::Specular);
     attenuation *= fcos / res.pdf;
     ray = Ray(hit.p, res.wi);
     lastPdf = res.pdf;

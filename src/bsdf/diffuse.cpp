@@ -29,7 +29,8 @@ BSDFSample DiffuseBSDF::sampleImpl(
   if (wo.z() < 0) wi *= -1;
 
   return {
-    m_hasEmission ? Scatter::Emitted : Scatter::Reflected,
+    m_hasEmission ? BSDFSample::Emitted
+                  : BSDFSample::Reflected | BSDFSample::Diffuse,
     m_rOverPi,
     m_emissive,
     wi,
