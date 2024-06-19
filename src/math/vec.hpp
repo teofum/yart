@@ -358,6 +358,14 @@ template<numeric T, std::size_t N>
   return true;
 }
 
+template<numeric T, std::size_t N>
+[[nodiscard]] constexpr T maxComponent(const vec <T, N>& vec) noexcept {
+  T max = std::numeric_limits<T>::min();
+  for (std::size_t i = 0; i < N; i++)
+    if (vec[i] > max) max = vec[i];
+  return max;
+}
+
 template<numeric T>
 [[nodiscard]] constexpr T dot(const vec3<T>& lhs, const vec3<T>& rhs) noexcept {
   return lhs.x() * rhs.x() + lhs.y() * rhs.y() + lhs.z() * rhs.z();

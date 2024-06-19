@@ -53,9 +53,15 @@ float3 MISIntegrator::Li(const Ray& r) {
     lastPdf = res.pdf;
     lastHit = hit.p;
     depth++;
+
+    if (depth > 1 && maxComponent(attenuation) < 1.0f) {
+      float q = std::max(0.0f, 1.0f - maxComponent(attenuation));
+      if (m_sampler.get1D() < q) break;
+      attenuation /= 1.0f - q;
+    }
   }
 
-  return min(L, float3(5.0f));
+  return min(L, float3(1.0f));
 }
 
 /**
