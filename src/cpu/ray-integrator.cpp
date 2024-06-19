@@ -118,13 +118,8 @@ bool RayIntegrator::testTriangle(
   Hit& hit,
   const Triangle& tri
 ) const {
-  const float3&
-    v0 = tri.v0.position,
-    v1 = tri.v1.position,
-    v2 = tri.v2.position;
-
-  const float3 edge1 = v1 - v0;
-  const float3 edge2 = v2 - v0;
+  const float3 edge1 = tri.v1.p - tri.v0.p;
+  const float3 edge2 = tri.v2.p - tri.v0.p;
 
   // Cramer's Rule
   const float3 rayEdge2 = cross(ray.dir, edge2);
@@ -134,7 +129,7 @@ bool RayIntegrator::testTriangle(
   if (std::abs(det) < epsilon) return false;
 
   const float invDet = 1.0f / det;
-  const float3 b = ray.origin - v0; // We're solving for Ax = b
+  const float3 b = ray.origin - tri.v0.p; // We're solving for Ax = b
 
   const float u = dot(b, rayEdge2) * invDet;
   if (u < 0.0f || u > 1.0f) return false;
@@ -162,16 +157,29 @@ float RayIntegrator::testBoundingBox(
   const interval<float>& tInt,
   const fbounds3& bounds
 ) const {
-  float3 t1 = fma(bounds.min, ray.idir, ray.odir);
-  float3 t2 = fma(bounds.max, ray.idir, ray.odir);
+  float3 bmin(
+    bounds[ray.sign[0]][0],
+    bounds[ray.sign[1]][1],
+    bounds[ray.sign[2]][2]
+  );
+  float3 bmax(
+    bounds[1 - ray.sign[0]][0],
+    bounds[1 - ray.sign[1]][1],
+    bounds[1 - ray.sign[2]][2]
+  );
 
-  float tmin = min(t1.x(), t2.x()), tmax = max(t1.x(), t2.x());
-  tmin = max(tmin, min(t1.y(), t2.y()));
-  tmax = min(tmax, max(t1.y(), t2.y()));
-  tmin = max(tmin, min(t1.z(), t2.z()));
-  tmax = min(tmax, max(t1.z(), t2.z()));
+  float3 tmin = fma(bmin, ray.idir, ray.odir);
+  float3 tmax = fma(bmax, ray.idir, ray.odir);
 
-  if (tmax >= tmin && tmin < tInt.max && tmax > tInt.min) return tmin;
+  float t0 = tInt.min, t1 = tInt.max;
+  t0 = max(tmin[0], t0);
+  t0 = max(tmin[1], t0);
+  t0 = max(tmin[2], t0);
+  t1 = min(tmax[0], t1);
+  t1 = min(tmax[1], t1);
+  t1 = min(tmax[2], t1);
+
+  if (t1 >= t0) return t0;
   return std::numeric_limits<float>::infinity();
 }
 

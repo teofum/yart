@@ -12,7 +12,7 @@ struct TriSample {
 };
 
 struct Vertex {
-  float3 position, normal;
+  float3 p, normal;
   float2 textureCoords;
 };
 
@@ -31,18 +31,18 @@ struct Triangle {
     v0 = vertices[face.i0];
     v1 = vertices[face.i1];
     v2 = vertices[face.i2];
-    centroid = (v0.position + v1.position + v2.position) / 3.0f;
+    centroid = (v0.p + v1.p + v2.p) / 3.0f;
   }
 
   [[nodiscard]] constexpr float area() const noexcept {
-    const float3 edge1 = v1.position - v0.position;
-    const float3 edge2 = v2.position - v0.position;
+    const float3 edge1 = v1.p - v0.p;
+    const float3 edge2 = v2.p - v0.p;
     return length(cross(edge1, edge2)) * 0.5f;
   }
 
   [[nodiscard]] constexpr TriSample sample(const float2& u) const noexcept {
     const float3 b = samplers::sampleTriUniform(u);
-    float3 pos = b[0] * v0.position + b[1] * v1.position + b[2] * v2.position;
+    float3 pos = b[0] * v0.p + b[1] * v1.p + b[2] * v2.p;
     float3 normal = b[0] * v0.normal + b[1] * v1.normal + b[2] * v2.normal;
 
     return {pos, normal, 1.0f / area()};
@@ -62,7 +62,7 @@ struct Triangle {
       return s;
     }
 
-    const float3& p0 = v0.position, p1 = v1.position, p2 = v2.position;
+    const float3& p0 = v0.p, p1 = v1.p, p2 = v2.p;
     float3
       w0 = normalized(p0 - p),
       w1 = normalized(p1 - p),
@@ -94,7 +94,7 @@ struct Triangle {
     float sa = solidAngle(p);
     float pdf = 1.0f / sa;
 
-    const float3& p0 = v0.position, p1 = v1.position, p2 = v2.position;
+    const float3& p0 = v0.p, p1 = v1.p, p2 = v2.p;
     float2 u = samplers::invertSphericalSample(p0, p1, p2, p, wi);
     float3
       w0 = normalized(p0 - p),
@@ -112,9 +112,9 @@ struct Triangle {
   }
 
   [[nodiscard]] constexpr float solidAngle(const float3& p) const noexcept {
-    float3 a = normalized(v0.position - p);
-    float3 b = normalized(v1.position - p);
-    float3 c = normalized(v2.position - p);
+    float3 a = normalized(v0.p - p);
+    float3 b = normalized(v1.p - p);
+    float3 c = normalized(v2.p - p);
     return std::abs(
       2.0f * std::atan2(
         dot(a, cross(b, c)),

@@ -101,7 +101,7 @@ public:
   [[nodiscard]] constexpr auto vertexPositions() const noexcept {
     return std::views::transform(
       m_vertices, [&](const Vertex& vertex) {
-        return vertex.position;
+        return vertex.p;
       }
     );
   }

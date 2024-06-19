@@ -95,7 +95,7 @@ public:
     return m_data[idx];
   }
 
-  [[nodiscard]] constexpr T* data() const noexcept {
+  [[nodiscard]] constexpr const T* data() const noexcept {
     return m_data.data();
   }
 
@@ -364,6 +364,14 @@ template<numeric T, std::size_t N>
   for (std::size_t i = 0; i < N; i++)
     if (vec[i] > max) max = vec[i];
   return max;
+}
+
+template<numeric T, std::size_t N>
+[[nodiscard]] constexpr T minComponent(const vec <T, N>& vec) noexcept {
+  T min = std::numeric_limits<T>::max();
+  for (std::size_t i = 0; i < N; i++)
+    if (vec[i] < min) min = vec[i];
+  return min;
 }
 
 template<numeric T>

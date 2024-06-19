@@ -65,9 +65,9 @@ protected:
     for (size_t i = 0; i < node.span; i++) {
       const Triangle& leafTri = (*m_tris)[m_triIdx[first + i]];
       fbounds3 tribounds = fbounds3::fromPoints(
-        leafTri.v0.position,
-        leafTri.v1.position,
-        leafTri.v2.position
+        leafTri.v0.p,
+        leafTri.v1.p,
+        leafTri.v2.p
       );
       node.bounds = fbounds3::join(
         node.bounds,
@@ -245,9 +245,9 @@ private:
       for (uint32_t i = 0; i < node.span; i++) {
         const Triangle& tri = (*m_tris)[m_triIdx[node.first + i]];
         auto triBounds = fbounds3::fromPoints(
-          tri.v0.position,
-          tri.v1.position,
-          tri.v2.position
+          tri.v0.p,
+          tri.v1.p,
+          tri.v2.p
         );
 
         auto b = std::min(
