@@ -24,7 +24,7 @@ float3 MISIntegrator::Li(const Ray& r) {
     if (!didHit) break; // TODO background color
 
     // Calculate direct lighting
-    if (!hit.bsdf->specular())
+    if (!hit.bsdf->specular() && !hit.bsdf->emission())
       L += attenuation * Ld(-ray.dir, hit);
 
     // Sample the BSDF to get the next ray direction
@@ -68,6 +68,7 @@ float3 MISIntegrator::Li(const Ray& r) {
  * Calculate direct lighting at a point
  */
 float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
+  m_rayCounter++;
   float uc = m_sampler.get1D();
   float2 u = m_sampler.get2D();
 

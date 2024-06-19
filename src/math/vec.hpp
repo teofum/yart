@@ -359,6 +359,22 @@ template<numeric T, std::size_t N>
 }
 
 template<numeric T, std::size_t N>
+[[nodiscard]] constexpr bool hasnan(const vec <T, N>& vec) noexcept {
+  for (std::size_t i = 0; i < N; i++) {
+    if (isnan(vec[i])) return true;
+  }
+  return false;
+}
+
+template<numeric T, std::size_t N>
+[[nodiscard]] constexpr bool hasinf(const vec <T, N>& vec) noexcept {
+  for (std::size_t i = 0; i < N; i++) {
+    if (isinf(vec[i])) return true;
+  }
+  return false;
+}
+
+template<numeric T, std::size_t N>
 [[nodiscard]] constexpr T maxComponent(const vec <T, N>& vec) noexcept {
   T max = std::numeric_limits<T>::min();
   for (std::size_t i = 0; i < N; i++)

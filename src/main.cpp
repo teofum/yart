@@ -6,10 +6,12 @@
 #include <output/ppm.hpp>
 #include <cpu/tile-renderer.hpp>
 #include <cpu/mis-integrator.hpp>
+#include <cpu/naive-integrator.hpp>
 #include <gltf/gltf.hpp>
 #include <frontend/metal/app.hpp>
 
 using namespace yart::math;
+using namespace yart::gltf;
 
 int main() {
   yart::Buffer buffer(800, 600);
@@ -17,13 +19,12 @@ int main() {
   yart::Camera camera(
     {buffer.width(), buffer.height()},
     radians(55.0f),
-//    {-7.0f, 5.0f, 0.0f}, axis_x<float> // Sponza
-    {0.0f, 5.0f, 15.0f} // Cornell box
+    {-7.0f, 2.0f, 0.0f}, axis_x<float> // Sponza
+//    {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-  yart::Scene scene = yart::gltf::load("models/cornell_metaldragon.glb")
-    .value();
-//  yart::Scene scene = yart::gltf::load("models/sponza/greensponza.glb").value();
+//  yart::Scene scene = load("models/cornell_dragon.glb").value();
+  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
   yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::MISIntegrator> renderer(
     std::move(buffer),
