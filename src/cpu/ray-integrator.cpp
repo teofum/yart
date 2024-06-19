@@ -24,7 +24,7 @@ bool RayIntegrator::testNode(
     node.transform.inverse(ray.dir, Transform::Type::Vector)
   );
 
-  if (isinf(testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox())))
+  if (hit.t < testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox()))
     return false;
 
   bool didHit = false;
@@ -66,7 +66,7 @@ bool RayIntegrator::testBVH(
   const BVHNode* node = &bvh[0];
   const BVHNode* stack[64];
   float dStack[64] = {std::numeric_limits<float>::infinity()};
-  float d = 0.0f;
+  float d = testBoundingBox(ray, {tMin, hit.t}, node->bounds);
   uint32_t stackIdx = 0;
   bool didHit = false;
 

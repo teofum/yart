@@ -14,7 +14,7 @@ public:
 
   constexpr bounds<T, N>() noexcept = default;
 
-  constexpr bounds<T, N>(vec<T, N> min, vec <T, N> max) noexcept
+  constexpr bounds<T, N>(vec<T, N> min, vec<T, N> max) noexcept
     : min(min), max(max) {}
 
   [[nodiscard]] constexpr vec<T, N>& operator[](std::size_t i) noexcept {
