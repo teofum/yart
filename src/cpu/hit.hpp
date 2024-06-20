@@ -11,6 +11,7 @@ public:
   float3 p, n;
   const BSDF* bsdf = nullptr;
   const Light* light = nullptr;
+  int64_t lightIdx = -1;
 };
 
 }

@@ -56,7 +56,8 @@ bool RayIntegrator::testMesh(
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
   if (didHit) {
     hit.bsdf = &scene->material(mesh.materialIdx);
-    if (mesh.lightIdx) hit.light = &scene->light(mesh.lightIdx);
+    hit.lightIdx = mesh.lightIdx;
+    if (mesh.lightIdx != -1) hit.light = &scene->light(mesh.lightIdx);
   }
 
   return didHit;

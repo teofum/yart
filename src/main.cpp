@@ -32,7 +32,7 @@ int main() {
   );
   renderer.scene = &scene;
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 128;
+  renderer.samples = 1024;
 
   yart::frontend::metal::MetalFrontend app(&renderer);
 

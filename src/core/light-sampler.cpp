@@ -23,9 +23,41 @@ SampledLight UniformLightSampler::sample(
 float UniformLightSampler::p(
   const float3& p,
   const float3& n,
-  const Light& light
+  size_t lightIdx
 ) const {
   return 1.0f / float(m_scene->nLights());
+}
+
+void PowerLightSampler::init(const Scene* scene) noexcept {
+  LightSampler::init(scene);
+
+  m_lightPowers.clear();
+  m_totalPower = 0.0f;
+  for (const Light& light: scene->lights()) {
+    m_lightPowers.push_back(m_totalPower + light.power());
+    m_totalPower += light.power();
+  }
+}
+
+SampledLight PowerLightSampler::sample(
+  const float3& p,
+  const float3& n,
+  float u
+) const {
+  u *= m_totalPower;
+  size_t i = 0;
+  while (i < m_lightPowers.size() - 1 && m_lightPowers[i] < u) i++;
+
+  float pl = m_scene->light(i).power() / m_totalPower;
+  return {m_scene->light(i), pl};
+}
+
+float PowerLightSampler::p(
+  const float3& p,
+  const float3& n,
+  size_t lightIdx
+) const {
+  return m_scene->light(lightIdx).power() / m_totalPower;
 }
 
 }

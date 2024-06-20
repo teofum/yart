@@ -32,9 +32,9 @@ float3 MISIntegrator::Li(const Ray& r) {
     if (res.is(BSDFSample::Emitted)) {
       if (depth == 0 || specularBounce) {
         L += attenuation * res.Le * absDot(res.wi, hit.n);
-      } else if (hit.light) {
+      } else if (hit.lightIdx != -1) {
         float pdfLight = lightPdf(lastHit, ray.dir, *hit.light) /
-                         m_lightSampler.p(hit.p, hit.n, *hit.light);
+                         m_lightSampler.p(hit.p, hit.n, hit.lightIdx);
         float wBSDF = lastPdf / (lastPdf + pdfLight);
         L += attenuation * wBSDF * res.Le * absDot(res.wi, hit.n);
       }

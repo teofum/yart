@@ -17,7 +17,7 @@ public:
   ) noexcept;
 
 private:
-  UniformLightSampler m_lightSampler;
+  PowerLightSampler m_lightSampler;
 
   void setup() override;
 

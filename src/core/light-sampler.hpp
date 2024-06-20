@@ -23,7 +23,7 @@ public:
   [[nodiscard]] virtual float p(
     const float3& p,
     const float3& n,
-    const Light& light
+    size_t lightIdx
   ) const = 0;
 
 protected:
@@ -41,12 +41,14 @@ public:
   [[nodiscard]] float p(
     const float3& p,
     const float3& n,
-    const Light& light
+    size_t lightIdx
   ) const override;
 };
 
 class PowerLightSampler : public LightSampler {
 public:
+  void init(const Scene* scene) noexcept override;
+
   [[nodiscard]] SampledLight sample(
     const float3& p,
     const float3& n,
@@ -56,11 +58,12 @@ public:
   [[nodiscard]] float p(
     const float3& p,
     const float3& n,
-    const Light& light
+    size_t lightIdx
   ) const override;
 
 private:
-  
+  float m_totalPower;
+  std::vector<float> m_lightPowers;
 };
 
 }
