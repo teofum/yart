@@ -79,6 +79,15 @@ namespace yart::math {
   return (norm(r_prl) + norm(r_per)) * 0.5f;
 }
 
+[[nodiscard]] constexpr float3 fresnelSchlick(
+  const float3& r,
+  float cosTheta
+) noexcept {
+  const float k = 1.0f - cosTheta;
+  const float k2 = k * k;
+  return r + (float3(1.0f) - r) * k2 * k2 * k;
+}
+
 }
 
 #endif //YART_MATH_HPP

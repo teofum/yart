@@ -22,7 +22,7 @@ int main() {
     {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-  yart::Scene scene = load("models/cornell_dragon.glb").value();
+  yart::Scene scene = load("models/cornell_metaldragon.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
   yart::tonemap::AgX tonemapper;
