@@ -77,6 +77,7 @@ set(SRC_CORE
         src/core/light.cpp
         src/core/light-sampler.cpp
         src/core/light-sampler.hpp
+        src/core/tonemapping.hpp
 )
 
 set(SRC_IO

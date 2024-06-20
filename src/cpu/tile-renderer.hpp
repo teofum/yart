@@ -28,9 +28,11 @@ public:
   uint32_t maxWaveSamples = MAX_WAVE_SAMPLES;
   uint32_t tileSize = DEFAULT_TILE_SIZE;
   uint32_t threadCount;
+  const tonemap::Tonemap* tonemapper = nullptr;
 
   TileRenderer(Buffer&& buffer, const Camera& camera) noexcept
-    : Renderer(std::move(buffer), camera) {
+    : Renderer(std::move(buffer), camera),
+      m_hdrBuffer(m_buffer.width(), m_buffer.height()) {
     threadCount = std::thread::hardware_concurrency();
   }
 
@@ -64,6 +66,9 @@ private:
     uint32_t width = 0, height = 0;
     size_t index = 0;
   };
+
+  // Render target buffer
+  Buffer m_hdrBuffer;
 
   // Threading state
   std::vector<std::unique_ptr<std::thread>> m_activeThreads;
@@ -191,14 +196,18 @@ private:
     std::unique_lock bufferLock(m_bufferMutex);
     for (size_t y = 0; y < tile.height; y++) {
       for (size_t x = 0; x < tile.width; x++) {
-        const float4& current = m_buffer(
-          x + tile.offset.x(),
-          y + tile.offset.y()
-        );
+        const size_t xabs = x + tile.offset.x(), yabs = y + tile.offset.y();
+        const float4& current = m_hdrBuffer(xabs, yabs);
         const float4& wave = threadBuffer(x, y);
 
-        m_buffer(x + tile.offset.x(), y + tile.offset.y()) =
-          current * wCurrent + wave * wWave;
+        m_hdrBuffer(xabs, yabs) = current * wCurrent + wave * wWave;
+
+        if (tonemapper) {
+          m_buffer(xabs, yabs) =
+            float4((*tonemapper)(float3(m_hdrBuffer(xabs, yabs))), 1.0f);
+        } else {
+          m_buffer(xabs, yabs) = m_hdrBuffer(xabs, yabs);
+        }
       }
     }
 

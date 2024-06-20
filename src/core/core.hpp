@@ -14,6 +14,7 @@
 #include "light-sampler.hpp"
 #include "bvh.hpp"
 #include "renderer.hpp"
+#include "tonemapping.hpp"
 #include "utils.hpp"
 
 #endif //YART_CORE_HPP

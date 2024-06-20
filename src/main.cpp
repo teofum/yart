@@ -6,7 +6,6 @@
 #include <output/ppm.hpp>
 #include <cpu/tile-renderer.hpp>
 #include <cpu/mis-integrator.hpp>
-#include <cpu/naive-integrator.hpp>
 #include <gltf/gltf.hpp>
 #include <frontend/metal/app.hpp>
 
@@ -23,8 +22,10 @@ int main() {
     {0.0f, 5.0f, 15.0f} // Cornell box
   );
 
-  yart::Scene scene = load("models/cornell_dragon_lights.glb").value();
+  yart::Scene scene = load("models/cornell_metaldragon.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
+
+  yart::tonemap::AgX tonemapper;
 
   yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::MISIntegrator> renderer(
     std::move(buffer),
@@ -32,7 +33,8 @@ int main() {
   );
   renderer.scene = &scene;
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 1024;
+  renderer.samples = 128;
+  renderer.tonemapper = &tonemapper;
 
   yart::frontend::metal::MetalFrontend app(&renderer);
 

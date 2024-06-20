@@ -421,7 +421,7 @@ template<numeric T, std::size_t N>
   const vec<T, N>& rhs
 ) noexcept {
   vec<T, N> ret;
-  for (size_t i = 0; i < N; i++) ret[i] = std::min(lhs[i], rhs[i]);
+  for (size_t i = 0; i < N; i++) ret[i] = math::min(lhs[i], rhs[i]);
   return ret;
 }
 
@@ -431,7 +431,43 @@ template<numeric T, std::size_t N>
   const vec<T, N>& rhs
 ) noexcept {
   vec<T, N> ret;
-  for (size_t i = 0; i < N; i++) ret[i] = std::max(lhs[i], rhs[i]);
+  for (size_t i = 0; i < N; i++) ret[i] = math::max(lhs[i], rhs[i]);
+  return ret;
+}
+
+template<numeric T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> clamp(
+  const vec<T, N>& v,
+  const vec<T, N>& min,
+  const vec<T, N>& max
+) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++)
+    ret[i] = math::min(max[i], math::max(min[i], v[i]));
+  return ret;
+}
+
+template<std::floating_point T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> log2(const vec<T, N>& v) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++) ret[i] = std::log2(v[i]);
+  return ret;
+}
+
+template<std::floating_point T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> pow(const vec<T, N>& v, T e) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++) ret[i] = std::pow(v[i], e);
+  return ret;
+}
+
+template<std::floating_point T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> pow(
+  const vec<T, N>& v,
+  const vec<T, N>& e
+) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++) ret[i] = std::pow(v[i], e[i]);
   return ret;
 }
 
