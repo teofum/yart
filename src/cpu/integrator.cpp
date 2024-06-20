@@ -15,14 +15,14 @@ void Integrator::render() {
 
   for (size_t j = top; j < bottom; j++) {
     for (size_t i = left; i < right; i++) {
-      float3 acc;
+      MeanEstimator estimator(samples);
       for (uint32_t s = 0; s < samples; s++) {
         m_sampler.startPixelSample({i, j}, s);
 
-        float3 sampled = sample(i + ox, j + oy) / float(samples);
-        acc += sampled;
+        float3 sampled = sample(i + ox, j + oy);
+        estimator.addSample(sampled);
       }
-      m_target(i, j) = float4(acc, 1.0f);
+      m_target(i, j) = float4(estimator.getValue(), 1.0f);
     }
   }
 }

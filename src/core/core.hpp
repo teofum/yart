@@ -15,6 +15,7 @@
 #include "bvh.hpp"
 #include "renderer.hpp"
 #include "tonemapping.hpp"
+#include "estimator.hpp"
 #include "utils.hpp"
 
 #endif //YART_CORE_HPP

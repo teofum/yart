@@ -26,6 +26,7 @@ int main() {
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
   yart::tonemap::AgX tonemapper;
+  tonemapper.look = yart::tonemap::AgX::none;
 
   yart::cpu::TileRenderer<yart::NaiveSampler, yart::cpu::MISIntegrator> renderer(
     std::move(buffer),
@@ -33,7 +34,9 @@ int main() {
   );
   renderer.scene = &scene;
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 128;
+  renderer.samples = 2048;
+  renderer.firstWaveSamples = 1;
+  renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::metal::MetalFrontend app(&renderer);

@@ -10,7 +10,8 @@
 
 #define DEFAULT_TILE_SIZE 64
 #define DEFAULT_SAMPLE_COUNT 64
-#define MAX_WAVE_SAMPLES 64
+#define DEFAULT_FIRST_WAVE_SAMPLES 1
+#define DEFAULT_MAX_WAVE_SAMPLES 64
 
 namespace yart::cpu {
 
@@ -24,8 +25,8 @@ std::derived_from<T_Sampler, Sampler>)
 class TileRenderer : public Renderer {
 public:
   uint32_t samples = DEFAULT_SAMPLE_COUNT;
-  uint32_t firstWaveSamples = 1;
-  uint32_t maxWaveSamples = MAX_WAVE_SAMPLES;
+  uint32_t firstWaveSamples = DEFAULT_FIRST_WAVE_SAMPLES;
+  uint32_t maxWaveSamples = DEFAULT_MAX_WAVE_SAMPLES;
   uint32_t tileSize = DEFAULT_TILE_SIZE;
   uint32_t threadCount;
   const tonemap::Tonemap* tonemapper = nullptr;
@@ -97,7 +98,7 @@ private:
     // Reset renderer state
     m_activeThreads.clear();
     m_currentWave = 0;
-    m_waveSamples = firstWaveSamples;
+    m_waveSamples = min(firstWaveSamples, samples);
     m_totalSamples = samples;
     m_samplesRemaining = samples;
 
