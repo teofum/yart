@@ -12,6 +12,7 @@ public:
   explicit MetalBSDF(
     const float3& reflectance,
     float roughness = 0.0f,
+    float anisotropic = 0.0f,
     float ior = 1.5f
   ) noexcept;
 

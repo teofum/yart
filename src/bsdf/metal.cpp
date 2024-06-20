@@ -5,10 +5,11 @@ namespace yart {
 MetalBSDF::MetalBSDF(
   const float3& reflectance,
   float roughness,
+  float anisotropic,
   float ior
 ) noexcept
   : m_reflectance(reflectance), m_ior(ior),
-    m_microfacets(roughness * roughness) {}
+    m_microfacets(roughness, anisotropic) {}
 
 float3 MetalBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return {};

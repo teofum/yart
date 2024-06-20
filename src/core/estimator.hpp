@@ -25,6 +25,7 @@ public:
     : m_samples(nSamples) {}
 
   constexpr void addSample(const float3& sample) noexcept override {
+    if (hasnan(sample)) return;
     m_acc += sample;
   }
 

@@ -3,7 +3,7 @@
 namespace yart {
 
 DielectricBSDF::DielectricBSDF(float roughness, float ior) noexcept
-  : m_ior(ior), m_microfacets(roughness * roughness) {}
+  : m_ior(ior), m_microfacets(roughness) {}
 
 float3 DielectricBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return {};
