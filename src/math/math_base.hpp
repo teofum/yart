@@ -35,6 +35,21 @@ template<typename T, std::floating_point T_t>
   return (T_t(1.0) - t) * a + t * b;
 }
 
+template<typename T, std::floating_point T_uv>
+[[nodiscard]] constexpr T bilerp(
+  const T& a0,
+  const T& a1,
+  const T& b0,
+  const T& b1,
+  T_uv u,
+  T_uv v
+) noexcept {
+  return a0 * (T_uv(1.0) - u) * (T_uv(1.0) - v) +
+         a1 * (T_uv(1.0) - u) * v +
+         b0 * u * (T_uv(1.0) - v) +
+         b1 * u * v;
+}
+
 template<std::integral T, std::integral U>
 [[nodiscard]] constexpr T ceilDiv(const T& m, const U& n) {
   return (m / n) + T(m % n != 0);

@@ -22,7 +22,7 @@ float3 MISIntegrator::Li(const Ray& r) {
     Hit hit;
     bool didHit = testNode(ray, 0.001f, hit, scene->root());
     if (!didHit) {
-      L += backgroundColor;
+      L += attenuation * backgroundColor;
       break;
     }
 
