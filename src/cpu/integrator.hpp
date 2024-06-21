@@ -9,6 +9,7 @@ using namespace math;
 
 class Integrator {
 public:
+  float3 backgroundColor;
   ubounds2 samplingBounds;
   uint2 samplingOffset;
   uint32_t samples = 1;

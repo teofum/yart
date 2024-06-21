@@ -149,6 +149,7 @@ private:
               {0, 0},
               {tile.width, tile.height}
             );
+            integrator.backgroundColor = backgroundColor;
 
             integrator.scene = scene;
             integrator.render();

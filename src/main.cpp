@@ -34,7 +34,7 @@ int main() {
     camera
   );
   renderer.scene = &scene;
-  renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
+  renderer.backgroundColor = float3(0.5f);
   renderer.samples = 256;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;

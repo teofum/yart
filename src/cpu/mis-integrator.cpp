@@ -22,9 +22,9 @@ float3 MISIntegrator::Li(const Ray& r) {
     Hit hit;
     bool didHit = testNode(ray, 0.001f, hit, scene->root());
     if (!didHit) {
-      L += float3(0.5f);
+      L += backgroundColor;
       break;
-    } // TODO background color
+    }
 
     // Sample the BSDF to get the next ray direction
     float2 u = m_sampler.get2D();
