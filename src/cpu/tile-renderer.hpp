@@ -42,7 +42,28 @@ public:
   }
 
   void abort() override {
+    if (m_shouldStopRenderInProgress) return;
+    
     m_shouldStopRenderInProgress = true;
+
+    TimePoint now = std::chrono::high_resolution_clock::now();
+    auto totalRenderTime = toMillis(now - m_renderStart);
+    if (onRenderAborted) {
+      auto cb = onRenderAborted.value();
+      cb(
+        {
+          m_buffer,
+          m_totalSamples - m_samplesRemaining,
+          m_totalSamples,
+          m_totalRays,
+          totalRenderTime
+        }
+      );
+    }
+  }
+
+  void wait() override {
+    for (auto& thread: m_activeThreads) thread->join();
   }
 
   RenderData renderSync() override {
@@ -154,8 +175,10 @@ private:
             integrator.scene = scene;
             integrator.render();
 
+            if (m_shouldStopRenderInProgress) break;
             finishTile(tile, threadBuffer, integrator.rayCount(), tileStart);
           }
+          if (m_shouldStopRenderInProgress) break;
 
           // Increment current thread wave and sync with other threads
           threadWave++;

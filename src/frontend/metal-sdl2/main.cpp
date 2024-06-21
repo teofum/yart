@@ -67,13 +67,14 @@ void MetalSDLFrontend::start() noexcept {
     // Event polling
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT)
+      if (event.type == SDL_QUIT || (
+        event.type == SDL_WINDOWEVENT &&
+        event.window.event == SDL_WINDOWEVENT_CLOSE &&
+        event.window.windowID == SDL_GetWindowID(m_sdlWindow)
+      )) {
+        m_renderer->abort();
         exit = true;
-
-      if (event.type == SDL_WINDOWEVENT &&
-          event.window.event == SDL_WINDOWEVENT_CLOSE &&
-          event.window.windowID == SDL_GetWindowID(m_sdlWindow))
-        exit = true;
+      }
     }
 
     // Handle resize
@@ -87,6 +88,8 @@ void MetalSDLFrontend::start() noexcept {
 
     autoreleasePool->release();
   }
+
+  m_renderer->wait();
 
   SDL_DestroyRenderer(m_sdlRenderer);
   SDL_DestroyWindow(m_sdlWindow);
@@ -250,6 +253,13 @@ void MetalSDLFrontend::startRenderer() noexcept {
               << std::setw(12) << renderData.totalRays << " rays ["
               << std::setw(6) << std::fixed << std::setprecision(3)
               << perf << " Mrays/s]\n";
+  };
+
+  m_renderer->onRenderAborted = [&](Renderer::RenderData renderData) {
+    std::cout << "Render aborted\n";
+    std::cout << "  Total: "
+              << std::setw(8) << renderData.totalTime << ", "
+              << std::setw(12) << renderData.totalRays << " rays\n";
   };
 
   m_renderer->render();

@@ -74,6 +74,12 @@ public:
   virtual void abort() = 0;
 
   /**
+   * Waits for the renderer to finish and joins all threads. Should be called
+   * when exiting and always after abort() is called.
+   */
+  virtual void wait() = 0;
+
+  /**
    * Renders a scene synchronously, blocking execution on the caller until the
    * render is complete.
    * @param root Root node of the scene to be rendered
