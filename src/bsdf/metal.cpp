@@ -39,7 +39,8 @@ float MetalBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 BSDFSample MetalBSDF::sampleImpl(
   const float3& wo,
   const float2& u,
-  float uc
+  float uc,
+  float uc2
 ) const {
   if (m_microfacets.smooth()) {
     const float3 F = fresnelSchlick(m_reflectance, wo.z());

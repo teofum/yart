@@ -49,7 +49,8 @@ public:
     const float3& wo,
     const float3& n,
     const float2& u,
-    float uc
+    float uc,
+    float uc2
   ) const;
 
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
@@ -68,7 +69,8 @@ protected:
   [[nodiscard]] virtual BSDFSample sampleImpl(
     const float3& wo,
     const float2& u,
-    float uc
+    float uc,
+    float uc2
   ) const = 0;
 };
 

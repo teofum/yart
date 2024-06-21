@@ -21,12 +21,16 @@ float3 MISIntegrator::Li(const Ray& r) {
     // Test scene for intersection and return if none
     Hit hit;
     bool didHit = testNode(ray, 0.001f, hit, scene->root());
-    if (!didHit) break; // TODO background color
+    if (!didHit) {
+      L += float3(0.5f);
+      break;
+    } // TODO background color
 
     // Sample the BSDF to get the next ray direction
-    float uc = m_sampler.get1D();
     float2 u = m_sampler.get2D();
-    BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc);
+    float uc = m_sampler.get1D();
+    float uc2 = m_sampler.get1D();
+    BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc, uc2);
 
     // Calculate indirect lighting (ie, if the ray happens to hit a light)
     if (res.is(BSDFSample::Emitted)) {
@@ -73,6 +77,8 @@ float3 MISIntegrator::Li(const Ray& r) {
  * Calculate direct lighting at a point
  */
 float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
+  if (scene->nLights() == 0) return {};
+
   m_rayCounter++;
   float uc = m_sampler.get1D();
   float2 u = m_sampler.get2D();

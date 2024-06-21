@@ -73,7 +73,8 @@ float DielectricBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 BSDFSample DielectricBSDF::sampleImpl(
   const float3& wo,
   const float2& u,
-  float uc
+  float uc,
+  float uc2
 ) const {
   // Handle perfect specular case
   if (m_microfacets.smooth()) {

@@ -1,7 +1,5 @@
 #include "gltf.hpp"
-#include <bsdf/diffuse.hpp>
-#include <bsdf/dielectric.hpp>
-#include <bsdf/metal.hpp>
+#include <bsdf/parametric.hpp>
 
 namespace yart::gltf {
 
@@ -23,33 +21,33 @@ static std::unique_ptr<BSDF> processMaterial(
   const fastgltf::Material& gltfMat
 ) noexcept {
   const auto base = gltfMat.pbrData.baseColorFactor;
-  const float3 diffuse = float3(base[0], base[1], base[2]);
+  const float3 baseColor = float3(base[0], base[1], base[2]);
 
   const auto em = gltfMat.emissiveFactor;
   const float3 emission =
     float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
 
-  if (gltfMat.transmission && gltfMat.transmission->transmissionFactor > 0.0f) {
-    float roughness = gltfMat.pbrData.roughnessFactor;
-
-    return std::make_unique<DielectricBSDF>(
-      DielectricBSDF(roughness, gltfMat.ior)
-    );
+  float roughness = gltfMat.pbrData.roughnessFactor;
+  float metallic = gltfMat.pbrData.metallicFactor;
+  float transmission = 0.0f;
+  if (gltfMat.transmission) {
+    transmission = gltfMat.transmission->transmissionFactor;
   }
+//  float anisotropic = 0.0f;
+//  if (gltfMat.anisotropy) {
+//    anisotropic = gltfMat.anisotropy->anisotropyStrength;
+//  }
 
-  if (gltfMat.pbrData.metallicFactor > 0.0f) {
-    float roughness = gltfMat.pbrData.roughnessFactor;
-    float anisotropic = 0.0f;
-    if (gltfMat.anisotropy) {
-      anisotropic = gltfMat.anisotropy->anisotropyStrength;
-    }
-
-    return std::make_unique<MetalBSDF>(
-      MetalBSDF(diffuse, roughness, anisotropic, gltfMat.ior)
-    );
-  }
-
-  return std::make_unique<DiffuseBSDF>(DiffuseBSDF(diffuse, emission));
+  return std::make_unique<ParametricBSDF>(
+    ParametricBSDF(
+      baseColor,
+      metallic,
+      roughness,
+      transmission,
+      gltfMat.ior,
+      emission
+    )
+  );
 }
 
 static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {

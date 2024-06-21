@@ -19,10 +19,11 @@ int main() {
     {buffer.width(), buffer.height()},
     radians(55.0f),
 //    {-7.0f, 5.0f, 0.0f}, axis_x<float> // Sponza
-    {0.0f, 5.0f, 15.0f} // Cornell box
+//    {0.0f, 5.0f, 15.0f} // Cornell box
+    {0.0f, 4.5f, 15.0f} // Furnace test
   );
 
-  yart::Scene scene = load("models/cornell_metaldragon.glb").value();
+  yart::Scene scene = load("models/furnace.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
   yart::tonemap::AgX tonemapper;
@@ -34,7 +35,7 @@ int main() {
   );
   renderer.scene = &scene;
   renderer.backgroundColor = float3(0.0f, 0.0f, 0.0f);
-  renderer.samples = 2048;
+  renderer.samples = 256;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

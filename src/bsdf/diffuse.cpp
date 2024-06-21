@@ -23,7 +23,8 @@ float DiffuseBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 BSDFSample DiffuseBSDF::sampleImpl(
   const float3& wo,
   const float2& u,
-  float uc
+  float uc,
+  float uc2
 ) const {
   float3 wi = samplers::sampleCosineHemisphere(u);
   if (wo.z() < 0) wi *= -1;

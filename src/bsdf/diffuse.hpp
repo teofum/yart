@@ -18,6 +18,8 @@ public:
     return m_hasEmission ? &m_emissive : nullptr;
   }
 
+  friend class ParametricBSDF;
+
 private:
   float3 m_reflectance, m_rOverPi, m_emissive;
   bool m_hasEmission;
@@ -32,7 +34,8 @@ private:
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,
     const float2& u,
-    float uc
+    float uc,
+    float uc2
   ) const override;
 };
 

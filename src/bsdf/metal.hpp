@@ -20,10 +20,9 @@ public:
     return nullptr;
   }
 
-private:
-  // Magic fresnel constant
-  static constexpr const float kFresnel = 10.0f;
+  friend class ParametricBSDF;
 
+private:
   float3 m_reflectance;
   float m_ior;
   GGX m_microfacets;
@@ -38,7 +37,8 @@ private:
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,
     const float2& u,
-    float uc
+    float uc,
+    float uc2
   ) const override;
 };
 

@@ -106,7 +106,9 @@ set(SRC_BSDF
         src/bsdf/dielectric.cpp
         src/bsdf/dielectric.hpp
         src/bsdf/metal.cpp
-        src/bsdf/metal.hpp)
+        src/bsdf/metal.hpp
+        src/bsdf/parametric.cpp
+        src/bsdf/parametric.hpp)
 
 set(SRC_FRONTEND_METAL
         src/frontend/metal/app-delegate.cpp

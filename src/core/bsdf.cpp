@@ -11,11 +11,12 @@ BSDFSample BSDF::sample(
   const float3& wo,
   const float3& n,
   const float2& u,
-  float uc
+  float uc,
+  float uc2
 ) const {
   Frame localFrame(n);
 
-  auto sample = sampleImpl(localFrame.wtl(wo), u, uc);
+  auto sample = sampleImpl(localFrame.wtl(wo), u, uc, uc2);
   sample.wi = localFrame.ltw(sample.wi);
   return sample;
 }

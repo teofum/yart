@@ -15,6 +15,8 @@ public:
     return nullptr;
   }
 
+  friend class ParametricBSDF;
+
 private:
   float m_ior;
   GGX m_microfacets;
@@ -29,7 +31,8 @@ private:
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,
     const float2& u,
-    float uc
+    float uc,
+    float uc2
   ) const override;
 };
 
