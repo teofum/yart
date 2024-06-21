@@ -44,6 +44,10 @@ include_directories(src xoshiro-rng)
 add_subdirectory(fastgltf)
 include_directories(fastgltf/include)
 
+# SDL2
+include_directories(/opt/homebrew/Cellar/sdl2/2.30.4/include)
+link_directories(/opt/homebrew/Cellar/sdl2/2.30.4/lib)
+
 set(SRC_MATH
         src/math/math_base.hpp
         src/math/vec.hpp
@@ -113,15 +117,12 @@ set(SRC_BSDF
         src/bsdf/glossy.hpp)
 
 set(SRC_FRONTEND_METAL
-        src/frontend/metal/app-delegate.cpp
-        src/frontend/metal/app-delegate.hpp
-        src/frontend/metal/view-delegate.cpp
-        src/frontend/metal/view-delegate.hpp
-        src/frontend/metal/utils.hpp
-        src/frontend/metal/app.hpp
-        src/frontend/metal/app.cpp)
+        src/frontend/metal-sdl2/main.cpp
+        src/frontend/metal-sdl2/main.hpp
+        src/frontend/metal-sdl2/helpers.mm
+        src/frontend/metal-sdl2/helpers.hpp)
 
-build_shaders(yart.metallib src/frontend/metal/display.metal)
+build_shaders(yart.metallib src/frontend/metal-sdl2/display.metal)
 add_executable(yart src/main.cpp
         ${SRC_CORE}
         ${SRC_MATH}
@@ -132,4 +133,4 @@ add_executable(yart src/main.cpp
         xoshiro-rng/xoshiro.hpp
         yart.metallib
 )
-target_link_libraries(yart fastgltf metal_cpp)
+target_link_libraries(yart fastgltf metal_cpp sdl2)

@@ -9,13 +9,15 @@ struct RasterVertex {
 
 vertex RasterVertex vertexShader(
   uint vertexID [[vertex_id]],
-  constant float2 *vertices [[buffer(0)]]
+  constant float2 *vertices [[buffer(0)]],
+  constant float2 *viewportSize [[buffer(1)]],
+  constant float2 *imageSize [[buffer(2)]]
 ) {
   float2 pos = vertices[vertexID].xy;
 
   RasterVertex out;
   out.position = float4(0.0, 0.0, 0.0, 1.0);
-  out.position.xy = (pos - 0.5) * 2.0;
+  out.position.xy = (pos - 0.5) * 2.0 * (*imageSize) / (*viewportSize);
   out.texCoord = float2(pos.x, 1.0 - pos.y);
 
   return out;

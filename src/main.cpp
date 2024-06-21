@@ -7,7 +7,7 @@
 #include <cpu/tile-renderer.hpp>
 #include <cpu/mis-integrator.hpp>
 #include <gltf/gltf.hpp>
-#include <frontend/metal/app.hpp>
+#include <frontend/metal-sdl2/main.hpp>
 
 using namespace yart::math;
 using namespace yart::gltf;
@@ -35,12 +35,13 @@ int main() {
     camera
   );
   renderer.scene = &scene;
-  renderer.samples = 2048;
+  renderer.samples = 256;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;
 
-  yart::frontend::metal::MetalFrontend app(&renderer);
+  yart::frontend::MetalSDLFrontend frontend(&renderer);
+  frontend.start();
 
   return 0;
 }
