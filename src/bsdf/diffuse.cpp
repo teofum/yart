@@ -5,9 +5,9 @@ namespace yart {
 DiffuseBSDF::DiffuseBSDF(
   const float3& reflectance,
   const float3& emissive
-) noexcept: m_reflectance(reflectance),
+) noexcept: m_baseColor(reflectance),
             m_rOverPi(reflectance * invPi),
-            m_emissive(emissive),
+            m_emission(emissive),
             m_hasEmission(length2(emissive) > 0.0f) {}
 
 float3 DiffuseBSDF::fImpl(const float3& wo, const float3& wi) const {
@@ -33,7 +33,7 @@ BSDFSample DiffuseBSDF::sampleImpl(
     m_hasEmission ? BSDFSample::Emitted
                   : BSDFSample::Reflected | BSDFSample::Diffuse,
     m_rOverPi,
-    m_emissive,
+    m_emission,
     wi,
     std::abs(wi.z()) * float(invPi)
   };

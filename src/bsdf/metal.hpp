@@ -23,7 +23,7 @@ public:
   friend class ParametricBSDF;
 
 private:
-  float3 m_reflectance;
+  float3 m_baseColor;
   float m_ior, m_roughness;
   GGX m_microfacets;
 

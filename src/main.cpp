@@ -23,7 +23,7 @@ int main() {
 //    {0.0f, 4.5f, 15.0f} // Furnace test
   );
 
-  yart::Scene scene = load("models/cornell_multiscatter.glb").value();
+  yart::Scene scene = load("models/cornell_dragon2.glb").value();
 //  yart::Scene scene = load("models/furnace.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
@@ -35,7 +35,7 @@ int main() {
     camera
   );
   renderer.scene = &scene;
-  renderer.samples = 256;
+  renderer.samples = 2048;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

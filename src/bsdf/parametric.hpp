@@ -3,7 +3,7 @@
 
 #include <math/math.hpp>
 #include <core/core.hpp>
-#include "diffuse.hpp"
+#include "glossy.hpp"
 #include "dielectric.hpp"
 #include "metal.hpp"
 
@@ -22,11 +22,11 @@ public:
   ) noexcept;
 
   [[nodiscard]] constexpr const float3* emission() const noexcept override {
-    return m_diffuse.emission();
+    return m_glossy.emission();
   }
 
 private:
-  DiffuseBSDF m_diffuse;
+  GlossyBSDF m_glossy;
   DielectricBSDF m_dielectric;
   MetalBSDF m_metallic;
   float m_cTrans, m_cMetallic;
