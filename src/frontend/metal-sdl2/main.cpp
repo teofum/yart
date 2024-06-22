@@ -1,4 +1,7 @@
 #include <iomanip>
+#include <fstream>
+
+#include <output/ppm.hpp>
 
 #include "main.hpp"
 #include "helpers.hpp"
@@ -259,6 +262,9 @@ void MetalSDLFrontend::startRenderer() noexcept {
               << std::setw(12) << renderData.totalRays << " rays ["
               << std::setw(6) << std::fixed << std::setprecision(3)
               << perf << " Mrays/s]\n";
+
+    std::ofstream outFile("out.ppm");
+    output::writePPM(outFile, renderData.buffer);
   };
 
   m_renderer->onRenderAborted = [&](Renderer::RenderData renderData) {
