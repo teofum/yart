@@ -25,6 +25,7 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_Renderer* m_sdlRenderer = nullptr;
+  std::string m_title = "yart [SDL2 + Metal]";
 
   CA::MetalLayer* m_layer = nullptr;
   MTL::Device* m_device = nullptr;

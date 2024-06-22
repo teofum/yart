@@ -38,7 +38,7 @@ void MetalSDLFrontend::start() noexcept {
   SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
   m_sdlWindow = SDL_CreateWindow(
-    "yart [SDL2 + Metal]",
+    m_title.c_str(),
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     int(m_renderer->bufferWidth()),
@@ -90,6 +90,8 @@ void MetalSDLFrontend::start() noexcept {
     sdl2_metal::setDrawableSize(m_layer, width, height);
     m_viewportSize.x() = width;
     m_viewportSize.y() = height;
+
+    SDL_SetWindowTitle(m_sdlWindow, m_title.c_str());
 
     drawFrame();
 
@@ -251,6 +253,11 @@ void MetalSDLFrontend::startRenderer() noexcept {
               << perf << " Mrays/s, "
               << std::setw(6) << std::fixed << std::setprecision(3)
               << samplePerf << " Msam/s]\n";
+
+    std::stringstream ss;
+    ss << "yart [SDL2 + Metal] (" << renderData.samplesTaken << "/"
+       << renderData.totalSamples << ")";
+    m_title = ss.str();
   };
 
   m_renderer->onRenderComplete = [&](Renderer::RenderData renderData) {
