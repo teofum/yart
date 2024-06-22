@@ -24,7 +24,7 @@ function(build_shaders LIB_NAME)
 
     message(STATUS "  Building: ${SHADER_AIRS}")
     add_custom_command(
-            OUTPUT ${LIB_NAME}
+            OUTPUT ${LIB_NAME} ___
             COMMAND xcrun -sdk macosx metallib -o ${CMAKE_SOURCE_DIR}/${LIB_NAME} ${SHADER_AIRS}
             DEPENDS ${SHADER_AIRS}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

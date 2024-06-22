@@ -38,8 +38,8 @@ void MetalSDLFrontend::start() noexcept {
     "yart [SDL2 + Metal]",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
-    int(m_renderer->bufferWidth() / 2),
-    int(m_renderer->bufferHeight() / 2),
+    int(m_renderer->bufferWidth()),
+    int(m_renderer->bufferHeight()),
     SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
@@ -48,6 +48,8 @@ void MetalSDLFrontend::start() noexcept {
     -1,
     SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
   );
+
+  m_keys = SDL_GetKeyboardState(nullptr);
 
   m_layer = static_cast<CA::MetalLayer*>(SDL_RenderGetMetalLayer(m_sdlRenderer));
   m_device = sdl2_metal::getDevice(m_layer);
@@ -74,6 +76,8 @@ void MetalSDLFrontend::start() noexcept {
       )) {
         m_renderer->abort();
         exit = true;
+      } else {
+        handleInput(event);
       }
     }
 
@@ -110,6 +114,7 @@ void MetalSDLFrontend::drawFrame() noexcept {
 
   float2 bufferSize(m_renderer->bufferWidth(), m_renderer->bufferHeight());
   float2 viewportSize(m_viewportSize);
+  float4x4 transformTr = transpose(m_viewTransform);
 
   enc->setViewport(
     {0.0, 0.0,
@@ -120,6 +125,7 @@ void MetalSDLFrontend::drawFrame() noexcept {
   enc->setVertexBuffer(m_vertexBuffer, 0, 0);
   enc->setVertexBytes(&viewportSize, sizeof(float2), 1);
   enc->setVertexBytes(&bufferSize, sizeof(float2), 2);
+  enc->setVertexBytes(&transformTr, sizeof(float4x4), 3);
 
   enc->setFragmentTexture(m_texture, 0);
   enc->setFragmentSamplerState(m_sso, 0);
@@ -263,6 +269,31 @@ void MetalSDLFrontend::startRenderer() noexcept {
   };
 
   m_renderer->render();
+}
+
+void MetalSDLFrontend::handleInput(const SDL_Event& event) noexcept {
+  if (event.type == SDL_MOUSEWHEEL) {
+    if (m_keys[SDL_SCANCODE_LGUI] || m_keys[SDL_SCANCODE_RGUI]) {
+      float2 mouseOffset(event.wheel.mouseX, event.wheel.mouseY);
+      mouseOffset *= 2.0f;
+      mouseOffset.y() = float(m_viewportSize.y()) - mouseOffset.y();
+      mouseOffset -= float2(m_viewportSize) / 2.0f;
+      mouseOffset *= 2.0f;
+
+      float zoom = std::exp(event.wheel.preciseY * 0.05f);
+
+      float4x4 t = float4x4::translation(float3(mouseOffset, 0.0f));
+      float4x4 ti = float4x4::translation(float3(-mouseOffset, 0.0f));
+      float4x4 s = float4x4::scaling(zoom);
+
+      m_viewTransform = t * s * ti * m_viewTransform;
+    } else {
+      float2 amt(event.wheel.preciseX, event.wheel.preciseY);
+      float4x4 t = float4x4::translation(float3(amt * -20.0f, 0.0f));
+
+      m_viewTransform = t * m_viewTransform;
+    }
+  }
 }
 
 }

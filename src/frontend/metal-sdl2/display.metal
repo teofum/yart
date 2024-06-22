@@ -11,13 +11,16 @@ vertex RasterVertex vertexShader(
   uint vertexID [[vertex_id]],
   constant float2 *vertices [[buffer(0)]],
   constant float2 *viewportSize [[buffer(1)]],
-  constant float2 *imageSize [[buffer(2)]]
+  constant float2 *imageSize [[buffer(2)]],
+  constant float4x4 *viewTransform [[buffer(3)]]
 ) {
   float2 pos = vertices[vertexID].xy;
+  float2 posPixels = (pos - 0.5) * 2.0 * (*imageSize);
+  posPixels = ((*viewTransform) * float4(posPixels, 0.0, 1.0)).xy;
 
   RasterVertex out;
   out.position = float4(0.0, 0.0, 0.0, 1.0);
-  out.position.xy = (pos - 0.5) * 2.0 * (*imageSize) / (*viewportSize);
+  out.position.xy = posPixels / (*viewportSize);
   out.texCoord = float2(pos.x, 1.0 - pos.y);
 
   return out;
