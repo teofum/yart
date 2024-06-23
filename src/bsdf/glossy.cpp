@@ -1,4 +1,5 @@
 #include "glossy.hpp"
+#include "luts.hpp"
 
 namespace yart {
 
@@ -11,6 +12,7 @@ GlossyBSDF::GlossyBSDF(
             m_emission(emission),
             m_hasEmission(length2(emission) > 0.0f),
             m_ior(ior),
+            m_roughness(roughness),
             m_microfacets(roughness) {}
 
 float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
@@ -23,15 +25,31 @@ float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (length2(wm) == 0.0f) return {};
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
-  const float F = fresnelDielectric(dot(wo, wm), m_ior);
-  const float D = 1.0f - F;
+  // Dielectric single scattering component
+  const float Fss = fresnelSchlickDielectric(dot(wo, wm), m_ior);
+  const float Mss = m_microfacets.mdf(wm) * m_microfacets.g(wo, wi) /
+                    (4 * cosTheta_o * cosTheta_i);
 
-  const float specular =
-    m_microfacets.mdf(wm) * F * m_microfacets.g(wo, wi) /
-    (4 * cosTheta_o * cosTheta_i);
+  // Dielectric multiscatter component
+  const float r = (1.0f - m_ior) / (1.0f + m_ior);
+  const float F0 = r * r;
+  const float fAvg = (1.0f + 20.0f * F0) / 21.0f;
+  const float EmsAvg = lut::E_msAvg(m_roughness);
+  const float Mms = (1.0f - lut::E_ms(cosTheta_o, m_roughness)) *
+                    (1.0f - lut::E_ms(cosTheta_i, m_roughness)) /
+                    (float(pi) * (1.0f - EmsAvg));
+  const float Fms = fAvg * fAvg * EmsAvg / (1.0f - fAvg * (1.0f - EmsAvg));
 
-  const float3 diffuse = m_base * float(invPi) * D;
-  return float3(specular) + diffuse;
+  // Diffuse component
+  const float cDiffuse =
+    (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
+    (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
+    (float(pi) * (1.0f - lut::Eb_msAvg(F0, m_roughness)));
+
+  const float3 diffuse = m_base * cDiffuse;
+
+  // Final BSDF
+  return float3(Fss * Mss + Mms * Fms) + diffuse;
 }
 
 float GlossyBSDF::pdfImpl(const float3& wo, const float3& wi) const {
@@ -42,7 +60,7 @@ float GlossyBSDF::pdfImpl(const float3& wo, const float3& wi) const {
   if (length2(wm) == 0.0f) return 0;
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
-  const float F = fresnelDielectric(dot(wo, wm), m_ior);
+  const float F = fresnelSchlickDielectric(dot(wo, wm), m_ior);
   const float D = 1.0f - F;
 
   return F * m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm)) +
@@ -55,9 +73,12 @@ BSDFSample GlossyBSDF::sampleImpl(
   float uc,
   float uc2
 ) const {
+  const float r = (1.0f - m_ior) / (1.0f + m_ior);
+  const float F0 = r * r;
+
   // Handle perfect specular case
   if (m_microfacets.smooth()) {
-    const float F = fresnelDielectric(wo.z(), m_ior);
+    const float F = fresnelSchlickDielectric(wo.z(), m_ior);
     const float D = 1.0f - F;
 
     if (uc < F) {
@@ -74,10 +95,16 @@ BSDFSample GlossyBSDF::sampleImpl(
       float3 wi = samplers::sampleCosineHemisphere(u);
       if (wo.z() < 0) wi *= -1;
 
+      const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
+      const float cDiffuse =
+        (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
+        (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
+        (float(pi) * (1.0f - lut::Eb_msAvg(F0, m_roughness)));
+
       return {
         BSDFSample::Reflected | BSDFSample::Diffuse |
         (m_hasEmission ? BSDFSample::Emitted : 0),
-        m_base * float(invPi),
+        m_base * cDiffuse,
         m_emission,
         wi,
         std::abs(wi.z()) * float(invPi) * D
@@ -86,22 +113,29 @@ BSDFSample GlossyBSDF::sampleImpl(
   }
 
   float3 wm = m_microfacets.sampleVisibleMicrofacet(wo, u);
-  const float F = fresnelDielectric(dot(wo, wm), m_ior);
+  const float F = fresnelSchlickDielectric(dot(wo, wm), m_ior);
   const float D = 1.0f - F;
 
-  if (uc < F) {
+  const float fAvg = (1.0f + 20.0f * F0) / 21.0f;
+  const float EmsAvg = lut::E_msAvg(m_roughness);
+  const float Fms = fAvg * fAvg * EmsAvg / (1.0f - fAvg * (1.0f - EmsAvg));
+
+  if (uc < F + Fms) {
     const float3 wi = reflect(wo, wm);
     const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
     if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
     const float pdf = m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm)) * F;
-    const float reflectionFactor =
-      m_microfacets.mdf(wm) * F * m_microfacets.g(wo, wi) /
-      (4 * cosTheta_o * cosTheta_i);
+    const float Mss = m_microfacets.mdf(wm) * m_microfacets.g(wo, wi) /
+                      (4 * cosTheta_o * cosTheta_i);
+
+    const float Mms = (1.0f - lut::E_ms(cosTheta_o, m_roughness)) *
+                      (1.0f - lut::E_ms(cosTheta_i, m_roughness)) /
+                      (float(pi) * (1.0f - EmsAvg));
 
     return {
       BSDFSample::Reflected | BSDFSample::Glossy,
-      float3(reflectionFactor),
+      float3(F * Mss + Mms * Fms),
       float3(),
       wi,
       pdf
@@ -110,10 +144,16 @@ BSDFSample GlossyBSDF::sampleImpl(
     float3 wi = samplers::sampleCosineHemisphere(u);
     if (wo.z() < 0) wi *= -1;
 
+    const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
+    const float cDiffuse =
+      (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
+      (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
+      (float(pi) * (1.0f - lut::Eb_msAvg(F0, m_roughness)));
+
     return {
       BSDFSample::Reflected | BSDFSample::Diffuse |
       (m_hasEmission ? BSDFSample::Emitted : 0),
-      m_base * float(invPi),
+      m_base * cDiffuse,
       m_emission,
       wi,
       std::abs(wi.z()) * float(invPi) * D

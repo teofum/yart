@@ -25,7 +25,7 @@ public:
 private:
   float3 m_base, m_emission;
   bool m_hasEmission;
-  float m_ior;
+  float m_ior, m_roughness;
   GGX m_microfacets;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;

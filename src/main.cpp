@@ -39,7 +39,7 @@ int main() {
   renderer.samples = 256;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
-  renderer.tonemapper = &tonemapper;
+//  renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);
   frontend.start();

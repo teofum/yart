@@ -50,6 +50,25 @@ template<typename T, std::floating_point T_uv>
          b1 * u * v;
 }
 
+template<typename T, std::floating_point T_uv>
+[[nodiscard]] constexpr T trilerp(
+  const std::array<T, 8>& x,
+  T_uv u,
+  T_uv v,
+  T_uv w
+) noexcept {
+  float up = T_uv(1.0) - u, vp = T_uv(1.0) - v, wp = T_uv(1.0) - w;
+
+  return x[0] * up * vp * wp +
+         x[1] * up * vp * w +
+         x[2] * up * v * wp +
+         x[3] * up * v * w +
+         x[4] * u * vp * wp +
+         x[5] * u * vp * w +
+         x[6] * u * v * wp +
+         x[7] * u * v * w;
+}
+
 template<std::integral T, std::integral U>
 [[nodiscard]] constexpr T ceilDiv(const T& m, const U& n) {
   return (m / n) + T(m % n != 0);

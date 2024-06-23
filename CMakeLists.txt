@@ -114,7 +114,9 @@ set(SRC_BSDF
         src/bsdf/parametric.cpp
         src/bsdf/parametric.hpp
         src/bsdf/glossy.cpp
-        src/bsdf/glossy.hpp)
+        src/bsdf/glossy.hpp
+        src/bsdf/luts.cpp
+        src/bsdf/luts.hpp)
 
 set(SRC_FRONTEND_METAL
         src/frontend/metal-sdl2/main.cpp
