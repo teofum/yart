@@ -45,18 +45,19 @@ BSDFSample ParametricBSDF::sampleImpl(
   const float3& wo,
   const float2& u,
   float uc,
-  float uc2
+  float uc2,
+  bool regularized
 ) const {
   BSDFSample sample;
   const float pMetallic = m_cMetallic;
   const float pDielectric = m_cMetallic + (1.0f - m_cMetallic) * m_cTrans;
 
   if (uc2 < pMetallic) {
-    sample = m_metallic.sampleImpl(wo, u, uc, 0.0f);
+    sample = m_metallic.sampleImpl(wo, u, uc, 0.0f, regularized);
   } else if (uc2 < pDielectric) {
-    sample = m_dielectric.sampleImpl(wo, u, uc, 0.0f);
+    sample = m_dielectric.sampleImpl(wo, u, uc, 0.0f, regularized);
   } else {
-    sample = m_glossy.sampleImpl(wo, u, uc, 0.0f);
+    sample = m_glossy.sampleImpl(wo, u, uc, 0.0f, regularized);
   }
 
   return sample;

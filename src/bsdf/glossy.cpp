@@ -78,7 +78,8 @@ BSDFSample GlossyBSDF::sampleImpl(
   const float3& wo,
   const float2& u,
   float uc,
-  float uc2
+  float uc2,
+  bool regularized
 ) const {
   const float r = (1.0f - m_ior) / (1.0f + m_ior);
   const float F0 = r * r;
@@ -110,7 +111,8 @@ BSDFSample GlossyBSDF::sampleImpl(
       m_base * cDiffuse,
       m_emission,
       wi,
-      std::abs(wi.z()) * cDiffuse
+      std::abs(wi.z()) * cDiffuse,
+      1.0f
     };
   }
 
@@ -124,7 +126,8 @@ BSDFSample GlossyBSDF::sampleImpl(
       float3(F / std::abs(wi.z())),
       float3(),
       wi,
-      F
+      F,
+      0.0f
     };
   }
 
@@ -149,7 +152,8 @@ BSDFSample GlossyBSDF::sampleImpl(
     float3(Fss * Mss + Mms * Fms),
     float3(),
     wi,
-    pdf
+    pdf,
+    m_roughness
   };
 }
 

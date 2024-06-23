@@ -25,6 +25,7 @@ struct BSDFSample {
   float3 Le;
   float3 wi;
   float pdf;
+  float roughness;
 
   [[nodiscard]] constexpr bool is(int flag) const noexcept {
     return scatter & flag;
@@ -50,7 +51,8 @@ public:
     const float3& n,
     const float2& u,
     float uc,
-    float uc2
+    float uc2,
+    bool regularized = false
   ) const;
 
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
@@ -70,7 +72,8 @@ protected:
     const float3& wo,
     const float2& u,
     float uc,
-    float uc2
+    float uc2,
+    bool regularized
   ) const = 0;
 };
 

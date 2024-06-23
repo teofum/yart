@@ -1,5 +1,7 @@
 #include "mis-integrator.hpp"
 
+#define REG_ROUGHNESS_THRESHOLD 0.5f;
+
 namespace yart::cpu {
 
 MISIntegrator::MISIntegrator(
@@ -11,8 +13,8 @@ MISIntegrator::MISIntegrator(
 float3 MISIntegrator::Li(const Ray& r) {
   float3 L(0.0f), attenuation(1.0f), lastHit;
   uint32_t depth = 0;
-  bool specularBounce = false;
-  float lastPdf = 0.0f;
+  bool specularBounce = false, regularized = false;
+  float lastPdf = 0.0f, accRoughness = 0.0f;
   Ray ray(r);
 
   while (depth < maxDepth) {
@@ -30,7 +32,7 @@ float3 MISIntegrator::Li(const Ray& r) {
     float2 u = m_sampler.get2D();
     float uc = m_sampler.get1D();
     float uc2 = m_sampler.get1D();
-    BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc, uc2);
+    BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc, uc2, regularized);
 
     // Calculate indirect lighting (ie, if the ray happens to hit a light)
     if (res.is(BSDFSample::Emitted)) {
@@ -53,9 +55,12 @@ float3 MISIntegrator::Li(const Ray& r) {
 
     // Update state variables
     float3 fcos = res.f * absDot(res.wi, hit.n);
-    specularBounce = res.is(BSDFSample::Specular);
     attenuation *= fcos / res.pdf;
     ray = Ray(hit.p, res.wi);
+
+    specularBounce = res.is(BSDFSample::Specular);
+    accRoughness += res.roughness;
+    regularized = accRoughness > REG_ROUGHNESS_THRESHOLD;
     lastPdf = res.pdf;
     lastHit = hit.p;
     depth++;

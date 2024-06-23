@@ -25,7 +25,7 @@ public:
 private:
   float3 m_baseColor;
   float m_ior, m_roughness;
-  GGX m_microfacets;
+  GGX m_microfacets, m_mfRoughened;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 
@@ -38,7 +38,8 @@ private:
     const float3& wo,
     const float2& u,
     float uc,
-    float uc2
+    float uc2,
+    bool regularized
   ) const override;
 };
 
