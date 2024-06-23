@@ -13,20 +13,20 @@ using namespace yart::math;
 using namespace yart::gltf;
 
 int main() {
-//  yart::Buffer buffer(800, 400); // Material test
-  yart::Buffer buffer(800, 600);
+  yart::Buffer buffer(800, 400); // Material test
+//  yart::Buffer buffer(800, 600);
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(55.0f),
+    radians(20.0f),
 //    {-7.0f, 5.0f, 0.0f}, axis_x<float> // Sponza
-    {0.0f, 5.0f, 15.0f} // Cornell box
-//    {0.0f, 2.0f, 15.0f} // Cornell box material test
+//    {0.0f, 5.0f, 15.0f} // Cornell box
+    {0.0f, 2.0f, 15.0f} // Cornell box material test
 //    {0.0f, 4.5f, 15.0f} // Furnace test
   );
 
-  yart::Scene scene = load("models/cornell_metaldragon.glb").value();
-//  yart::Scene scene = load("models/cornell_mat_metal.glb").value();
+//  yart::Scene scene = load("models/cornell_metaldragon.glb").value();
+  yart::Scene scene = load("models/cornell_mat_glossy.glb").value();
 //  yart::Scene scene = load("models/furnace_dl.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 

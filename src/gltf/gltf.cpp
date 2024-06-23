@@ -33,10 +33,10 @@ static std::unique_ptr<BSDF> processMaterial(
   if (gltfMat.transmission) {
     transmission = gltfMat.transmission->transmissionFactor;
   }
-//  float anisotropic = 0.0f;
-//  if (gltfMat.anisotropy) {
-//    anisotropic = gltfMat.anisotropy->anisotropyStrength;
-//  }
+  float anisotropic = 0.0f;
+  if (gltfMat.anisotropy) {
+    anisotropic = gltfMat.anisotropy->anisotropyStrength;
+  }
 
   return std::make_unique<ParametricBSDF>(
     ParametricBSDF(
@@ -45,6 +45,7 @@ static std::unique_ptr<BSDF> processMaterial(
       roughness,
       transmission,
       gltfMat.ior,
+      anisotropic,
       emission
     )
   );

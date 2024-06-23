@@ -13,6 +13,7 @@ public:
     const float3& baseColor,
     float roughness = 0.0f,
     float ior = 1.5f,
+    float anisotropic = 0.0f,
     const float3& emission = float3()
   ) noexcept;
 
@@ -26,7 +27,7 @@ private:
   float3 m_base, m_emission;
   bool m_hasEmission;
   float m_ior, m_roughness;
-  GGX m_microfacets;
+  GGX m_microfacets, m_mfRoughened;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 

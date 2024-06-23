@@ -7,13 +7,18 @@ GlossyBSDF::GlossyBSDF(
   const float3& baseColor,
   float roughness,
   float ior,
+  float anisotropic,
   const float3& emission
 ) noexcept: m_base(baseColor),
             m_emission(emission),
             m_hasEmission(length2(emission) > 0.0f),
             m_ior(ior),
             m_roughness(roughness),
-            m_microfacets(roughness) {}
+            m_microfacets(roughness, anisotropic),
+            m_mfRoughened(
+              max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f)),
+              anisotropic
+            ) {}
 
 float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return {};
@@ -131,21 +136,23 @@ BSDFSample GlossyBSDF::sampleImpl(
     };
   }
 
+  const GGX& mfd = regularized ? m_mfRoughened : m_microfacets;
+
   // Rough (glossy) reflection
-  float3 wm = m_microfacets.sampleVisibleMicrofacet(wo, u);
+  float3 wm = mfd.sampleVisibleMicrofacet(wo, u);
   const float3 wi = reflect(wo, wm);
   const float cosTheta_i = wi.z();
   if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
   const float Fss = fresnelSchlickDielectric(dot(wo, wm), m_ior);
-  const float Mss = m_microfacets.mdf(wm) * m_microfacets.g(wo, wi) /
+  const float Mss = mfd.mdf(wm) * mfd.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
   const float Mms = (1.0f - Ems_o) *
                     (1.0f - lut::E_ms(cosTheta_i, m_roughness)) /
                     (float(pi) * (1.0f - EmsAvg));
 
-  const float pdf = m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
+  const float pdf = mfd.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
 
   return {
     BSDFSample::Reflected | BSDFSample::Glossy,

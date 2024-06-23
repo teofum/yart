@@ -2,8 +2,16 @@
 
 namespace yart {
 
-DielectricBSDF::DielectricBSDF(float roughness, float ior) noexcept
-  : m_ior(ior), m_microfacets(roughness) {}
+DielectricBSDF::DielectricBSDF(
+  float roughness,
+  float ior,
+  float anisotropic
+) noexcept: m_ior(ior),
+            m_microfacets(roughness, anisotropic),
+            m_mfRoughened(
+              max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f)),
+              anisotropic
+            ) {}
 
 float3 DielectricBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return {};
@@ -106,7 +114,9 @@ BSDFSample DielectricBSDF::sampleImpl(
     }
   }
 
-  float3 wm = m_microfacets.sampleVisibleMicrofacet(wo, u);
+  const GGX& mfd = regularized ? m_mfRoughened : m_microfacets;
+
+  float3 wm = mfd.sampleVisibleMicrofacet(wo, u);
   const float F = fresnelDielectric(dot(wo, wm), m_ior);
   const float T = 1.0f - F;
 
@@ -115,9 +125,9 @@ BSDFSample DielectricBSDF::sampleImpl(
     const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
     if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
-    const float pdf = m_microfacets.vmdf(wo, wm) / (4 * absDot(wo, wm)) * F;
+    const float pdf = mfd.vmdf(wo, wm) / (4 * absDot(wo, wm)) * F;
     const float reflectionFactor =
-      m_microfacets.mdf(wm) * F * m_microfacets.g(wo, wi) /
+      mfd.mdf(wm) * F * mfd.g(wo, wi) /
       (4 * cosTheta_o * cosTheta_i);
 
     return {
@@ -136,9 +146,9 @@ BSDFSample DielectricBSDF::sampleImpl(
     const float ior = wo.z() > 0.0f ? m_ior : 1.0f / m_ior;
     const float temp = dot(wi, wm) + dot(wo, wm) / ior;
     const float dwm_dwi = absDot(wi, wm) / (temp * temp);
-    const float pdf = m_microfacets.vmdf(wo, wm) * dwm_dwi * T;
+    const float pdf = mfd.vmdf(wo, wm) * dwm_dwi * T;
     const float transmissionFactor =
-      m_microfacets.mdf(wm) * T * m_microfacets.g(wo, wi) *
+      mfd.mdf(wm) * T * mfd.g(wo, wi) *
       absDot(wi, wm) * absDot(wo, wm) / (wi.z() * wo.z() * temp * temp);
 
     return {

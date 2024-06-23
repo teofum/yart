@@ -8,11 +8,12 @@ ParametricBSDF::ParametricBSDF(
   float roughness,
   float transmission,
   float ior,
+  float anisotropic,
   const float3& emission
 ) noexcept
-  : m_glossy(baseColor, roughness, ior, emission),
-    m_dielectric(roughness, ior),
-    m_metallic(baseColor, roughness),
+  : m_glossy(baseColor, roughness, ior, anisotropic, emission),
+    m_dielectric(roughness, ior, anisotropic),
+    m_metallic(baseColor, roughness, anisotropic, ior),
     m_cTrans(transmission), m_cMetallic(metallic) {}
 
 float3 ParametricBSDF::fImpl(const float3& wo, const float3& wi) const {
