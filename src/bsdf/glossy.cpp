@@ -36,16 +36,16 @@ float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
                     (4 * cosTheta_o * cosTheta_i);
 
   // Dielectric multiscatter component
-  const float r = (1.0f - m_ior) / (1.0f + m_ior);
-  const float F0 = r * r;
-  const float fAvg = (1.0f + 20.0f * F0) / 21.0f;
-  const float EmsAvg = lut::E_msAvg(m_roughness);
+  const float Favg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
+  const float Eavg = lut::E_msAvg(m_roughness);
   const float Mms = (1.0f - lut::E_ms(cosTheta_o, m_roughness)) *
                     (1.0f - lut::E_ms(cosTheta_i, m_roughness)) /
-                    (float(pi) * (1.0f - EmsAvg));
-  const float Fms = fAvg * fAvg * EmsAvg / (1.0f - fAvg * (1.0f - EmsAvg));
+                    (float(pi) * (1.0f - Eavg));
+  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
   // Diffuse component
+  const float r = (1.0f - m_ior) / (1.0f + m_ior);
+  const float F0 = r * r;
   const float cDiffuse =
     (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
     (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
@@ -66,12 +66,9 @@ float GlossyBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 
   const float Fss = fresnelSchlickDielectric(dot(wo, wm), m_ior);
 
-  const float r = (1.0f - m_ior) / (1.0f + m_ior);
-  const float F0 = r * r;
-  const float fAvg = (1.0f + 20.0f * F0) / 21.0f;
-  const float EmsAvg = lut::E_msAvg(m_roughness);
-  const float Fms = fAvg * fAvg * EmsAvg / (1.0f - fAvg * (1.0f - EmsAvg));
   const float FAvg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
+  const float EmsAvg = lut::E_msAvg(m_roughness);
+  const float Fms = FAvg * FAvg * EmsAvg / (1.0f - FAvg * (1.0f - EmsAvg));
   const float Ems_o = lut::E_ms(cosTheta_o, m_roughness);
   const float kappa = 1.0f - (FAvg * Ems_o + Fms * (1.0f - Ems_o));
 
@@ -86,18 +83,14 @@ BSDFSample GlossyBSDF::sampleImpl(
   float uc2,
   bool regularized
 ) const {
-  const float r = (1.0f - m_ior) / (1.0f + m_ior);
-  const float F0 = r * r;
-
   const float cosTheta_o = wo.z();
 
-  const float fAvg = (1.0f + 20.0f * F0) / 21.0f;
-  const float EmsAvg = lut::E_msAvg(m_roughness);
-  const float Fms = fAvg * fAvg * EmsAvg / (1.0f - fAvg * (1.0f - EmsAvg));
+  const float Favg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
+  const float Eavg = lut::E_msAvg(m_roughness);
+  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
-  const float FAvg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
-  const float Ems_o = lut::E_ms(cosTheta_o, m_roughness);
-  const float kappa = 1.0f - (FAvg * Ems_o + Fms * (1.0f - Ems_o));
+  const float E_o = lut::E_ms(cosTheta_o, m_roughness);
+  const float kappa = 1.0f - (Favg * E_o + Fms * (1.0f - E_o));
 
   // Diffuse scattering
   if (uc < kappa) {
@@ -105,6 +98,9 @@ BSDFSample GlossyBSDF::sampleImpl(
     if (wo.z() < 0) wi *= -1;
 
     const float cosTheta_i = wi.z();
+
+    const float r = (1.0f - m_ior) / (1.0f + m_ior);
+    const float F0 = r * r;
     const float cDiffuse =
       (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
       (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
@@ -148,15 +144,15 @@ BSDFSample GlossyBSDF::sampleImpl(
   const float Mss = mfd.mdf(wm) * mfd.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
-  const float Mms = (1.0f - Ems_o) *
+  const float Mms = (1.0f - E_o) *
                     (1.0f - lut::E_ms(cosTheta_i, m_roughness)) /
-                    (float(pi) * (1.0f - EmsAvg));
+                    (float(pi) * (1.0f - Eavg));
 
   const float pdf = mfd.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
 
   return {
     BSDFSample::Reflected | BSDFSample::Glossy,
-    float3(Fss * Mss + Mms * Fms),
+    float3(Fss * Mss + Fms * Mms),
     float3(),
     wi,
     pdf,

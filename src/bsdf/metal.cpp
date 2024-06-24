@@ -76,15 +76,15 @@ BSDFSample MetalBSDF::sampleImpl(
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
   const float3 Fss = fresnelSchlick(m_baseColor, absDot(wo, wm));
-  const float3 fss = mfd.mdf(wm) * Fss * mfd.g(wo, wi) /
+  const float3 Mss = mfd.mdf(wm) * Fss * mfd.g(wo, wi) /
                      (4 * cosTheta_o * cosTheta_i);
 
   const float Ess = lut::E_ms(cosTheta_o, m_roughness);
-  const float3 fms = fss * m_baseColor * (1.0f - Ess) / Ess;
+  const float3 Mms = Mss * m_baseColor * (1.0f - Ess) / Ess;
 
   return {
     BSDFSample::Reflected | BSDFSample::Glossy,
-    fss + fms,
+    Mss + Mms,
     float3(),
     wi,
     pdf,

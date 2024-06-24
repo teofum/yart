@@ -22,7 +22,7 @@ float3 NaiveIntegrator::LiImpl(
 
   Hit hit;
   bool didHit = testNode(ray, 0.001f, hit, root);
-  if (!didHit) return {}; // TODO background color
+  if (!didHit) return backgroundColor;
 
   BSDFSample res = hit.bsdf->sample(
     -ray.dir,
@@ -33,16 +33,10 @@ float3 NaiveIntegrator::LiImpl(
   );
 
   float3 Li;
-  if (res.scatter == BSDFSample::Emitted) {
+  if (res.is(BSDFSample::Emitted)) {
     Li += res.Le;
   }
-  if (res.scatter == BSDFSample::Reflected) {
-    float3 fcos = res.f * absDot(res.wi, hit.n);
-
-    Ray scattered(hit.p, res.wi);
-    Li += LiImpl(scattered, root, depth + 1) * fcos / res.pdf;
-  }
-  if (res.scatter == BSDFSample::Transmitted) {
+  if (res.is(BSDFSample::Reflected | BSDFSample::Transmitted)) {
     float3 fcos = res.f * absDot(res.wi, hit.n);
 
     Ray scattered(hit.p, res.wi);
