@@ -9,11 +9,14 @@ using namespace math;
 
 class Integrator {
 public:
-  float3 backgroundColor;
-  ubounds2 samplingBounds;
-  uint2 samplingOffset;
-  uint32_t samples = 1;
+  ubounds2 samplingBounds; // Sampling rect as written to buffer
+  uint2 samplingOffset; // Pixel offset for rays
+
+  uint32_t samples = 1; // Total # of samples
+  uint32_t sampleOffset = 0; // First sample, used to seed RNG deterministically
+
   const Scene* scene = nullptr;
+  float3 backgroundColor;
 
   Integrator(Buffer& buffer, const Camera& camera, Sampler& sampler) noexcept
     : m_camera(camera), m_target(buffer), m_sampler(sampler) {}

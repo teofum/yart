@@ -43,7 +43,7 @@ public:
 
   void abort() override {
     if (m_shouldStopRenderInProgress) return;
-    
+
     m_shouldStopRenderInProgress = true;
 
     TimePoint now = std::chrono::high_resolution_clock::now();
@@ -171,6 +171,7 @@ private:
               {tile.width, tile.height}
             );
             integrator.backgroundColor = backgroundColor;
+            integrator.sampleOffset = m_totalSamples - m_samplesRemaining;
 
             integrator.scene = scene;
             integrator.render();

@@ -8,7 +8,7 @@ NaiveSampler::NaiveSampler() noexcept {
 }
 
 void NaiveSampler::startPixelSample(uint2 p, uint32_t sample) noexcept {
-  // TODO hash pixel pos/sample
+  m_rng.seed(hash(p, sample));
 }
 
 float NaiveSampler::get1D() noexcept {
