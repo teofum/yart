@@ -14,21 +14,22 @@ using namespace yart::math;
 using namespace yart::gltf;
 
 int main() {
-  yart::Buffer buffer(800, 400); // Material test
+  yart::Buffer buffer(800, 600);
+//  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(400, 400); // Furnace test
-//  yart::Buffer buffer(800, 600);
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(20.0f),
+    radians(55.0f),
+    {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
 //    {-7.0f, 5.0f, 0.0f}, axis_x<float> // Sponza
-//    {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
-    {0.0f, 2.0f, 15.0f} // Cornell box material test
   );
 
+//  camera.moveAndLookAt({0.0, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
+
 //  yart::Scene scene = load("models/cornell_glass.glb").value();
-  yart::Scene scene = load("models/cornell_mat_glass.glb").value();
-//  yart::Scene scene = load("models/furnace_glass.glb").value();
+//  yart::Scene scene = load("models/cornell_mat_glass_spec.glb").value();
+  yart::Scene scene = load("models/furnace_dl.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
   yart::tonemap::AgX tonemapper;
@@ -38,9 +39,9 @@ int main() {
     std::move(buffer),
     camera
   );
-  renderer.backgroundColor = float3(0.5f);
+//  renderer.backgroundColor = float3(0.5f);
   renderer.scene = &scene;
-  renderer.samples = 1024;
+  renderer.samples = 512;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
 //  renderer.tonemapper = &tonemapper;

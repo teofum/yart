@@ -58,11 +58,13 @@ float3 DielectricBSDF::fImpl(const float3& wo, const float3& wi) const {
     const float temp = dot(wi, wm) * ior + dot(wo, wm);
     const float dwm_dwi = absDot(wi, wm) * absDot(wo, wm) / (temp * temp);
 
-    const float transmitted =
-      m_microfacets.mdf(wm) * T * m_microfacets.g(wo, wi) * dwm_dwi /
+    const float E_i = lut::ggxGlassE(ior, m_roughness, std::abs(cosTheta_i));
+
+    const float Tss =
+      m_microfacets.mdf(wm) * m_microfacets.g(wo, wi) * dwm_dwi /
       (std::abs(cosTheta_i * cosTheta_o));
 
-    return float3(transmitted);
+    return float3(T * Tss / E_i);
   }
 }
 
@@ -138,18 +140,17 @@ BSDFSample DielectricBSDF::sampleImpl(
   float3 wm = mfd.sampleVisibleMicrofacet(wo, u);
   const float Fss = fresnelSchlickDielectric(absDot(wo, wm), ior);
 
-  float Favg;
-  if (ior >= 1.0f) {
-    Favg = (ior - 1.0f) / (4.08567f + 1.00071f * ior);
-  } else {
-    Favg = ior * (ior * (ior * -0.130607f - 0.965241f) + 0.1014f) + 0.997118f;
-  }
+//  float Favg;
+//  if (ior >= 1.0f) {
+//    Favg = (ior - 1.0f) / (4.08567f + 1.00071f * ior);
+//  } else {
+//    Favg = ior * (ior * (ior * -0.130607f - 0.965241f) + 0.1014f) + 0.997118f;
+//  }
 
   const float cosTheta_o = std::abs(wo.z());
   const float E_o = lut::ggxGlassE(ior, m_roughness, cosTheta_o);
-  const float Eavg = lut::ggxGlassEavg(ior, m_roughness);
-
-  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
+//  const float Eavg = lut::ggxGlassEavg(ior, m_roughness);
+//  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
   if (uc < Fss) {
     const float3 wi = reflect(wo, wm);
@@ -159,11 +160,10 @@ BSDFSample DielectricBSDF::sampleImpl(
     const float Mss = mfd.mdf(wm) * mfd.g(wo, wi) /
                       (4 * cosTheta_o * cosTheta_i);
 
-    const float E_i = lut::ggxGlassE(ior, m_roughness, cosTheta_i);
-    const float Mms = (1.0f - E_o) * (1.0f - E_i) /
-                      (float(pi) * (1.0f - Eavg));
-
-    const float scale = 1.0f + (1.0f - E_o) / E_o;
+//    const float E_i = lut::ggxGlassE(ior, m_roughness, cosTheta_i);
+//    const float Mms = (1.0f - E_o) * (1.0f - E_i) /
+//                      (float(pi) * (1.0f - Eavg));
+//    const float scale = 1.0f + (1.0f - E_o) / E_o;
 
     const float pdf = mfd.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
 
@@ -188,17 +188,13 @@ BSDFSample DielectricBSDF::sampleImpl(
       dot(wi, wm) * dot(wo, wm) / (wi.z() * wo.z() * temp * temp)
     );
 
-    const float cosTheta_i = std::abs(wi.z());
-    const float invIor = 1.0f / ior;
-
-    const float E_iInv = lut::ggxGlassE(invIor, m_roughness, cosTheta_i);
-    const float EavgInv = lut::ggxGlassEavg(invIor, m_roughness);
-    const float Tms = (1.0f - E_o) * (1.0f - E_iInv) /
-                      (float(pi) * (1.0f - EavgInv));
-
-    const float scale = 1.0f + (1.0f - E_o) / E_o;
-
-//    return {BSDFSample::Emitted, float3(), float3(E_o, 0, 0), wi};
+//    const float cosTheta_i = std::abs(wi.z());
+//    const float invIor = 1.0f / ior;
+//    const float E_iInv = lut::ggxGlassE(invIor, m_roughness, cosTheta_i);
+//    const float EavgInv = lut::ggxGlassEavg(invIor, m_roughness);
+//    const float Tms = (1.0f - E_o) * (1.0f - E_iInv) /
+//                      (float(pi) * (1.0f - EavgInv));
+//    const float scale = 1.0f + (1.0f - E_o) / E_o;
 
     return {
       BSDFSample::Transmitted | BSDFSample::Glossy,

@@ -98,7 +98,7 @@ public:
                    + m_pixelDeltaU * jitter.x()
                    + m_pixelDeltaV * jitter.y();
 
-    return {m_position, pixel - m_position};
+    return {m_position, normalized(pixel - m_position)};
   }
 };
 
