@@ -23,7 +23,7 @@ protected:
 
 class NaiveSampler : public Sampler {
 public:
-  NaiveSampler() noexcept;
+  NaiveSampler() noexcept = default;
 
   void startPixelSample(uint2 p, uint32_t sample) noexcept override;
 
@@ -32,6 +32,24 @@ public:
   float2 get2D() noexcept override;
 
   float2 getPixel2D() noexcept override;
+};
+
+class StratifiedSampler : public Sampler {
+public:
+  StratifiedSampler() noexcept = default;
+
+  void startPixelSample(uint2 p, uint32_t sample) noexcept override;
+
+  float get1D() noexcept override;
+
+  float2 get2D() noexcept override;
+
+  float2 getPixel2D() noexcept override;
+
+private:
+  uint2 m_pixel;
+  uint32_t m_dim = 0, m_sampleIdx = 0;
+  uint32_t m_xSamples = 4, m_ySamples = 4;
 };
 
 }
