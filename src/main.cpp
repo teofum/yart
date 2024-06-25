@@ -13,6 +13,10 @@
 using namespace yart::math;
 using namespace yart::gltf;
 
+//using Sampler = yart::SobolSampler<yart::FastOwenScrambler>;
+using Sampler = yart::NaiveSampler;
+using Integrator = yart::cpu::MISIntegrator;
+
 int main() {
   yart::Buffer buffer(800, 600);
 //  yart::Buffer buffer(800, 400); // Material test
@@ -35,13 +39,14 @@ int main() {
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;
 
-  yart::cpu::TileRenderer<yart::StratifiedSampler, yart::cpu::MISIntegrator> renderer(
+  yart::cpu::TileRenderer<Sampler, Integrator> renderer(
     std::move(buffer),
     camera
   );
+
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = &scene;
-  renderer.samples = 256;
+  renderer.samples = 2400;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

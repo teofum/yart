@@ -100,6 +100,40 @@ namespace yart::math {
   return r + (1.0f - r) * k2 * k2 * k;
 }
 
+[[nodiscard]] constexpr uint32_t reverseBits32(uint32_t n) noexcept {
+  n = (n << 16) | (n >> 16);
+  n = ((n & 0x00ff00ff) << 8) | ((n & 0xff00ff00) >> 8);
+  n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4);
+  n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
+  n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
+  return n;
+}
+
+[[nodiscard]] constexpr uint32_t multSobolGen(
+  const std::array<uint32_t, 32>& C,
+  uint32_t d
+) noexcept {
+  uint32_t v = 0;
+  for (uint32_t i = 0; d != 0; i++, d >>= 1) {
+    if (d & 1) v ^= C[i];
+  }
+  return v;
+}
+
+[[nodiscard]] constexpr uint64_t leftShift2(uint64_t x) {
+  x &= 0xffffffff;
+  x = (x ^ (x << 16)) & 0x0000ffff0000ffff;
+  x = (x ^ (x << 8)) & 0x00ff00ff00ff00ff;
+  x = (x ^ (x << 4)) & 0x0f0f0f0f0f0f0f0f;
+  x = (x ^ (x << 2)) & 0x3333333333333333;
+  x = (x ^ (x << 1)) & 0x5555555555555555;
+  return x;
+}
+
+[[nodiscard]] constexpr uint64_t encodeMorton2(uint32_t x, uint32_t y) {
+  return (leftShift2(y) << 1) | leftShift2(x);
+}
+
 }
 
 #endif //YART_MATH_HPP

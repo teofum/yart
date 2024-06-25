@@ -12,6 +12,8 @@ constexpr double epsilon = 1e-12;
 constexpr double pi = M_PI;
 constexpr double invPi = 1.0 / pi;
 
+constexpr float oneMinusEpsilon = 0x1.fffffep-1;
+
 template<typename T>
 concept numeric = std::integral<T> || std::floating_point<T>;
 
@@ -110,6 +112,39 @@ template<numeric T, numeric C, numeric... Args>
   }
   return std::clamp(first - 1, int64_t(0), size - 2);
 }
+
+[[nodiscard]] constexpr uint32_t bits(float f) {
+  return std::bit_cast<uint32_t>(f);
+}
+
+[[nodiscard]] constexpr int32_t exponent(float v) {
+  return int32_t(bits(v) >> 23) - 127;
+}
+
+[[nodiscard]] constexpr uint32_t significand(float v) {
+  return bits(v) & ((1 << 23) - 1);
+}
+
+[[nodiscard]] constexpr uint32_t signBit(float v) {
+  return bits(v) & 0x80000000;
+}
+
+[[nodiscard]] constexpr int32_t log2Int(float v) {
+  if (v < 1) return -log2Int(1 / v);
+  const uint32_t midsignif = 0b00000000001101010000010011110011;
+  return exponent(v) + ((significand(v) >= midsignif) ? 1 : 0);
+}
+
+[[nodiscard]] constexpr int32_t roundUpPow2(int32_t v) {
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  return v + 1;
+}
+
 
 }
 

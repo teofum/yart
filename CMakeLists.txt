@@ -83,6 +83,9 @@ set(SRC_CORE
         src/core/light-sampler.hpp
         src/core/tonemapping.hpp
         src/core/estimator.hpp
+        src/core/scrambler.hpp
+        src/core/sobol-matrices.cpp
+        src/core/sobol-matrices.hpp
 )
 
 set(SRC_IO

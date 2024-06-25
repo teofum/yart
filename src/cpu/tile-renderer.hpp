@@ -150,7 +150,10 @@ private:
     for (uint32_t ti = 0; ti < threadCount; ti++) {
       auto threadFunc = [&]() {
         Buffer threadBuffer(tileSize, tileSize);
-        T_Sampler sampler;
+        T_Sampler sampler(
+          m_totalSamples,
+          {tileSize, tileSize}
+        );
         T_Integrator integrator(threadBuffer, m_camera, sampler);
 
         size_t threadWave = 0;

@@ -17,7 +17,7 @@ void Integrator::render() {
     for (size_t i = left; i < right; i++) {
       MeanEstimator estimator(samples);
       for (uint32_t s = 0; s < samples; s++) {
-        m_sampler.startPixelSample({i + ox, j + oy}, s + sampleOffset);
+        m_sampler.startPixelSample({i, j}, s + sampleOffset);
 
         float3 sampled = sample(i + ox, j + oy);
         estimator.addSample(sampled);

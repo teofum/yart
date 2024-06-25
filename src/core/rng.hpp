@@ -90,7 +90,16 @@ inline uint64_t hash(Args... args) {
   return murmurHash64A((const unsigned char*) buf, sz, 0);
 }
 
-constexpr uint32_t permel(uint32_t i, uint32_t l, uint32_t p) {
+constexpr uint64_t mixBits(uint64_t v) noexcept {
+  v ^= (v >> 31);
+  v *= 0x7fb5d329728ea185;
+  v ^= (v >> 27);
+  v *= 0x81dadef4bc2dd44d;
+  v ^= (v >> 33);
+  return v;
+}
+
+constexpr uint32_t permel(uint32_t i, uint32_t l, uint32_t p) noexcept {
   uint32_t w = l - 1;
   w |= w >> 1;
   w |= w >> 2;
