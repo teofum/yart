@@ -20,8 +20,10 @@ extern const float table_ggx_glass_inv_E[16][16][16];
 extern const float table_ggx_glass_inv_Eavg[16][16];
 
 [[nodiscard]] constexpr float E_ms(float cosTheta, float r) noexcept {
-  size_t ri = min(size_t(r * 31), 30), cosi = min(size_t(cosTheta * 31), 30);
-  float ro = r * 31.0f - float(ri), co = cosTheta * 31.0f - float(cosi);
+  float ro = r * 31.0f, co = cosTheta * 31.0f;
+  size_t ri = min(size_t(ro), 30), cosi = min(size_t(co), 30);
+  ro -= float(ri);
+  co -= float(cosi);
 
   const float
     d00 = E_msLut[ri][cosi], d01 = E_msLut[ri][cosi + 1],
@@ -42,12 +44,17 @@ extern const float table_ggx_glass_inv_Eavg[16][16];
   float r,
   float cosTheta
 ) noexcept {
-  size_t f0i = min(size_t(f0 * 15), 14);
-  size_t ri = min(size_t(r * 15), 14);
-  size_t ci = min(size_t(cosTheta * 15), 14);
-  float f0o = f0 * 15.0f - float(f0i);
-  float ro = r * 15.0f - float(ri);
-  float co = cosTheta * 15.0f - float(ci);
+  float f0o = f0 * 15.0f;
+  float ro = r * 15.0f;
+  float co = cosTheta * 15.0f;
+
+  size_t f0i = min(size_t(f0o), 14);
+  size_t ri = min(size_t(ro), 14);
+  size_t ci = min(size_t(co), 14);
+
+  f0o -= float(f0i);
+  ro -= float(ri);
+  co -= float(ci);
 
   std::array<float, 8> vals = {
     Eb_msLut[f0i][ri][ci],
