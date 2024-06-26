@@ -141,8 +141,12 @@ private:
 
   static constexpr float sobolSample(uint64_t d, uint32_t dim, R scrambler) {
     uint32_t v = 0;
-    for (uint32_t i = dim * sobol::sobolMatrixSize; d != 0; d >>= 1, i++) {
-      v ^= (d & 1) * sobol::matrices[i];
+    if (dim == 0) {
+      v ^= reverseBits32(d);
+    } else {
+      for (uint32_t i = dim * sobol::sobolMatrixSize; d != 0; d >>= 1, i++) {
+        v ^= (d & 1) * sobol::matrices[i];
+      }
     }
     v = scrambler(v);
     return std::min(float(v) * 0x1p-32f, oneMinusEpsilon);

@@ -45,7 +45,7 @@ int main() {
 
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = &scene;
-  renderer.samples = 4096;
+  renderer.samples = 256;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;
