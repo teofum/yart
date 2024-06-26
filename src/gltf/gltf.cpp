@@ -53,18 +53,27 @@ static std::unique_ptr<BSDF> processMaterial(
   );
 }
 
-static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
+static Mesh processMesh(
+  const fastgltf::Asset& asset,
+  size_t meshIdx,
+  Scene& scene
+) noexcept {
   const auto gltfMesh = asset.meshes[meshIdx];
 
   const auto primitives = gltfMesh.primitives;
-  size_t materialIdx = primitives[0].materialIndex.value_or(0);
-
   std::vector<Vertex> meshVertices;
-  std::vector<size_t> meshIndices;
-  uint32_t count = 0;
+  std::vector<Face> meshFaces;
+  float3 emission;
+
   for (const auto& primitive: primitives) {
-    count++;
     const size_t idxOffset = meshVertices.size();
+    const size_t materialIdx = primitive.materialIndex.value_or(0);
+
+    const BSDF& material = scene.material(materialIdx);
+    if (material.emission() && length2(emission) == 0.0f) {
+      emission = *material.emission();
+    }
+
 
     if (primitive.type != fastgltf::PrimitiveType::Triangles) continue;
 
@@ -101,25 +110,24 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
     indices.reserve(idxAccesor.count);
     for (const uint32& idx: idxIt) indices.push_back(idx + idxOffset);
 
-    meshIndices.reserve(meshIndices.size() + indices.size());
-    meshIndices.insert(meshIndices.end(), indices.begin(), indices.end());
+    std::vector<Face> faces;
+    faces.reserve(indices.size() / 3);
+    for (size_t i = 0; i < indices.size(); i += 3) {
+      faces.push_back(
+        {
+          indices[i + 0],
+          indices[i + 1],
+          indices[i + 2],
+          materialIdx
+        }
+      );
+    }
+
+    meshFaces.reserve(meshFaces.size() + faces.size());
+    meshFaces.insert(meshFaces.end(), faces.begin(), faces.end());
   }
 
-  std::cout << "Loaded " << count << " primitives\n";
-
-  std::vector<Face> faces;
-  faces.reserve(meshIndices.size() / 3);
-  for (size_t i = 0; i < meshIndices.size(); i += 3) {
-    faces.push_back(
-      {
-        meshIndices[i + 0],
-        meshIndices[i + 1],
-        meshIndices[i + 2]
-      }
-    );
-  }
-
-  return {std::move(meshVertices), faces, materialIdx};
+  return {std::move(meshVertices), meshFaces, emission};
 }
 
 static Node processNode(
@@ -131,7 +139,8 @@ static Node processNode(
   const auto gltfNode = asset.nodes[nodeIdx];
 
   const auto meshIdx = gltfNode.meshIndex;
-  Node node = meshIdx ? Node(processMesh(asset, meshIdx.value())) : Node();
+  Node node = meshIdx ? Node(processMesh(asset, meshIdx.value(), scene))
+                      : Node();
 
   auto trs = std::get_if<fastgltf::TRS>(&gltfNode.transform);
   if (trs) {
@@ -150,8 +159,7 @@ static Node processNode(
   }
 
   const float3* emission;
-  if (node.mesh() &&
-      (emission = scene.material(node.mesh()->materialIdx).emission())) {
+  if (node.mesh() && (emission = node.mesh()->emission())) {
     node.mesh()->lightIdx = int64_t(scene.nLights());
     AreaLight light(node.mesh(), *emission, localTransform);
     scene.addLight(std::move(light));

@@ -17,12 +17,13 @@ struct Vertex {
 };
 
 struct Face {
-  size_t i0, i1, i2;
+  size_t i0, i1, i2, materialIdx;
 };
 
 struct Triangle {
   Vertex v0, v1, v2;
   float3 centroid;
+  size_t materialIdx = 0;
 
   constexpr Triangle(
     const Face& face,
@@ -31,6 +32,7 @@ struct Triangle {
     v0 = vertices[face.i0];
     v1 = vertices[face.i1];
     v2 = vertices[face.i2];
+    materialIdx = face.materialIdx;
     centroid = (v0.p + v1.p + v2.p) / 3.0f;
   }
 

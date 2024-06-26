@@ -56,7 +56,6 @@ bool RayIntegrator::testMesh(
 ) const {
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
   if (didHit) {
-    hit.bsdf = &scene->material(mesh.materialIdx);
     hit.lightIdx = mesh.lightIdx;
     if (mesh.lightIdx != -1) hit.light = &scene->light(mesh.lightIdx);
   }
@@ -167,6 +166,8 @@ bool RayIntegrator::testTriangle(
   } else {
     hit.tg = normalized(cross(hit.n, axis_y<float>));
   }
+  
+  hit.bsdf = &scene->material(tri.materialIdx);
 
   return true;
 }
