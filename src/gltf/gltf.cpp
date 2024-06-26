@@ -80,13 +80,13 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
     size_t nIdx = 0;
     for (const float3& norm: normIt) vertices[nIdx++].normal = norm;
 
-    const auto* tangentIt = primitive.findAttribute("TANGENT");
-    if (tangentIt) {
-      const auto& tanAccessor = asset.accessors[tangentIt->second];
-      const auto& tanIt = fastgltf::iterateAccessor<float3>(asset, tanAccessor);
-      size_t tIdx = 0;
-      for (const float3& tan: tanIt) vertices[tIdx++].tangent = tan;
-    }
+//    const auto* tangentIt = primitive.findAttribute("TANGENT");
+//    if (tangentIt) {
+//      const auto& tanAccessor = asset.accessors[tangentIt->second];
+//      const auto& tanIt = fastgltf::iterateAccessor<float3>(asset, tanAccessor);
+//      size_t tIdx = 0;
+//      for (const float3& tan: tanIt) vertices[tIdx++].tangent = tan;
+//    }
 
     meshVertices.reserve(meshVertices.size() + vertices.size());
     meshVertices.insert(meshVertices.end(), vertices.begin(), vertices.end());
