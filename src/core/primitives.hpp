@@ -12,7 +12,7 @@ struct TriSample {
 };
 
 struct Vertex {
-  float3 p, normal;
+  float3 p, normal, tangent;
   float2 textureCoords;
 };
 

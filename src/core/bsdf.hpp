@@ -37,18 +37,21 @@ public:
   [[nodiscard]] float3 f(
     const float3& wo,
     const float3& wi,
-    const float3& n
+    const float3& n,
+    const float3& t
   ) const;
 
   [[nodiscard]] float pdf(
     const float3& wo,
     const float3& wi,
-    const float3& n
+    const float3& n,
+    const float3& t
   ) const;
 
   [[nodiscard]] BSDFSample sample(
     const float3& wo,
     const float3& n,
+    const float3& t,
     const float2& u,
     float uc,
     float uc2,

@@ -70,13 +70,21 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
     const auto& posIt = fastgltf::iterateAccessor<float3>(asset, posAccesor);
     vertices.reserve(posAccesor.count);
     for (const float3& pos: posIt)
-      vertices.push_back(Vertex{pos, float3(), float2()});
+      vertices.push_back(Vertex{pos, float3(), float3(), float2()});
 
     const auto* normalIt = primitive.findAttribute("NORMAL");
     const auto& normAccessor = asset.accessors[normalIt->second];
     const auto& normIt = fastgltf::iterateAccessor<float3>(asset, normAccessor);
     size_t nIdx = 0;
     for (const float3& norm: normIt) vertices[nIdx++].normal = norm;
+
+    const auto* tangentIt = primitive.findAttribute("TANGENT");
+    if (tangentIt) {
+      const auto& tanAccessor = asset.accessors[tangentIt->second];
+      const auto& tanIt = fastgltf::iterateAccessor<float3>(asset, tanAccessor);
+      size_t tIdx = 0;
+      for (const float3& tan: tanIt) vertices[tIdx++].tangent = tan;
+    }
 
     meshVertices.reserve(meshVertices.size() + vertices.size());
     meshVertices.insert(meshVertices.end(), vertices.begin(), vertices.end());

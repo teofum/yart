@@ -27,6 +27,7 @@ float3 NaiveIntegrator::LiImpl(
   BSDFSample res = hit.bsdf->sample(
     -ray.dir,
     hit.n,
+    hit.tg,
     m_sampler.get2D(),
     m_sampler.get1D(),
     m_sampler.get1D()

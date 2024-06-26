@@ -32,7 +32,15 @@ float3 MISIntegrator::Li(const Ray& r) {
     float2 u = m_sampler.get2D();
     float uc = m_sampler.get1D();
     float uc2 = m_sampler.get1D();
-    BSDFSample res = hit.bsdf->sample(-ray.dir, hit.n, u, uc, uc2, regularized);
+    BSDFSample res = hit.bsdf->sample(
+      -ray.dir,
+      hit.n,
+      hit.tg,
+      u,
+      uc,
+      uc2,
+      regularized
+    );
 
     // Calculate indirect lighting (ie, if the ray happens to hit a light)
     if (res.is(BSDFSample::Emitted)) {
@@ -95,10 +103,10 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   // Sample the light
   LightSample ls = l.light.sample(hit.p, hit.n, u, uc);
 
-  float3 f = hit.bsdf->f(wo, ls.wi, hit.n);
+  float3 f = hit.bsdf->f(wo, ls.wi, hit.n, hit.tg);
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};
 
-  float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n);
+  float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg);
   float pdfLight = l.p * ls.pdf * length2(hit.p - ls.p) / absDot(ls.n, -ls.wi);
 
   return ls.Li * f * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);

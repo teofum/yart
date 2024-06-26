@@ -44,6 +44,7 @@ bool RayIntegrator::testNode(
 
   hit.p = node.transform(hit.p, Transform::Type::Point);
   hit.n = node.transform(hit.n, Transform::Type::Normal);
+  hit.tg = node.transform(hit.tg, Transform::Type::Vector);
   return true;
 }
 
@@ -160,6 +161,7 @@ bool RayIntegrator::testTriangle(
 
   const float w = 1.0f - u - v;
   hit.n = w * tri.v0.normal + u * tri.v1.normal + v * tri.v2.normal;
+  hit.tg = w * tri.v0.tangent + u * tri.v1.tangent + v * tri.v2.tangent;
 
   return true;
 }
