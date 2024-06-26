@@ -61,7 +61,11 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
 
   std::vector<Vertex> meshVertices;
   std::vector<size_t> meshIndices;
+  uint32_t count = 0;
   for (const auto& primitive: primitives) {
+    count++;
+    const size_t idxOffset = meshVertices.size();
+
     if (primitive.type != fastgltf::PrimitiveType::Triangles) continue;
 
     std::vector<Vertex> vertices;
@@ -95,11 +99,13 @@ static Mesh processMesh(const fastgltf::Asset& asset, size_t meshIdx) noexcept {
     const auto& idxAccesor = asset.accessors[indexAccessorIdx];
     const auto& idxIt = fastgltf::iterateAccessor<uint32>(asset, idxAccesor);
     indices.reserve(idxAccesor.count);
-    for (const uint32& idx: idxIt) indices.push_back(idx);
+    for (const uint32& idx: idxIt) indices.push_back(idx + idxOffset);
 
     meshIndices.reserve(meshIndices.size() + indices.size());
     meshIndices.insert(meshIndices.end(), indices.begin(), indices.end());
   }
+
+  std::cout << "Loaded " << count << " primitives\n";
 
   std::vector<Face> faces;
   faces.reserve(meshIndices.size() / 3);

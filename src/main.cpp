@@ -24,16 +24,16 @@ int main() {
   yart::Camera camera(
     {buffer.width(), buffer.height()},
     radians(55.0f),
-//    {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
-    {-7.0f, 3.0f, 0.0f}, axis_x<float> // Sponza
+    {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
+//    {-7.0f, 3.0f, 0.0f}, axis_x<float> // Sponza
   );
 
 //  camera.moveAndLookAt({0.0, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
 
-//  yart::Scene scene = load("models/cornell_dragon2.glb").value();
+  yart::Scene scene = load("models/cornell_multimat_test.glb").value();
 //  yart::Scene scene = load("models/cornell_mat_aniso_gloss.glb").value();
 //  yart::Scene scene = load("models/furnace_glass_dl.glb").value();
-  yart::Scene scene = load("models/sponza_nomats.glb").value();
+//  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;

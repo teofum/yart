@@ -13,7 +13,7 @@ struct TriSample {
 
 struct Vertex {
   float3 p, normal, tangent;
-  float2 textureCoords;
+  float2 texCoords;
 };
 
 struct Face {
