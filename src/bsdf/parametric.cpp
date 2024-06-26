@@ -12,7 +12,7 @@ ParametricBSDF::ParametricBSDF(
   float anisoRotation,
   const float3& emission
 ) noexcept
-  : m_glossy(baseColor, roughness, ior, anisotropic, emission),
+  : m_glossy(baseColor, roughness, ior, anisotropic, anisoRotation, emission),
     m_dielectric(roughness, ior, anisotropic),
     m_metallic(baseColor, roughness, anisotropic, anisoRotation, ior),
     m_cTrans(transmission), m_cMetallic(metallic) {}

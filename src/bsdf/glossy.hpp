@@ -14,6 +14,7 @@ public:
     float roughness = 0.0f,
     float ior = 1.5f,
     float anisotropic = 0.0f,
+    float anisoRotation = 0.0f,
     const float3& emission = float3()
   ) noexcept;
 
@@ -28,6 +29,7 @@ private:
   bool m_hasEmission;
   float m_ior, m_roughness;
   GGX m_microfacets, m_mfRoughened;
+  float3x3 m_localRotation, m_invRotation;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 

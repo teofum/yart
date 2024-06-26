@@ -8,6 +8,7 @@ GlossyBSDF::GlossyBSDF(
   float roughness,
   float ior,
   float anisotropic,
+  float anisoRotation,
   const float3& emission
 ) noexcept: m_base(baseColor),
             m_emission(emission),
@@ -15,10 +16,15 @@ GlossyBSDF::GlossyBSDF(
             m_ior(ior),
             m_roughness(roughness),
             m_microfacets(roughness, anisotropic),
-            m_mfRoughened(roughen(roughness), anisotropic) {}
+            m_mfRoughened(roughen(roughness), anisotropic) {
+  m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
+  m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
+}
 
-float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
+float3 GlossyBSDF::fImpl(const float3& _wo, const float3& _wi) const {
   if (m_microfacets.smooth()) return {};
+
+  float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
   if (cosTheta_i == 0 || cosTheta_o == 0) return {};
@@ -53,8 +59,10 @@ float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
   return float3(Fss * Mss + Mms * Fms) + diffuse;
 }
 
-float GlossyBSDF::pdfImpl(const float3& wo, const float3& wi) const {
+float GlossyBSDF::pdfImpl(const float3& _wo, const float3& _wi) const {
   if (m_microfacets.smooth()) return 0;
+
+  float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
   float3 wm = wo + wi;
@@ -74,13 +82,13 @@ float GlossyBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 }
 
 BSDFSample GlossyBSDF::sampleImpl(
-  const float3& wo,
+  const float3& _wo,
   const float2& u,
   float uc,
   float uc2,
   bool regularized
 ) const {
-  const float cosTheta_o = wo.z();
+  const float cosTheta_o = _wo.z();
 
   const float Favg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
   const float Eavg = lut::E_msAvg(m_roughness);
@@ -92,7 +100,7 @@ BSDFSample GlossyBSDF::sampleImpl(
   // Diffuse scattering
   if (uc < kappa) {
     float3 wi = samplers::sampleCosineHemisphere(u);
-    if (wo.z() < 0) wi *= -1;
+    if (_wo.z() < 0) wi *= -1;
 
     const float cosTheta_i = wi.z();
 
@@ -116,8 +124,8 @@ BSDFSample GlossyBSDF::sampleImpl(
 
   // Handle perfect specular case
   if (m_microfacets.smooth()) {
-    const float F = fresnelDielectric(wo.z(), m_ior);
-    float3 wi(-wo.x(), -wo.y(), wo.z());
+    const float F = fresnelDielectric(_wo.z(), m_ior);
+    float3 wi(-_wo.x(), -_wo.y(), _wo.z());
 
     return {
       BSDFSample::Reflected | BSDFSample::Specular,
@@ -130,6 +138,7 @@ BSDFSample GlossyBSDF::sampleImpl(
   }
 
   const GGX& mfd = regularized ? m_mfRoughened : m_microfacets;
+  float3 wo = m_localRotation * _wo;
 
   // Rough (glossy) reflection
   float3 wm = mfd.sampleVisibleMicrofacet(wo, u);
@@ -151,7 +160,7 @@ BSDFSample GlossyBSDF::sampleImpl(
     BSDFSample::Reflected | BSDFSample::Glossy,
     float3(Fss * Mss + Fms * Mms),
     float3(),
-    wi,
+    m_invRotation * wi,
     pdf,
     m_roughness
   };

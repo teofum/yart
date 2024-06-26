@@ -31,7 +31,7 @@ int main() {
   camera.moveAndLookAt({0.0, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
 
 //  yart::Scene scene = load("models/cornell_dragon2.glb").value();
-  yart::Scene scene = load("models/cornell_mat_aniso.glb").value();
+  yart::Scene scene = load("models/cornell_mat_aniso_gloss.glb").value();
 //  yart::Scene scene = load("models/furnace_glass_dl.glb").value();
 //  yart::Scene scene = load("models/sponza_nomats.glb").value();
 
