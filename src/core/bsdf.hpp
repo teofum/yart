@@ -9,6 +9,11 @@
 namespace yart {
 using namespace math;
 
+// Util function
+[[nodiscard]] constexpr float roughen(float roughness) noexcept {
+  return max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f));
+}
+
 struct BSDFSample {
   enum Scatter {
     Absorbed = 0,

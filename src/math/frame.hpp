@@ -32,16 +32,16 @@ public:
   }
 
   constexpr explicit Frame(const float3& n, const float3& t) noexcept: z(n) {
-    if (absDot(t, n) > 0.1f) {
+    if (absDot(t, n) > 0.9f) [[unlikely]] {
       // Ignore degenerate tangents
       const float3 a = std::abs(n.x()) > 0.5 ? axis_y<float> : axis_x<float>;
 
       y = normalized(cross(n, a));
       x = cross(n, y);
-    } else {
+    } else [[likely]] {
       // Otherwise, ensure orthogonality
-      x = gramSchmidt(t, n);
-      y = cross(z, x);
+      y = normalized(cross(n, t));
+      x = cross(y, z);
     }
   }
 

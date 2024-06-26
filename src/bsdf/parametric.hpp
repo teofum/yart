@@ -19,6 +19,7 @@ public:
     float transmission = 0.0f,
     float ior = 1.5f,
     float anisotropic = 0.0f,
+    float anisoRotation = 0.0f,
     const float3& emission = float3()
   ) noexcept;
 

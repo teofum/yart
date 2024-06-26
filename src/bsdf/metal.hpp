@@ -13,6 +13,7 @@ public:
     const float3& reflectance,
     float roughness = 0.0f,
     float anisotropic = 0.0f,
+    float anisoRotation = 0.0f,
     float ior = 1.5f
   ) noexcept;
 
@@ -26,6 +27,7 @@ private:
   float3 m_baseColor;
   float m_ior, m_roughness;
   GGX m_microfacets, m_mfRoughened;
+  float3x3 m_localRotation, m_invRotation;
 
   [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
 

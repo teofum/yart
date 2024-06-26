@@ -160,8 +160,13 @@ bool RayIntegrator::testTriangle(
   hit.p = ray(t);
 
   const float w = 1.0f - u - v;
+  // TODO: defer these calculations until last hit
   hit.n = w * tri.v0.normal + u * tri.v1.normal + v * tri.v2.normal;
-  hit.tg = w * tri.v0.tangent + u * tri.v1.tangent + v * tri.v2.tangent;
+  if (absDot(hit.n, axis_y<float>) > 0.999f) {
+    hit.tg = axis_x<float>;
+  } else {
+    hit.tg = normalized(cross(hit.n, axis_y<float>));
+  }
 
   return true;
 }

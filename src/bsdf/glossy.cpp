@@ -15,10 +15,7 @@ GlossyBSDF::GlossyBSDF(
             m_ior(ior),
             m_roughness(roughness),
             m_microfacets(roughness, anisotropic),
-            m_mfRoughened(
-              max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f)),
-              anisotropic
-            ) {}
+            m_mfRoughened(roughen(roughness), anisotropic) {}
 
 float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
   if (m_microfacets.smooth()) return {};

@@ -7,17 +7,20 @@ MetalBSDF::MetalBSDF(
   const float3& reflectance,
   float roughness,
   float anisotropic,
+  float anisoRotation,
   float ior
 ) noexcept
   : m_baseColor(reflectance), m_ior(ior), m_roughness(roughness),
     m_microfacets(roughness, anisotropic),
-    m_mfRoughened(
-      max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f)),
-      anisotropic
-    ) {}
+    m_mfRoughened(roughen(roughness), anisotropic) {
+  m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
+  m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
+}
 
-float3 MetalBSDF::fImpl(const float3& wo, const float3& wi) const {
+float3 MetalBSDF::fImpl(const float3& _wo, const float3& _wi) const {
   if (m_microfacets.smooth()) return {};
+
+  float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
   if (cosTheta_i == 0 || cosTheta_o == 0) return {};
@@ -36,8 +39,10 @@ float3 MetalBSDF::fImpl(const float3& wo, const float3& wi) const {
   return fss + fms;
 }
 
-float MetalBSDF::pdfImpl(const float3& wo, const float3& wi) const {
+float MetalBSDF::pdfImpl(const float3& _wo, const float3& _wi) const {
   if (m_microfacets.smooth()) return 0;
+
+  float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;
 
   float3 wm = wo + wi;
   if (length2(wm) == 0.0f) return 0;
@@ -47,24 +52,26 @@ float MetalBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 }
 
 BSDFSample MetalBSDF::sampleImpl(
-  const float3& wo,
+  const float3& _wo,
   const float2& u,
   float uc,
   float uc2,
   bool regularized
 ) const {
   if (m_microfacets.smooth()) {
-    const float3 F = fresnelSchlick(m_baseColor, wo.z());
+    const float3 F = fresnelSchlick(m_baseColor, _wo.z());
 
     return {
       BSDFSample::Reflected | BSDFSample::Specular,
-      F / std::abs(wo.z()),
+      F / std::abs(_wo.z()),
       float3(),
-      float3(-wo.x(), -wo.y(), wo.z()),
+      float3(-_wo.x(), -_wo.y(), _wo.z()),
       1.0f,
       0.0f
     };
   }
+
+  float3 wo = m_localRotation * _wo;
 
   const GGX& mfd = regularized ? m_mfRoughened : m_microfacets;
 
@@ -86,7 +93,7 @@ BSDFSample MetalBSDF::sampleImpl(
     BSDFSample::Reflected | BSDFSample::Glossy,
     Mss + Mms,
     float3(),
-    wi,
+    m_invRotation * wi,
     pdf,
     m_roughness
   };
