@@ -31,7 +31,7 @@ float3 GlossyBSDF::fImpl(const float3& wo, const float3& wi) const {
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
   // Dielectric single scattering component
-  const float Fss = fresnelSchlickDielectric(dot(wo, wm), m_ior);
+  const float Fss = fresnelDielectric(dot(wo, wm), m_ior);
   const float Mss = m_microfacets.mdf(wm) * m_microfacets.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
@@ -64,7 +64,7 @@ float GlossyBSDF::pdfImpl(const float3& wo, const float3& wi) const {
   if (length2(wm) == 0.0f) return 0;
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
-  const float Fss = fresnelSchlickDielectric(dot(wo, wm), m_ior);
+  const float Fss = fresnelDielectric(dot(wo, wm), m_ior);
 
   const float FAvg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
   const float EmsAvg = lut::E_msAvg(m_roughness);
@@ -119,7 +119,7 @@ BSDFSample GlossyBSDF::sampleImpl(
 
   // Handle perfect specular case
   if (m_microfacets.smooth()) {
-    const float F = fresnelSchlickDielectric(wo.z(), m_ior);
+    const float F = fresnelDielectric(wo.z(), m_ior);
     float3 wi(-wo.x(), -wo.y(), wo.z());
 
     return {
@@ -140,7 +140,7 @@ BSDFSample GlossyBSDF::sampleImpl(
   const float cosTheta_i = wi.z();
   if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
-  const float Fss = fresnelSchlickDielectric(dot(wo, wm), m_ior);
+  const float Fss = fresnelDielectric(dot(wo, wm), m_ior);
   const float Mss = mfd.mdf(wm) * mfd.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 

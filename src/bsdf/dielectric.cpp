@@ -31,40 +31,26 @@ float3 DielectricBSDF::fImpl(const float3& wo, const float3& wi) const {
     return {}; // Discard back-facing microsurfaces
 
   // Single-scattering fresnel
-  const float Fss = fresnelSchlickDielectric(absDot(wo, wm), ior);
+  const float Fss = fresnelDielectric(absDot(wo, wm), ior);
   const float T = 1.0f - Fss;
+
+  const float E_o = lut::ggxGlassE(ior, m_roughness, std::abs(cosTheta_o));
 
   if (isReflection) {
     // Single-scattering term
     const float Mss = m_microfacets.mdf(wm) * m_microfacets.g(wo, wi) /
                       (4 * cosTheta_o * cosTheta_i);
 
-    // Multiscatter fresnel
-    const float r = (1.0f - ior) / (1.0f + ior);
-    const float F0 = r * r;
-
-    const float fAvg = (1.0f + 20.0f * F0) / 21.0f;
-    const float EmsAvg = lut::E_msAvg(m_roughness);
-    const float Fms = fAvg * fAvg * EmsAvg / (1.0f - fAvg * (1.0f - EmsAvg));
-
-    // Multiscatter term
-    const float Ems_o = lut::E_ms(std::abs(cosTheta_o), m_roughness);
-    const float Mms = (1.0f - Ems_o) *
-                      (1.0f - lut::E_ms(std::abs(cosTheta_i), m_roughness)) /
-                      (float(pi) * (1.0f - EmsAvg));
-
-    return float3(Fss * Mss + Fms * Mms);
+    return float3(Fss * Mss / E_o);
   } else {
     const float temp = dot(wi, wm) * ior + dot(wo, wm);
     const float dwm_dwi = absDot(wi, wm) * absDot(wo, wm) / (temp * temp);
-
-    const float E_i = lut::ggxGlassE(ior, m_roughness, std::abs(cosTheta_i));
 
     const float Tss =
       m_microfacets.mdf(wm) * m_microfacets.g(wo, wi) * dwm_dwi /
       (std::abs(cosTheta_i * cosTheta_o));
 
-    return float3(T * Tss / E_i);
+    return float3(T * Tss / E_o);
   }
 }
 
@@ -108,7 +94,7 @@ BSDFSample DielectricBSDF::sampleImpl(
 
   // Handle perfect specular case
   if (m_microfacets.smooth()) {
-    float F = fresnelSchlickDielectric(std::abs(wo.z()), ior);
+    float F = fresnelDielectric(std::abs(wo.z()), ior);
     float T = 1.0f - F;
 
     if (uc < F) {
@@ -119,7 +105,8 @@ BSDFSample DielectricBSDF::sampleImpl(
         float3(F / std::abs(wi.z())),
         float3(),
         wi,
-        F
+        F,
+        0.0f
       };
     } else {
       float3 wi;
@@ -130,7 +117,8 @@ BSDFSample DielectricBSDF::sampleImpl(
         float3(T / std::abs(wi.z())),
         float3(),
         wi,
-        T
+        T,
+        0.0f
       };
     }
   }
@@ -138,19 +126,10 @@ BSDFSample DielectricBSDF::sampleImpl(
   const GGX& mfd = regularized ? m_mfRoughened : m_microfacets;
 
   float3 wm = mfd.sampleVisibleMicrofacet(wo, u);
-  const float Fss = fresnelSchlickDielectric(absDot(wo, wm), ior);
-
-//  float Favg;
-//  if (ior >= 1.0f) {
-//    Favg = (ior - 1.0f) / (4.08567f + 1.00071f * ior);
-//  } else {
-//    Favg = ior * (ior * (ior * -0.130607f - 0.965241f) + 0.1014f) + 0.997118f;
-//  }
+  const float Fss = fresnelDielectric(absDot(wo, wm), ior);
 
   const float cosTheta_o = std::abs(wo.z());
   const float E_o = lut::ggxGlassE(ior, m_roughness, cosTheta_o);
-//  const float Eavg = lut::ggxGlassEavg(ior, m_roughness);
-//  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
   if (uc < Fss) {
     const float3 wi = reflect(wo, wm);
@@ -160,11 +139,6 @@ BSDFSample DielectricBSDF::sampleImpl(
     const float Mss = mfd.mdf(wm) * mfd.g(wo, wi) /
                       (4 * cosTheta_o * cosTheta_i);
 
-//    const float E_i = lut::ggxGlassE(ior, m_roughness, cosTheta_i);
-//    const float Mms = (1.0f - E_o) * (1.0f - E_i) /
-//                      (float(pi) * (1.0f - Eavg));
-//    const float scale = 1.0f + (1.0f - E_o) / E_o;
-
     const float pdf = mfd.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
 
     return {
@@ -172,7 +146,8 @@ BSDFSample DielectricBSDF::sampleImpl(
       float3(Fss * Mss / E_o),
       float3(),
       wi,
-      pdf
+      pdf,
+      m_roughness
     };
   } else {
     float3 wi;
@@ -188,20 +163,13 @@ BSDFSample DielectricBSDF::sampleImpl(
       dot(wi, wm) * dot(wo, wm) / (wi.z() * wo.z() * temp * temp)
     );
 
-//    const float cosTheta_i = std::abs(wi.z());
-//    const float invIor = 1.0f / ior;
-//    const float E_iInv = lut::ggxGlassE(invIor, m_roughness, cosTheta_i);
-//    const float EavgInv = lut::ggxGlassEavg(invIor, m_roughness);
-//    const float Tms = (1.0f - E_o) * (1.0f - E_iInv) /
-//                      (float(pi) * (1.0f - EavgInv));
-//    const float scale = 1.0f + (1.0f - E_o) / E_o;
-
     return {
       BSDFSample::Transmitted | BSDFSample::Glossy,
       float3((1.0f - Fss) * Tss / E_o),
       float3(),
       wi,
-      pdf
+      pdf,
+      m_roughness
     };
   }
 }
