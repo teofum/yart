@@ -45,8 +45,10 @@ SampledLight PowerLightSampler::sample(
   float u
 ) const {
   u *= m_totalPower;
-  size_t i = 0;
-  while (i < m_lightPowers.size() - 1 && m_lightPowers[i] < u) i++;
+  int64_t i = findFirst(
+    int64_t(m_lightPowers.size()),
+    [&](int64_t i) { return m_lightPowers[i] < u; }
+  );
 
   float pl = m_scene->light(i).power() / m_totalPower;
   return {m_scene->light(i), pl};

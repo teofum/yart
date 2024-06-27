@@ -85,7 +85,7 @@ namespace yart::math {
 ) noexcept {
   const float k = 1.0f - cosTheta;
   const float k2 = k * k;
-  return r + (float3(1.0f) - r) * k2 * k2 * k;
+  return r + (float3(1.0f) - r) * (k2 * k2 * k);
 }
 
 [[nodiscard]] constexpr float fresnelSchlickDielectric(
