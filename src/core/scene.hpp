@@ -15,7 +15,11 @@ public:
   constexpr Node() noexcept = default;
 
   constexpr explicit Node(const Mesh& mesh) noexcept {
-    m_meshBounds = fbounds3::fromPoints(mesh.vertexPositions());
+    for (const TrianglePositions& tri: mesh.triangles()) {
+      m_meshBounds.expandToInclude(tri.p0);
+      m_meshBounds.expandToInclude(tri.p1);
+      m_meshBounds.expandToInclude(tri.p2);
+    }
     m_bounds = m_meshBounds;
 
     m_mesh = std::make_unique<Mesh>(mesh);

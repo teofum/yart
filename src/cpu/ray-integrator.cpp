@@ -56,7 +56,19 @@ bool RayIntegrator::testMesh(
 ) const {
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
   if (didHit) {
-    hit.lightIdx = mesh.lightIdx;
+    float u = hit.u, v = hit.v, w = 1.0f - u - v;
+    const TriangleData& d = mesh.data(hit.idx);
+
+    hit.n = w * d.n[0] + u * d.n[1] + v * d.n[2];
+    if (absDot(hit.n, axis_y<float>) > 0.999f) {
+      hit.tg = axis_x<float>;
+    } else {
+      hit.tg = normalized(cross(hit.n, axis_y<float>));
+    }
+
+    hit.bsdf = &scene->material(mesh.material(hit.idx));
+
+    hit.lightIdx = int32_t(mesh.lightIdx);
     if (mesh.lightIdx != -1) hit.light = &scene->light(mesh.lightIdx);
   }
 
@@ -82,7 +94,8 @@ bool RayIntegrator::testBVH(
     if (d < hit.t) {
       if (node->span > 0) {
         for (size_t i = 0; i < node->span; i++) {
-          didHit |= testTriangle(ray, tMin, hit, bvh.tri(node->first + i));
+          uint32_t idx = node->first + i;
+          didHit |= testTriangle(ray, tMin, hit, bvh.tri(idx), bvh.idx(idx));
         }
         if (stackIdx == 0) break;
         node = stack[--stackIdx];
@@ -128,10 +141,11 @@ bool RayIntegrator::testTriangle(
   const Ray& ray,
   float tMin,
   Hit& hit,
-  const Triangle& tri
+  const TrianglePositions& tri,
+  uint32_t idx
 ) const {
-  const float3 edge1 = tri.v1.p - tri.v0.p;
-  const float3 edge2 = tri.v2.p - tri.v0.p;
+  const float3 edge1 = tri.p1 - tri.p0;
+  const float3 edge2 = tri.p2 - tri.p0;
 
   // Cramer's Rule
   const float3 rayEdge2 = cross(ray.dir, edge2);
@@ -141,7 +155,7 @@ bool RayIntegrator::testTriangle(
   if (std::abs(det) < epsilon) return false;
 
   const float invDet = 1.0f / det;
-  const float3 b = ray.origin - tri.v0.p; // We're solving for Ax = b
+  const float3 b = ray.origin - tri.p0; // We're solving for Ax = b
 
   const float u = dot(b, rayEdge2) * invDet;
   if (u < 0.0f || u > 1.0f) return false;
@@ -156,19 +170,11 @@ bool RayIntegrator::testTriangle(
   if (t <= tMin || hit.t <= t) return false;
 
   hit.t = t;
+  hit.u = u;
+  hit.v = v;
   hit.p = ray(t);
-
-  const float w = 1.0f - u - v;
-  // TODO: defer these calculations until last hit
-  hit.n = w * tri.v0.normal + u * tri.v1.normal + v * tri.v2.normal;
-  if (absDot(hit.n, axis_y<float>) > 0.999f) {
-    hit.tg = axis_x<float>;
-  } else {
-    hit.tg = normalized(cross(hit.n, axis_y<float>));
-  }
+  hit.idx = idx;
   
-  hit.bsdf = &scene->material(tri.materialIdx);
-
   return true;
 }
 

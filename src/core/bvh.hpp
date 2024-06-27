@@ -18,11 +18,19 @@ struct BVHNode {
 
 class BVH {
 public:
-  constexpr explicit BVH(const std::vector<Triangle>& tris) noexcept
-    : m_tris(&tris), m_triIdx(tris.size()), m_nodes(tris.size() * 2 - 1) {
+  void init(
+    const std::vector<TrianglePositions>* tris,
+    const std::vector<float3>* centroids
+  ) noexcept {
+    m_tris = tris;
+    m_centroids = centroids;
+
+    m_indices.resize(tris->size());
+    m_nodes.resize(tris->size() * 2 - 1);
+
     m_buildStart = std::chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < m_triIdx.size(); i++) {
-      m_triIdx[i] = i;
+    for (size_t i = 0; i < m_indices.size(); i++) {
+      m_indices[i] = i;
     }
 
     BVHNode& root = m_nodes[m_rootIdx];
@@ -30,44 +38,56 @@ public:
     root.span = m_tris->size();
 
     updateBounds(root);
+    subdivide(root);
+    printStats();
   }
 
-  constexpr BVH(const BVH& other, const std::vector<Triangle>& tris) noexcept
-    : m_tris(&tris), m_triIdx(other.m_triIdx), m_nodes(other.m_nodes),
-      m_rootIdx(other.m_rootIdx), m_nodesUsed(other.m_nodesUsed) {}
-
-  constexpr BVH(BVH&& other, const std::vector<Triangle>& tris) noexcept
-    : m_tris(&tris),
-      m_triIdx(std::move(other.m_triIdx)),
-      m_nodes(std::move(other.m_nodes)),
-      m_rootIdx(other.m_rootIdx),
-      m_nodesUsed(other.m_nodesUsed) {}
+//  constexpr BVH(const BVH& other, const std::vector<Triangle>& tris) noexcept
+//    : m_tris(&tris), m_triIdx(other.m_triIdx), m_nodes(other.m_nodes),
+//      m_rootIdx(other.m_rootIdx), m_nodesUsed(other.m_nodesUsed) {}
+//
+//  constexpr BVH(BVH&& other, const std::vector<Triangle>& tris) noexcept
+//    : m_tris(&tris),
+//      m_triIdx(std::move(other.m_triIdx)),
+//      m_nodes(std::move(other.m_nodes)),
+//      m_rootIdx(other.m_rootIdx),
+//      m_nodesUsed(other.m_nodesUsed) {}
 
   [[nodiscard]] constexpr const BVHNode& operator[](size_t i) const {
     return m_nodes[i];
   };
 
-  [[nodiscard]] constexpr const Triangle& tri(size_t i) const {
-    return (*m_tris)[m_triIdx[i]];
+  [[nodiscard]] constexpr const TrianglePositions& tri(size_t i) const {
+    return (*m_tris)[m_indices[i]];
+  };
+
+  [[nodiscard]] constexpr uint32_t idx(size_t i) const {
+    return m_indices[i];
   };
 
   friend class Mesh;
 
 protected:
-  const std::vector<Triangle>* m_tris;
-  std::vector<size_t> m_triIdx;
+  // Pointers to mesh data
+  const std::vector<TrianglePositions>* m_tris = nullptr;
+  const std::vector<float3>* m_centroids = nullptr;
+
+  // Internal BVH data
+  std::vector<size_t> m_indices;
   std::vector<BVHNode> m_nodes;
   size_t m_rootIdx = 0, m_nodesUsed = 1;
+
+  // Perf data
   std::chrono::time_point<std::chrono::high_resolution_clock> m_buildStart;
 
   constexpr void updateBounds(BVHNode& node) {
     size_t first = node.first;
     for (size_t i = 0; i < node.span; i++) {
-      const Triangle& leafTri = (*m_tris)[m_triIdx[first + i]];
+      const TrianglePositions& leafTri = (*m_tris)[m_indices[first + i]];
       fbounds3 tribounds = fbounds3::fromPoints(
-        leafTri.v0.p,
-        leafTri.v1.p,
-        leafTri.v2.p
+        leafTri.p0,
+        leafTri.p1,
+        leafTri.p2
       );
       node.bounds = fbounds3::join(
         node.bounds,
@@ -82,8 +102,8 @@ protected:
   ) const noexcept {
     fbounds3 bounds;
     for (size_t i = first; i < first + span; i++) {
-      const Triangle& tri = (*m_tris)[m_triIdx[i]];
-      bounds.expandToInclude(tri.centroid);
+      const float3& centroid = (*m_centroids)[m_indices[i]];
+      bounds.expandToInclude(centroid);
     }
 
     return bounds;
@@ -97,11 +117,11 @@ protected:
     int64_t i = node.first;
     int64_t j = i + node.span - 1;
     while (i <= j) {
-      float centroid = (*m_tris)[m_triIdx[i]].centroid[axis];
+      float centroid = (*m_centroids)[m_indices[i]][axis];
       if (centroid < splitPos) {
         i++;
       } else {
-        std::iter_swap(m_triIdx.begin() + i, m_triIdx.begin() + (j--));
+        std::iter_swap(m_indices.begin() + i, m_indices.begin() + (j--));
       }
     }
 
@@ -163,24 +183,6 @@ protected:
 };
 
 class MedianSplitBVH : public BVH {
-public:
-  constexpr explicit MedianSplitBVH(const std::vector<Triangle>& tris) noexcept
-    : BVH(tris) {
-    BVHNode& root = m_nodes[m_rootIdx];
-    subdivide(root);
-    printStats();
-  }
-
-  constexpr MedianSplitBVH(
-    const BVH& other,
-    const std::vector<Triangle>& tris
-  ) noexcept: BVH(other, tris) {}
-
-  constexpr MedianSplitBVH(
-    BVH&& other,
-    const std::vector<Triangle>& tris
-  ) noexcept: BVH(std::move(other), tris) {}
-
 private:
   constexpr bool getSplit(
     const BVHNode& node,
@@ -201,24 +203,6 @@ private:
 };
 
 class SahBVH : public BVH {
-public:
-  constexpr explicit SahBVH(const std::vector<Triangle>& tris) noexcept
-    : BVH(tris) {
-    BVHNode& root = m_nodes[m_rootIdx];
-    subdivide(root);
-    printStats();
-  }
-
-  constexpr SahBVH(
-    const BVH& other,
-    const std::vector<Triangle>& tris
-  ) noexcept: BVH(other, tris) {}
-
-  constexpr SahBVH(
-    BVH&& other,
-    const std::vector<Triangle>& tris
-  ) noexcept: BVH(std::move(other), tris) {}
-
 private:
   struct Bin {
     uint32_t count = 0;
@@ -243,16 +227,17 @@ private:
       Bin bins[nBins];
       float scale = float(nBins) / bsize;
       for (uint32_t i = 0; i < node.span; i++) {
-        const Triangle& tri = (*m_tris)[m_triIdx[node.first + i]];
+        const TrianglePositions& tri = (*m_tris)[m_indices[node.first + i]];
+        const float3& centroid = (*m_centroids)[m_indices[node.first + i]];
         auto triBounds = fbounds3::fromPoints(
-          tri.v0.p,
-          tri.v1.p,
-          tri.v2.p
+          tri.p0,
+          tri.p1,
+          tri.p2
         );
 
         auto b = std::min(
           nBins - 1,
-          uint32_t(scale * (tri.centroid[a] - bmin))
+          uint32_t(scale * (centroid[a] - bmin))
         );
         bins[b].count++;
         bins[b].bounds = fbounds3::join(bins[b].bounds, triBounds);

@@ -49,7 +49,8 @@ protected:
     const Ray& ray,
     float tMin,
     Hit& hit,
-    const Triangle& tri
+    const TrianglePositions& tri,
+    uint32_t idx
   ) const;
 
   [[nodiscard]] bool testBoundingBox(

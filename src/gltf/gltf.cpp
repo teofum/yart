@@ -67,7 +67,7 @@ static Mesh processMesh(
 
   for (const auto& primitive: primitives) {
     const size_t idxOffset = meshVertices.size();
-    const size_t materialIdx = primitive.materialIndex.value_or(0);
+    const uint32_t materialIdx = primitive.materialIndex.value_or(0);
 
     const BSDF& material = scene.material(materialIdx);
     if (material.emission() && length2(emission) == 0.0f) {

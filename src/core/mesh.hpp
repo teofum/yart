@@ -16,19 +16,35 @@ class Mesh {
 private:
   using BVHType = SahBVH;
 
-  std::vector<Vertex> m_vertices;
-  std::vector<Triangle> m_triangles;
+  std::vector<TrianglePositions> m_triangles;
+  std::vector<TriangleData> m_triangleData;
+  std::vector<float3> m_centroids;
+  std::vector<uint32_t> m_materials;
+
   BVHType m_bvh;
   float3 m_emission;
 
-  constexpr std::vector<Triangle> buildTris(const std::vector<Face>& faces) noexcept {
-    std::vector<Triangle> tris;
-    tris.reserve(faces.size());
+  constexpr void buildTris(
+    const std::vector<Vertex>& vertices,
+    const std::vector<Face>& faces
+  ) noexcept {
+    m_triangles.resize(faces.size());
+    m_triangleData.resize(faces.size());
+    m_centroids.resize(faces.size());
+    m_materials.resize(faces.size());
 
-    for (const Face& face: faces)
-      tris.emplace_back(face, m_vertices);
-
-    return tris;
+    size_t i = 0;
+    for (const Face& face: faces) {
+      createTriangle(
+        face,
+        vertices,
+        &m_triangles[i],
+        &m_triangleData[i],
+        &m_centroids[i],
+        &m_materials[i]
+      );
+      i++;
+    }
   }
 
 public:
@@ -43,47 +59,52 @@ public:
     const std::vector<Vertex>& vertices,
     const std::vector<Face>& faces,
     const float3& emission = {}
-  ) noexcept
-    : m_vertices(vertices),
-      m_triangles(buildTris(faces)),
-      m_bvh(m_triangles),
-      m_emission(emission) {}
-
-  constexpr Mesh(
-    std::vector<Vertex>&& vertices,
-    const std::vector<Face>& faces,
-    const float3& emission = {}
-  ) noexcept
-    : m_vertices(std::move(vertices)),
-      m_triangles(buildTris(faces)),
-      m_bvh(m_triangles),
-      m_emission(emission) {}
+  ) noexcept: m_emission(emission) {
+    buildTris(vertices, faces);
+    m_bvh.init(&m_triangles, &m_centroids);
+  }
 
   constexpr Mesh(const Mesh& other) noexcept
-    : m_vertices(other.m_vertices),
-      m_triangles(other.m_triangles),
-      m_bvh(other.m_bvh, m_triangles),
-      m_emission(other.m_emission) {}
+    : m_triangles(other.m_triangles),
+      m_triangleData(other.m_triangleData),
+      m_centroids(other.m_centroids),
+      m_materials(other.m_materials),
+      m_emission(other.m_emission) {
+    m_bvh.init(&m_triangles, &m_centroids);
+  }
 
   constexpr Mesh& operator=(const Mesh& other) noexcept {
-    m_vertices = other.m_vertices;
     m_triangles = other.m_triangles;
-    m_bvh = BVHType(other.m_bvh, other.m_triangles);
+    m_triangleData = other.m_triangleData;
+    m_centroids = other.m_centroids;
+    m_materials = other.m_materials;
     m_emission = other.m_emission;
+
+    m_bvh.init(&m_triangles, &m_centroids);
     return *this;
   }
 
   constexpr Mesh(Mesh&& other) noexcept
-    : m_vertices(std::move(other.m_vertices)),
-      m_triangles(std::move(other.m_triangles)),
-      m_bvh(std::move(other.m_bvh), m_triangles),
-      m_emission(other.m_emission) {}
+    : m_triangles(std::move(other.m_triangles)),
+      m_triangleData(std::move(other.m_triangleData)),
+      m_centroids(std::move(other.m_centroids)),
+      m_materials(std::move(other.m_materials)),
+      m_emission(other.m_emission) {
+    m_bvh = std::move(other.m_bvh);
+    m_bvh.m_tris = &m_triangles;
+    m_bvh.m_centroids = &m_centroids;
+  }
 
   constexpr Mesh& operator=(Mesh&& other) noexcept {
-    m_vertices = std::move(other.m_vertices);
     m_triangles = std::move(other.m_triangles);
-    m_bvh = BVHType(std::move(other.m_bvh), other.m_triangles);
+    m_triangleData = std::move(other.m_triangleData);
+    m_centroids = std::move(other.m_centroids);
+    m_materials = std::move(other.m_materials);
     m_emission = other.m_emission;
+
+    m_bvh = std::move(other.m_bvh);
+    m_bvh.m_tris = &m_triangles;
+    m_bvh.m_centroids = &m_centroids;
     return *this;
   }
 
@@ -91,20 +112,20 @@ public:
     return m_bvh;
   }
 
-  [[nodiscard]] constexpr const std::vector<Triangle>& triangles() const noexcept {
+  [[nodiscard]] constexpr const TrianglePositions& triangle(uint32_t i) const noexcept {
+    return m_triangles[i];
+  }
+
+  [[nodiscard]] constexpr const TriangleData& data(uint32_t i) const noexcept {
+    return m_triangleData[i];
+  }
+
+  [[nodiscard]] constexpr uint32_t material(uint32_t i) const noexcept {
+    return m_materials[i];
+  }
+
+  [[nodiscard]] constexpr const std::vector<TrianglePositions>& triangles() const noexcept {
     return m_triangles;
-  }
-
-  [[nodiscard]] constexpr const std::vector<Vertex>& vertices() const noexcept {
-    return m_vertices;
-  }
-
-  [[nodiscard]] constexpr auto vertexPositions() const noexcept {
-    return std::views::transform(
-      m_vertices, [&](const Vertex& vertex) {
-        return vertex.p;
-      }
-    );
   }
 
   [[nodiscard]] constexpr const float3* emission() const noexcept {

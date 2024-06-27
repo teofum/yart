@@ -25,17 +25,17 @@ AreaLight::AreaLight(
   m_triCumulativeAreas.reserve(triangles.size());
 
   const auto transformedTriangles = std::views::transform(
-    triangles, [&](const Triangle& tri) {
-      Triangle transformed(tri);
-      transformed.v0.p = transform(transformed.v0.p, Transform::Type::Point);
-      transformed.v1.p = transform(transformed.v1.p, Transform::Type::Point);
-      transformed.v2.p = transform(transformed.v2.p, Transform::Type::Point);
+    triangles, [&](const TrianglePositions& tri) {
+      TrianglePositions transformed(tri);
+      transformed.p0 = transform(transformed.p0, Transform::Type::Point);
+      transformed.p1 = transform(transformed.p1, Transform::Type::Point);
+      transformed.p2 = transform(transformed.p2, Transform::Type::Point);
       return transformed;
     }
   );
 
   m_area = 0.0f;
-  for (const Triangle& tri: transformedTriangles) {
+  for (const TrianglePositions& tri: transformedTriangles) {
     const float triArea = tri.area();
     m_triAreas.push_back(triArea);
     m_triCumulativeAreas.push_back(m_area + triArea);
@@ -67,19 +67,23 @@ LightSample AreaLight::sample(
     [&](size_t i) { return m_triCumulativeAreas[i] < uc; }
   );
 
-  const Triangle& tri = m_mesh->triangles()[triIdx];
-  auto ts = tri.sample(u);
-  ts.pos = m_transform(ts.pos, Transform::Type::Point);
-  ts.normal = m_transform(ts.normal, Transform::Type::Normal);
+  const TrianglePositions& tri = m_mesh->triangle(triIdx);
+  const TriangleData& d = m_mesh->data(triIdx);
 
-  float3 wi = normalized(ts.pos - p);
+  const float3 b = samplers::sampleTriUniform(u);
+  float3 pos = b[0] * tri.p0 + b[1] * tri.p1 + b[2] * tri.p2;
+  float3 normal = b[0] * d.n[0] + b[1] * d.n[1] + b[2] * d.n[2];
+  pos = m_transform(pos, Transform::Type::Point);
+  normal = m_transform(normal, Transform::Type::Normal);
+
+  float3 wi = normalized(pos - p);
   float pdf = 1.0f / m_area;
 
   return {
     m_emission,
     wi,
-    ts.pos,
-    ts.normal,
+    pos,
+    normal,
     pdf
   };
 }
