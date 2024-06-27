@@ -14,7 +14,7 @@ public:
 
   constexpr Node() noexcept = default;
 
-  constexpr explicit Node(const Mesh& mesh) noexcept {
+  constexpr explicit Node(Mesh&& mesh) noexcept {
     for (const TrianglePositions& tri: mesh.triangles()) {
       m_meshBounds.expandToInclude(tri.p0);
       m_meshBounds.expandToInclude(tri.p1);
@@ -22,7 +22,7 @@ public:
     }
     m_bounds = m_meshBounds;
 
-    m_mesh = std::make_unique<Mesh>(mesh);
+    m_mesh = std::make_unique<Mesh>(std::move(mesh));
   }
 
   [[nodiscard]] constexpr const Mesh* mesh() const noexcept {

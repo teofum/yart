@@ -127,7 +127,7 @@ static Mesh processMesh(
     meshFaces.insert(meshFaces.end(), faces.begin(), faces.end());
   }
 
-  return {std::move(meshVertices), meshFaces, emission};
+  return {meshVertices, meshFaces, emission};
 }
 
 static Node processNode(

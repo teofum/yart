@@ -64,26 +64,6 @@ public:
     m_bvh.init(&m_triangles, &m_centroids);
   }
 
-  constexpr Mesh(const Mesh& other) noexcept
-    : m_triangles(other.m_triangles),
-      m_triangleData(other.m_triangleData),
-      m_centroids(other.m_centroids),
-      m_materials(other.m_materials),
-      m_emission(other.m_emission) {
-    m_bvh.init(&m_triangles, &m_centroids);
-  }
-
-  constexpr Mesh& operator=(const Mesh& other) noexcept {
-    m_triangles = other.m_triangles;
-    m_triangleData = other.m_triangleData;
-    m_centroids = other.m_centroids;
-    m_materials = other.m_materials;
-    m_emission = other.m_emission;
-
-    m_bvh.init(&m_triangles, &m_centroids);
-    return *this;
-  }
-
   constexpr Mesh(Mesh&& other) noexcept
     : m_triangles(std::move(other.m_triangles)),
       m_triangleData(std::move(other.m_triangleData)),
