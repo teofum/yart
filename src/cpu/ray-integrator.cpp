@@ -68,8 +68,8 @@ bool RayIntegrator::testMesh(
 
     hit.bsdf = &scene->material(mesh.material(hit.idx));
 
-    hit.lightIdx = int32_t(mesh.lightIdx);
-    if (mesh.lightIdx != -1) hit.light = &scene->light(mesh.lightIdx);
+    hit.lightIdx = int32_t(mesh.lightIdx(hit.idx));
+    hit.tri = &mesh.triangle(hit.idx);
   }
 
   return didHit;
@@ -174,7 +174,7 @@ bool RayIntegrator::testTriangle(
   hit.v = v;
   hit.p = ray(t);
   hit.idx = idx;
-  
+
   return true;
 }
 

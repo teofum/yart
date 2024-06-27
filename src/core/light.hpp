@@ -36,8 +36,6 @@ public:
     float uc
   ) const noexcept = 0;
 
-  [[nodiscard]] virtual const Mesh* mesh() const noexcept;
-
   [[nodiscard]] const Transform& transform() const noexcept;
 
 protected:
@@ -49,7 +47,8 @@ public:
   bool twoSided = false;
 
   AreaLight(
-    const Mesh* mesh,
+    const TrianglePositions* tri,
+    const TriangleData* data,
     const float3& emission,
     const Transform& transform
   ) noexcept;
@@ -67,15 +66,12 @@ public:
     float uc
   ) const noexcept override;
 
-  [[nodiscard]] const Mesh* mesh() const noexcept override;
-
 private:
-  const Mesh* m_mesh;
-  float3 m_emission;
+  const TrianglePositions* m_tri;
+  const TriangleData* m_data;
 
   float m_area;
-  std::vector<float> m_triAreas;
-  std::vector<float> m_triCumulativeAreas;
+  float3 m_emission;
 };
 
 }

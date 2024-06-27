@@ -127,7 +127,7 @@ static Mesh processMesh(
     meshFaces.insert(meshFaces.end(), faces.begin(), faces.end());
   }
 
-  return {meshVertices, meshFaces, emission};
+  return {meshVertices, meshFaces};
 }
 
 static Node processNode(
@@ -158,11 +158,21 @@ static Node processNode(
     node.appendChild(processNode(asset, childIdx, scene, localTransform));
   }
 
-  const float3* emission;
-  if (node.mesh() && (emission = node.mesh()->emission())) {
-    node.mesh()->lightIdx = int64_t(scene.nLights());
-    AreaLight light(node.mesh(), *emission, localTransform);
-    scene.addLight(std::move(light));
+  if (node.mesh()) {
+    uint32_t i = 0;
+    int32_t li = 0;
+    for (const auto& tri: node.mesh()->triangles()) {
+      const BSDF& mat = scene.material(node.mesh()->material(i));
+      const float3* emission = mat.emission();
+
+      if (emission) {
+        AreaLight light(&tri, &node.mesh()->data(i), *emission, localTransform);
+        scene.addLight(std::move(light));
+        node.mesh()->lightIdx(i) = li++;
+      }
+
+      i++;
+    }
   }
 
   return node;

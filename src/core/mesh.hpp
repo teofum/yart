@@ -20,9 +20,9 @@ private:
   std::vector<TriangleData> m_triangleData;
   std::vector<float3> m_centroids;
   std::vector<uint32_t> m_materials;
+  std::vector<int32_t> m_lights;
 
   BVHType m_bvh;
-  float3 m_emission;
 
   constexpr void buildTris(
     const std::vector<Vertex>& vertices,
@@ -32,6 +32,7 @@ private:
     m_triangleData.resize(faces.size());
     m_centroids.resize(faces.size());
     m_materials.resize(faces.size());
+    m_lights.resize(faces.size());
 
     size_t i = 0;
     for (const Face& face: faces) {
@@ -43,23 +44,16 @@ private:
         &m_centroids[i],
         &m_materials[i]
       );
+      m_lights[i] = -1;
       i++;
     }
   }
 
 public:
-  enum class FaceCulling : int {
-    None = 0, Front, Back
-  };
-
-  FaceCulling faceCulling = FaceCulling::None;
-  int64_t lightIdx = -1;
-
   constexpr Mesh(
     const std::vector<Vertex>& vertices,
-    const std::vector<Face>& faces,
-    const float3& emission = {}
-  ) noexcept: m_emission(emission) {
+    const std::vector<Face>& faces
+  ) noexcept {
     buildTris(vertices, faces);
     m_bvh.init(&m_triangles, &m_centroids);
   }
@@ -69,7 +63,7 @@ public:
       m_triangleData(std::move(other.m_triangleData)),
       m_centroids(std::move(other.m_centroids)),
       m_materials(std::move(other.m_materials)),
-      m_emission(other.m_emission) {
+      m_lights(std::move(other.m_lights)) {
     m_bvh = std::move(other.m_bvh);
     m_bvh.m_tris = &m_triangles;
     m_bvh.m_centroids = &m_centroids;
@@ -80,7 +74,7 @@ public:
     m_triangleData = std::move(other.m_triangleData);
     m_centroids = std::move(other.m_centroids);
     m_materials = std::move(other.m_materials);
-    m_emission = other.m_emission;
+    m_lights = std::move(other.m_lights);
 
     m_bvh = std::move(other.m_bvh);
     m_bvh.m_tris = &m_triangles;
@@ -104,12 +98,16 @@ public:
     return m_materials[i];
   }
 
-  [[nodiscard]] constexpr const std::vector<TrianglePositions>& triangles() const noexcept {
-    return m_triangles;
+  [[nodiscard]] constexpr int32_t& lightIdx(uint32_t i) noexcept {
+    return m_lights[i];
   }
 
-  [[nodiscard]] constexpr const float3* emission() const noexcept {
-    return length2(m_emission) == 0.0f ? nullptr : &m_emission;
+  [[nodiscard]] constexpr int32_t lightIdx(uint32_t i) const noexcept {
+    return m_lights[i];
+  }
+
+  [[nodiscard]] constexpr const std::vector<TrianglePositions>& triangles() const noexcept {
+    return m_triangles;
   }
 };
 
