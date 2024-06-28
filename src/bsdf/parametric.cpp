@@ -4,6 +4,7 @@ namespace yart {
 
 ParametricBSDF::ParametricBSDF(
   const float3& baseColor,
+  const Texture<float3>* baseTexture,
   float metallic,
   float roughness,
   float transmission,
@@ -12,20 +13,26 @@ ParametricBSDF::ParametricBSDF(
   float anisoRotation,
   const float3& emission
 ) noexcept
-  : m_glossy(baseColor, roughness, ior, anisotropic, anisoRotation, emission),
+  : m_glossy(
+  baseColor, baseTexture, roughness, ior, anisotropic, anisoRotation, emission
+),
     m_dielectric(roughness, ior, anisotropic),
     m_metallic(baseColor, roughness, anisotropic, anisoRotation, ior),
     m_cTrans(transmission), m_cMetallic(metallic) {}
 
-float3 ParametricBSDF::fImpl(const float3& wo, const float3& wi) const {
+float3 ParametricBSDF::fImpl(
+  const float3& wo,
+  const float3& wi,
+  const float2& uv
+) const {
   const float cMetallic = m_cMetallic;
   const float cDielectric = (1.0f - m_cMetallic) * m_cTrans;
   const float cGlossy = (1.0f - m_cMetallic) * (1.0f - m_cTrans);
 
   float3 val;
-  if (cMetallic > 0.0f) val += cMetallic * m_metallic.fImpl(wo, wi);
-  if (cDielectric > 0.0f) val += cDielectric * m_dielectric.fImpl(wo, wi);
-  if (cGlossy > 0.0f) val += cGlossy * m_glossy.fImpl(wo, wi);
+  if (cMetallic > 0.0f) val += cMetallic * m_metallic.fImpl(wo, wi, uv);
+  if (cDielectric > 0.0f) val += cDielectric * m_dielectric.fImpl(wo, wi, uv);
+  if (cGlossy > 0.0f) val += cGlossy * m_glossy.fImpl(wo, wi, uv);
 
   return val;
 }
@@ -45,6 +52,7 @@ float ParametricBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 
 BSDFSample ParametricBSDF::sampleImpl(
   const float3& wo,
+  const float2& uv,
   const float2& u,
   float uc,
   float uc2,
@@ -55,11 +63,11 @@ BSDFSample ParametricBSDF::sampleImpl(
   const float pDielectric = m_cMetallic + (1.0f - m_cMetallic) * m_cTrans;
 
   if (uc2 < pMetallic) {
-    sample = m_metallic.sampleImpl(wo, u, uc, 0.0f, regularized);
+    sample = m_metallic.sampleImpl(wo, uv, u, uc, 0.0f, regularized);
   } else if (uc2 < pDielectric) {
-    sample = m_dielectric.sampleImpl(wo, u, uc, 0.0f, regularized);
+    sample = m_dielectric.sampleImpl(wo, uv, u, uc, 0.0f, regularized);
   } else {
-    sample = m_glossy.sampleImpl(wo, u, uc, 0.0f, regularized);
+    sample = m_glossy.sampleImpl(wo, uv, u, uc, 0.0f, regularized);
   }
 
   return sample;

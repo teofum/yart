@@ -11,7 +11,11 @@ DielectricBSDF::DielectricBSDF(
             m_microfacets(roughness, anisotropic),
             m_mfRoughened(roughen(roughness), anisotropic) {}
 
-float3 DielectricBSDF::fImpl(const float3& wo, const float3& wi) const {
+float3 DielectricBSDF::fImpl(
+  const float3& wo,
+  const float3& wi,
+  const float2& uv
+) const {
   if (m_microfacets.smooth()) return {};
 
   const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
@@ -82,6 +86,7 @@ float DielectricBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 
 BSDFSample DielectricBSDF::sampleImpl(
   const float3& wo,
+  const float2& uv,
   const float2& u,
   float uc,
   float uc2,

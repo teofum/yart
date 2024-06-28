@@ -17,7 +17,11 @@ MetalBSDF::MetalBSDF(
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
 }
 
-float3 MetalBSDF::fImpl(const float3& _wo, const float3& _wi) const {
+float3 MetalBSDF::fImpl(
+  const float3& _wo,
+  const float3& _wi,
+  const float2& uv
+) const {
   if (m_microfacets.smooth()) return {};
 
   float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;
@@ -53,6 +57,7 @@ float MetalBSDF::pdfImpl(const float3& _wo, const float3& _wi) const {
 
 BSDFSample MetalBSDF::sampleImpl(
   const float3& _wo,
+  const float2& uv,
   const float2& u,
   float uc,
   float uc2,

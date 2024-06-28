@@ -16,12 +16,45 @@ static float4x4 rotationFromQuat(std::array<float, 4> q) noexcept {
   return half * 2.0f;
 }
 
+static std::unique_ptr<Texture<float3>> loadTexture(
+  const fastgltf::Asset& asset,
+  const fastgltf::Texture& gltfTex
+) {
+  if (!gltfTex.imageIndex) return nullptr;
+
+  uint32_t imgIdx = gltfTex.imageIndex.value();
+  const auto& image = asset.images[imgIdx];
+
+  const auto* bvi = std::get_if<fastgltf::sources::BufferView>(&image.data);
+  if (!bvi) return nullptr;
+
+  const auto& bv = asset.bufferViews[bvi->bufferViewIndex];
+  const auto& buf = asset.buffers[bv.bufferIndex];
+
+  const auto* bytes = std::get_if<fastgltf::sources::ByteView>(&buf.data);
+  if (!bytes) return nullptr;
+
+  // Shut up, C++
+  const uint8_t* data =
+    reinterpret_cast<const uint8_t*>(&bytes->bytes[bv.byteOffset]);
+  int32_t len = int32_t(bv.byteLength);
+
+  return std::make_unique<Texture<float3>>(Texture<float3>::loadRGB(data, len));
+}
+
 static std::unique_ptr<BSDF> processMaterial(
   const fastgltf::Asset& asset,
-  const fastgltf::Material& gltfMat
+  const fastgltf::Material& gltfMat,
+  const Scene& scene
 ) noexcept {
   const auto base = gltfMat.pbrData.baseColorFactor;
   const float3 baseColor = float3(base[0], base[1], base[2]);
+
+  const Texture<float3>* baseTexture = nullptr;
+  if (gltfMat.pbrData.baseColorTexture) {
+    uint32_t idx = gltfMat.pbrData.baseColorTexture.value().textureIndex;
+    baseTexture = &scene.texture(idx);
+  }
 
   const auto em = gltfMat.emissiveFactor;
   const float3 emission =
@@ -39,18 +72,21 @@ static std::unique_ptr<BSDF> processMaterial(
     anisoRotation = gltfMat.anisotropy->anisotropyRotation;
   }
 
-  return std::make_unique<ParametricBSDF>(
-    ParametricBSDF(
-      baseColor,
-      metallic,
-      roughness,
-      transmission,
-      gltfMat.ior,
-      anisotropic,
-      anisoRotation,
-      emission
-    )
+  metallic = 0.0f;
+
+  ParametricBSDF bsdf(
+    baseColor,
+    baseTexture,
+    metallic,
+    roughness,
+    transmission,
+    gltfMat.ior,
+    anisotropic,
+    anisoRotation,
+    emission
   );
+
+  return std::make_unique<ParametricBSDF>(std::move(bsdf));
 }
 
 static Mesh processMesh(
@@ -74,7 +110,6 @@ static Mesh processMesh(
       emission = *material.emission();
     }
 
-
     if (primitive.type != fastgltf::PrimitiveType::Triangles) continue;
 
     std::vector<Vertex> vertices;
@@ -92,6 +127,13 @@ static Mesh processMesh(
     const auto& normIt = fastgltf::iterateAccessor<float3>(asset, normAccessor);
     size_t nIdx = 0;
     for (const float3& norm: normIt) vertices[nIdx++].normal = norm;
+
+    const auto* texIt = primitive.findAttribute("TEXCOORD_0");
+    const auto& tcAccessor = asset.accessors[texIt->second];
+    const auto& tcIt = fastgltf::iterateAccessor<float2>(asset, tcAccessor);
+    size_t tcIdx = 0;
+    for (const float2& tc: tcIt)
+      vertices[tcIdx++].texCoords = tc;
 
 //    const auto* tangentIt = primitive.findAttribute("TANGENT");
 //    if (tangentIt) {
@@ -178,7 +220,7 @@ static Node processNode(
   return node;
 }
 
-std::optional<Scene> load(const fs::path& path) noexcept {
+std::unique_ptr<Scene> load(const fs::path& path) noexcept {
   auto buffer = fastgltf::GltfDataBuffer();
   buffer.loadFromFile(path);
 
@@ -196,7 +238,7 @@ std::optional<Scene> load(const fs::path& path) noexcept {
     fastgltf::Options::LoadExternalBuffers
   );
 
-  if (result.error() != fastgltf::Error::None) return std::nullopt;
+  if (result.error() != fastgltf::Error::None) return nullptr;
   const fastgltf::Asset& asset = result.get();
 
   size_t sceneIdx = asset.defaultScene.value_or(0);
@@ -205,13 +247,16 @@ std::optional<Scene> load(const fs::path& path) noexcept {
   Node root;
   Scene scene(std::move(root));
 
+  for (const auto& texture: asset.textures)
+    scene.addTexture(loadTexture(asset, texture));
+
   for (const auto& material: asset.materials)
-    scene.addMaterial(processMaterial(asset, material));
+    scene.addMaterial(processMaterial(asset, material, scene));
 
   for (size_t nodeIdx: gltfScene.nodeIndices)
     scene.root().appendChild(processNode(asset, nodeIdx, scene, Transform()));
 
-  return scene;
+  return std::make_unique<Scene>(std::move(scene));
 }
 
 }

@@ -10,7 +10,11 @@ DiffuseBSDF::DiffuseBSDF(
             m_emission(emissive),
             m_hasEmission(length2(emissive) > 0.0f) {}
 
-float3 DiffuseBSDF::fImpl(const float3& wo, const float3& wi) const {
+float3 DiffuseBSDF::fImpl(
+  const float3& wo,
+  const float3& wi,
+  const float2& uv
+) const {
   return m_rOverPi;
 }
 
@@ -22,6 +26,7 @@ float DiffuseBSDF::pdfImpl(const float3& wo, const float3& wi) const {
 
 BSDFSample DiffuseBSDF::sampleImpl(
   const float3& wo,
+  const float2& uv,
   const float2& u,
   float uc,
   float uc2,

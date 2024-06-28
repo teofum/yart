@@ -25,7 +25,11 @@ private:
   float m_ior, m_roughness;
   GGX m_microfacets, m_mfRoughened;
 
-  [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
+  [[nodiscard]] float3 fImpl(
+    const float3& wo,
+    const float3& wi,
+    const float2& uv
+  ) const override;
 
   [[nodiscard]] float pdfImpl(
     const float3& wo,
@@ -34,6 +38,7 @@ private:
 
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,
+    const float2& uv,
     const float2& u,
     float uc,
     float uc2,

@@ -56,10 +56,11 @@ bool RayIntegrator::testMesh(
 ) const {
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
   if (didHit) {
-    float u = hit.u, v = hit.v, w = 1.0f - u - v;
+    float u = hit.uv.x(), v = hit.uv.y(), w = 1.0f - u - v;
     const TriangleData& d = mesh.data(hit.idx);
 
     hit.n = w * d.n[0] + u * d.n[1] + v * d.n[2];
+    hit.uv = w * d.texCoords[0] + u * d.texCoords[1] + v * d.texCoords[2];
     if (absDot(hit.n, axis_y<float>) > 0.999f) {
       hit.tg = axis_x<float>;
     } else {
@@ -170,8 +171,7 @@ bool RayIntegrator::testTriangle(
   if (t <= tMin || hit.t <= t) return false;
 
   hit.t = t;
-  hit.u = u;
-  hit.v = v;
+  hit.uv = {u, v};
   hit.p = ray(t);
   hit.idx = idx;
 

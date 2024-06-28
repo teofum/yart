@@ -14,6 +14,7 @@ class ParametricBSDF : public BSDF {
 public:
   explicit ParametricBSDF(
     const float3& baseColor,
+    const Texture<float3>* baseTexture = nullptr,
     float metallic = 0.0f,
     float roughness = 0.0f,
     float transmission = 0.0f,
@@ -33,7 +34,11 @@ private:
   MetalBSDF m_metallic;
   float m_cTrans, m_cMetallic;
 
-  [[nodiscard]] float3 fImpl(const float3& wo, const float3& wi) const override;
+  [[nodiscard]] float3 fImpl(
+    const float3& wo,
+    const float3& wi,
+    const float2& uv
+  ) const override;
 
   [[nodiscard]] float pdfImpl(
     const float3& wo,
@@ -42,6 +47,7 @@ private:
 
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,
+    const float2& uv,
     const float2& u,
     float uc,
     float uc2,

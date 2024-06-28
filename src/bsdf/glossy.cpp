@@ -5,6 +5,7 @@ namespace yart {
 
 GlossyBSDF::GlossyBSDF(
   const float3& baseColor,
+  const Texture<float3>* baseTexture,
   float roughness,
   float ior,
   float anisotropic,
@@ -12,19 +13,25 @@ GlossyBSDF::GlossyBSDF(
   const float3& emission
 ) noexcept: m_base(baseColor),
             m_emission(emission),
-            m_hasEmission(length2(emission) > 0.0f),
             m_ior(ior),
             m_roughness(roughness),
+            m_baseTexture(baseTexture),
             m_microfacets(roughness, anisotropic),
             m_mfRoughened(roughen(roughness), anisotropic) {
   m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
 }
 
-float3 GlossyBSDF::fImpl(const float3& _wo, const float3& _wi) const {
+float3 GlossyBSDF::fImpl(
+  const float3& _wo,
+  const float3& _wi,
+  const float2& uv
+) const {
   if (m_microfacets.smooth()) return {};
 
   float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;
+  float3 base = m_base;
+  if (m_baseTexture) base = m_baseTexture->sample(uv);
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
   if (cosTheta_i == 0 || cosTheta_o == 0) return {};
@@ -53,7 +60,7 @@ float3 GlossyBSDF::fImpl(const float3& _wo, const float3& _wi) const {
     (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
     (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
     (float(pi) * (1.0f - lut::Eb_msAvg(F0, m_roughness)));
-  const float3 diffuse = m_base * cDiffuse;
+  const float3 diffuse = base * cDiffuse;
 
   // Final BSDF
   return float3(Fss * Mss + Mms * Fms) + diffuse;
@@ -83,6 +90,7 @@ float GlossyBSDF::pdfImpl(const float3& _wo, const float3& _wi) const {
 
 BSDFSample GlossyBSDF::sampleImpl(
   const float3& _wo,
+  const float2& uv,
   const float2& u,
   float uc,
   float uc2,
@@ -111,10 +119,13 @@ BSDFSample GlossyBSDF::sampleImpl(
       (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
       (float(pi) * (1.0f - lut::Eb_msAvg(F0, m_roughness)));
 
+    float3 base = m_base;
+    if (m_baseTexture) base = m_baseTexture->sample(uv);
+
     return {
       BSDFSample::Reflected | BSDFSample::Diffuse |
-      (m_hasEmission ? BSDFSample::Emitted : 0),
-      m_base * cDiffuse,
+      (length2(m_emission) > 0.0f ? BSDFSample::Emitted : 0),
+      base * cDiffuse,
       m_emission,
       wi,
       std::abs(wi.z()) * cDiffuse,

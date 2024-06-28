@@ -3,6 +3,7 @@
 
 #include "types.hpp"
 #include "buffer.hpp"
+#include "texture.hpp"
 #include "camera.hpp"
 #include "rng.hpp"
 #include "scrambler.hpp"

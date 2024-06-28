@@ -43,7 +43,8 @@ public:
     const float3& wo,
     const float3& wi,
     const float3& n,
-    const float3& t
+    const float3& t,
+    const float2& uv
   ) const;
 
   [[nodiscard]] float pdf(
@@ -57,6 +58,7 @@ public:
     const float3& wo,
     const float3& n,
     const float3& t,
+    const float2& uv,
     const float2& u,
     float uc,
     float uc2,
@@ -68,7 +70,8 @@ public:
 protected:
   [[nodiscard]] virtual float3 fImpl(
     const float3& wo,
-    const float3& wi
+    const float3& wi,
+    const float2& uv
   ) const = 0;
 
   [[nodiscard]] virtual float pdfImpl(
@@ -78,6 +81,7 @@ protected:
 
   [[nodiscard]] virtual BSDFSample sampleImpl(
     const float3& wo,
+    const float2& uv,
     const float2& u,
     float uc,
     float uc2,
