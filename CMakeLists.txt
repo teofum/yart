@@ -115,16 +115,8 @@ set(SRC_CPU
 )
 
 set(SRC_BSDF
-        src/bsdf/diffuse.cpp
-        src/bsdf/diffuse.hpp
-        src/bsdf/dielectric.cpp
-        src/bsdf/dielectric.hpp
-        src/bsdf/metal.cpp
-        src/bsdf/metal.hpp
         src/bsdf/parametric.cpp
         src/bsdf/parametric.hpp
-        src/bsdf/glossy.cpp
-        src/bsdf/glossy.hpp
         src/bsdf/luts.cpp
         src/bsdf/luts.hpp)
 

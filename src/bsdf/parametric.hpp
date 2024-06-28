@@ -3,9 +3,6 @@
 
 #include <math/math.hpp>
 #include <core/core.hpp>
-#include "glossy.hpp"
-#include "dielectric.hpp"
-#include "metal.hpp"
 
 namespace yart {
 using namespace math;
