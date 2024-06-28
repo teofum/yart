@@ -23,6 +23,8 @@ public:
     const float3& emission = float3()
   ) noexcept;
 
+  [[nodiscard]] float alpha(const float2& uv) const override;
+
   [[nodiscard]] constexpr const float3* emission() const noexcept override {
     return length2(m_emission) > 0.0f ? &m_emission : nullptr;
   }

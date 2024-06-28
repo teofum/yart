@@ -17,8 +17,8 @@ using Sampler = yart::SobolSampler<yart::FastOwenScrambler>;
 using Integrator = yart::cpu::MISIntegrator;
 
 int main() {
-//  yart::Buffer buffer(800, 600);
-  yart::Buffer buffer(1600, 1200);
+  yart::Buffer buffer(800, 600);
+//  yart::Buffer buffer(1600, 1200);
 //  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(400, 400); // Furnace test
 
@@ -46,7 +46,7 @@ int main() {
 
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = scene.get();
-  renderer.samples = 4096;
+  renderer.samples = 2048;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

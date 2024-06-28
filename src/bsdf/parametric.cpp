@@ -29,6 +29,11 @@ ParametricBSDF::ParametricBSDF(
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
 }
 
+float ParametricBSDF::alpha(const float2& uv) const {
+  if (m_baseTexture) return m_baseTexture->sample(uv).w();
+  return 1.0f;
+}
+
 float3 ParametricBSDF::fImpl(
   const float3& _wo,
   const float3& _wi,
@@ -540,6 +545,5 @@ BSDFSample ParametricBSDF::sampleGlossy(
     m_roughness
   };
 }
-
 
 }

@@ -54,20 +54,13 @@ bool RayIntegrator::testMesh(
   Hit& hit,
   const Mesh& mesh
 ) const {
-  bool didHit = testBVH(ray, tMin, hit, mesh.bvh());
+  bool didHit = testBVH(ray, tMin, hit, mesh.bvh(), mesh);
   if (didHit) {
-    float u = hit.uv.x(), v = hit.uv.y(), w = 1.0f - u - v;
-    const TriangleData& d = mesh.data(hit.idx);
-
-    hit.n = w * d.n[0] + u * d.n[1] + v * d.n[2];
-    hit.uv = w * d.texCoords[0] + u * d.texCoords[1] + v * d.texCoords[2];
     if (absDot(hit.n, axis_y<float>) > 0.999f) {
       hit.tg = axis_x<float>;
     } else {
       hit.tg = normalized(cross(hit.n, axis_y<float>));
     }
-
-    hit.bsdf = &scene->material(mesh.material(hit.idx));
 
     hit.lightIdx = int32_t(mesh.lightIdx(hit.idx));
     hit.tri = &mesh.triangle(hit.idx);
@@ -80,7 +73,8 @@ bool RayIntegrator::testBVH(
   const Ray& ray,
   float tMin,
   Hit& hit,
-  const BVH& bvh
+  const BVH& bvh,
+  const Mesh& mesh
 ) const {
   const BVHNode* node = &bvh[0];
   const BVHNode* stack[64];
@@ -95,8 +89,11 @@ bool RayIntegrator::testBVH(
     if (d < hit.t) {
       if (node->span > 0) {
         for (size_t i = 0; i < node->span; i++) {
-          uint32_t idx = node->first + i;
-          didHit |= testTriangle(ray, tMin, hit, bvh.tri(idx), bvh.idx(idx));
+          uint32_t idx = bvh.idx(node->first + i);
+          const TrianglePositions& tri = mesh.triangle(idx);
+          const TriangleData& td = mesh.data(idx);
+          const BSDF& bsdf = scene->material(mesh.material(idx));
+          didHit |= testTriangle(ray, tMin, hit, tri, td, idx, bsdf);
         }
         if (stackIdx == 0) break;
         node = stack[--stackIdx];
@@ -143,7 +140,9 @@ bool RayIntegrator::testTriangle(
   float tMin,
   Hit& hit,
   const TrianglePositions& tri,
-  uint32_t idx
+  const TriangleData& d,
+  uint32_t idx,
+  const BSDF& bsdf
 ) const {
   const float3 edge1 = tri.p1 - tri.p0;
   const float3 edge2 = tri.p2 - tri.p0;
@@ -170,11 +169,18 @@ bool RayIntegrator::testTriangle(
   const float t = dot(edge2, bEdge1) * invDet;
   if (t <= tMin || hit.t <= t) return false;
 
+  // Alpha test
+  const float w = 1.0f - u - v;
+  float2 uv = w * d.texCoords[0] + u * d.texCoords[1] + v * d.texCoords[2];
+  float alpha = bsdf.alpha(uv);
+  if (alpha < 1.0f && m_sampler.get1D() > alpha) return false;
+
   hit.t = t;
-  hit.uv = {u, v};
+  hit.n = w * d.n[0] + u * d.n[1] + v * d.n[2];
+  hit.uv = uv;
   hit.p = ray(t);
   hit.idx = idx;
-
+  hit.bsdf = &bsdf;
   return true;
 }
 

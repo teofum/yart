@@ -42,7 +42,8 @@ protected:
     const Ray& ray,
     float tMin,
     Hit& hit,
-    const BVH& bvh
+    const BVH& bvh,
+    const Mesh& mesh
   ) const;
 
   [[nodiscard]] bool testTriangle(
@@ -50,7 +51,9 @@ protected:
     float tMin,
     Hit& hit,
     const TrianglePositions& tri,
-    uint32_t idx
+    const TriangleData& d,
+    uint32_t idx,
+    const BSDF& bsdf
   ) const;
 
   [[nodiscard]] bool testBoundingBox(

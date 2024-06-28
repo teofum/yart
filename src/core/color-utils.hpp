@@ -15,7 +15,7 @@ constexpr float sRGB_InvGamma = 1.0f / sRGB_Gamma;
 template<std::size_t N>
 requires (N >= 3)
 [[nodiscard]] constexpr vec<float, N> sRGBDecode(const vec<float, N>& val) noexcept {
-  vec<float, N> ret;
+  vec<float, N> ret(val);
   for (uint32_t i = 0; i < 3; i++) {
     if (val[i] <= 0.04045f) ret[i] = val[i] / 12.92f;
     else ret[i] = std::pow((val[i] + 0.055f) / 1.055f, sRGB_Gamma);
@@ -29,7 +29,7 @@ requires (N >= 3)
 template<std::size_t N>
 requires (N >= 3)
 [[nodiscard]] constexpr vec<float, N> sRGBEncode(const vec<float, N>& val) noexcept {
-  vec<float, N> ret;
+  vec<float, N> ret(val);
   for (uint32_t i = 0; i < 3; i++) {
     if (val[i] < 0.0031308) ret[i] = val[i] * 12.92f;
     else ret[i] = std::pow(val[i], sRGB_InvGamma) * 1.055 - 0.055;

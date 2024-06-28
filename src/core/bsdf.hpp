@@ -14,10 +14,6 @@ using namespace math;
   return max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f));
 }
 
-[[nodiscard]] constexpr bool isSmooth(float roughness) noexcept {
-  return roughness < 1e-3f;
-}
-
 struct BSDFSample {
   enum Scatter {
     Absorbed = 0,
@@ -69,6 +65,8 @@ public:
     float uc2,
     bool regularized = false
   ) const;
+
+  [[nodiscard]] virtual float alpha(const float2& uv) const = 0;
 
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
 
