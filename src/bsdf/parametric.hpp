@@ -25,14 +25,22 @@ public:
   ) noexcept;
 
   [[nodiscard]] constexpr const float3* emission() const noexcept override {
-    return m_glossy.emission();
+    return length2(m_emission) > 0.0f ? &m_emission : nullptr;
   }
 
 private:
-  GlossyBSDF m_glossy;
-  DielectricBSDF m_dielectric;
-  MetalBSDF m_metallic;
+  // Lobe weights
   float m_cTrans, m_cMetallic;
+
+  // Common BSDF prameters
+  float3 m_base, m_emission;
+  float m_ior, m_roughness, m_anisotropic;
+
+  // Textures
+  const Texture<float3>* m_baseTexture;
+
+  // Anisotropy data
+  float3x3 m_localRotation, m_invRotation;
 
   [[nodiscard]] float3 fImpl(
     const float3& wo,
@@ -53,6 +61,69 @@ private:
     float uc2,
     bool regularized
   ) const override;
+
+  [[nodiscard]] float3 fMetallic(
+    const float3& wo,
+    const float3& wi,
+    const float3& base,
+    const GGX& mf
+  ) const;
+
+  [[nodiscard]] float pdfMetallic(
+    const float3& wo,
+    const float3& wi,
+    const GGX& mf
+  ) const;
+
+  [[nodiscard]] BSDFSample sampleMetallic(
+    const float3& wo,
+    const float3& base,
+    const GGX& mf,
+    const float2& u,
+    float uc
+  ) const;
+
+  [[nodiscard]] float3 fDielectric(
+    const float3& wo,
+    const float3& wi,
+    const float3& base,
+    const GGX& microfacets
+  ) const;
+
+  [[nodiscard]] float pdfDielectric(
+    const float3& wo,
+    const float3& wi,
+    const GGX& mf
+  ) const;
+
+  [[nodiscard]] BSDFSample sampleDielectric(
+    const float3& wo,
+    const float3& base,
+    const GGX& mf,
+    const float2& u,
+    float uc
+  ) const;
+
+  [[nodiscard]] float3 fGlossy(
+    const float3& wo,
+    const float3& wi,
+    const float3& base,
+    const GGX& mf
+  ) const;
+
+  [[nodiscard]] float pdfGlossy(
+    const float3& wo,
+    const float3& wi,
+    const GGX& mf
+  ) const;
+
+  [[nodiscard]] BSDFSample sampleGlossy(
+    const float3& wo,
+    const float3& base,
+    const GGX& mf,
+    const float2& u,
+    float uc
+  ) const;
 };
 
 }

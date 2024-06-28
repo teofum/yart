@@ -72,8 +72,6 @@ static std::unique_ptr<BSDF> processMaterial(
     anisoRotation = gltfMat.anisotropy->anisotropyRotation;
   }
 
-  metallic = 0.0f;
-
   ParametricBSDF bsdf(
     baseColor,
     baseTexture,

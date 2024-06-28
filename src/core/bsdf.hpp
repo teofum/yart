@@ -9,9 +9,13 @@
 namespace yart {
 using namespace math;
 
-// Util function
+// Util functions
 [[nodiscard]] constexpr float roughen(float roughness) noexcept {
   return max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f));
+}
+
+[[nodiscard]] constexpr bool isSmooth(float roughness) noexcept {
+  return roughness < 1e-3f;
 }
 
 struct BSDFSample {
