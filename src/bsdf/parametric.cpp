@@ -45,9 +45,9 @@ float3 ParametricBSDF::fImpl(
 
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   if (m_mrTexture) {
-    float2 mr = float2(m_mrTexture->sample(uv));
-    m *= mr.x();
+    float3 mr = float3(m_mrTexture->sample(uv));
     r *= mr.y();
+    m *= mr.z();
   }
   if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
 
@@ -79,9 +79,9 @@ float ParametricBSDF::pdfImpl(
   // Sample textures
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   if (m_mrTexture) {
-    float2 mr = float2(m_mrTexture->sample(uv));
-    m *= mr.x();
+    float3 mr = float3(m_mrTexture->sample(uv));
     r *= mr.y();
+    m *= mr.z();
   }
   if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
 
@@ -115,9 +115,9 @@ BSDFSample ParametricBSDF::sampleImpl(
 
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   if (m_mrTexture) {
-    float2 mr = float2(m_mrTexture->sample(uv));
-    m *= mr.x();
+    float3 mr = float3(m_mrTexture->sample(uv));
     r *= mr.y();
+    m *= mr.z();
   }
   if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
 
