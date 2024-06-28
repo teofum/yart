@@ -109,7 +109,7 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   float3 f = hit.bsdf->f(wo, ls.wi, hit.n, hit.tg, hit.uv);
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};
 
-  float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg);
+  float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg, hit.uv);
   float pdfLight = l.p * ls.pdf * length2(hit.p - ls.p) / absDot(ls.n, -ls.wi);
 
   return ls.Li * f * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);

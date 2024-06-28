@@ -17,10 +17,11 @@ float BSDF::pdf(
   const float3& wo,
   const float3& wi,
   const float3& n,
-  const float3& t
+  const float3& t,
+  const float2& uv
 ) const {
   Frame localFrame = length2(t) > 0 ? Frame(n, t) : Frame(n);
-  return pdfImpl(localFrame.wtl(wo), localFrame.wtl(wi));
+  return pdfImpl(localFrame.wtl(wo), localFrame.wtl(wi), uv);
 }
 
 BSDFSample BSDF::sample(

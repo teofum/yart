@@ -66,7 +66,11 @@ float3 GlossyBSDF::fImpl(
   return float3(Fss * Mss + Mms * Fms) + diffuse;
 }
 
-float GlossyBSDF::pdfImpl(const float3& _wo, const float3& _wi) const {
+float GlossyBSDF::pdfImpl(
+  const float3& _wo,
+  const float3& _wi,
+  const float2& uv
+) const {
   if (m_microfacets.smooth()) return 0;
 
   float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;

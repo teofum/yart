@@ -47,34 +47,54 @@ static std::unique_ptr<BSDF> processMaterial(
   const fastgltf::Material& gltfMat,
   const Scene& scene
 ) noexcept {
+  // Base color
   const auto base = gltfMat.pbrData.baseColorFactor;
   const float3 baseColor = float3(base[0], base[1], base[2]);
-
   const Texture<float3>* baseTexture = nullptr;
   if (gltfMat.pbrData.baseColorTexture) {
     uint32_t idx = gltfMat.pbrData.baseColorTexture.value().textureIndex;
     baseTexture = &scene.texture(idx);
   }
 
-  const auto em = gltfMat.emissiveFactor;
-  const float3 emission =
-    float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
-
+  // Roughness + metallic
   float roughness = gltfMat.pbrData.roughnessFactor;
   float metallic = gltfMat.pbrData.metallicFactor;
+  Texture<float3>* mrTexture = nullptr;
+  if (gltfMat.pbrData.metallicRoughnessTexture) {
+    uint32_t idx = gltfMat.pbrData.metallicRoughnessTexture.value()
+                          .textureIndex;
+    mrTexture = (Texture<float3>*) &scene.texture(idx);
+  }
+
+  // Transmission
   float transmission = 0.0f;
+  const Texture<float3>* transmissionTexture = nullptr;
   if (gltfMat.transmission) {
     transmission = gltfMat.transmission->transmissionFactor;
+    if (gltfMat.transmission->transmissionTexture) {
+      uint32_t idx = gltfMat.transmission->transmissionTexture.value()
+                            .textureIndex;
+      transmissionTexture = &scene.texture(idx);
+    }
   }
+
+  // Anisotropy
   float anisotropic = 0.0f, anisoRotation = 0.0f;
   if (gltfMat.anisotropy) {
     anisotropic = gltfMat.anisotropy->anisotropyStrength;
     anisoRotation = gltfMat.anisotropy->anisotropyRotation;
   }
 
+  // Emission
+  const auto em = gltfMat.emissiveFactor;
+  const float3 emission =
+    float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
+
   ParametricBSDF bsdf(
     baseColor,
     baseTexture,
+    mrTexture,
+    transmissionTexture,
     metallic,
     roughness,
     transmission,

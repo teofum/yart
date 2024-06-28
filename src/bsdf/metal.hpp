@@ -37,7 +37,8 @@ private:
 
   [[nodiscard]] float pdfImpl(
     const float3& wo,
-    const float3& wi
+    const float3& wi,
+    const float2& uv
   ) const override;
 
   [[nodiscard]] BSDFSample sampleImpl(

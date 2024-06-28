@@ -6,6 +6,8 @@ namespace yart {
 ParametricBSDF::ParametricBSDF(
   const float3& baseColor,
   const Texture<float3>* baseTexture,
+  const Texture<float3>* mrTexture,
+  const Texture<float3>* transmissionTexture,
   float metallic,
   float roughness,
   float transmission,
@@ -20,7 +22,9 @@ ParametricBSDF::ParametricBSDF(
             m_ior(ior),
             m_roughness(roughness),
             m_anisotropic(anisotropic),
-            m_baseTexture(baseTexture) {
+            m_baseTexture(baseTexture),
+            m_mrTexture(mrTexture),
+            m_transmissionTexture(transmissionTexture) {
   m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
 }
@@ -32,17 +36,23 @@ float3 ParametricBSDF::fImpl(
 ) const {
   // Sample textures
   float3 base = m_base;
-  if (m_baseTexture) base = m_baseTexture->sample(uv);
+  if (m_baseTexture) base *= m_baseTexture->sample(uv);
 
-  float r = m_roughness;
+  float r = m_roughness, m = m_cMetallic, t = m_cTrans;
+  if (m_mrTexture) {
+    float3 mr = m_mrTexture->sample(uv);
+    m *= mr.x();
+    r *= mr.y();
+  }
+  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
 
   // Init GGX microfacet distribution for sampled roughness
   GGX mf(r, m_anisotropic);
 
   // Calculate coeffs
-  const float cMetallic = m_cMetallic;
-  const float cDielectric = (1.0f - m_cMetallic) * m_cTrans;
-  const float cGlossy = (1.0f - m_cMetallic) * (1.0f - m_cTrans);
+  const float cMetallic = m;
+  const float cDielectric = (1.0f - m) * t;
+  const float cGlossy = (1.0f - m) * (1.0f - t);
 
   // Rotate wo/wi for anisotropy rotation
   float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;
@@ -56,17 +66,27 @@ float3 ParametricBSDF::fImpl(
   return val;
 }
 
-float ParametricBSDF::pdfImpl(const float3& wo, const float3& wi) const {
+float ParametricBSDF::pdfImpl(
+  const float3& wo,
+  const float3& wi,
+  const float2& uv
+) const {
   // Sample textures
-  float r = m_roughness;
+  float r = m_roughness, m = m_cMetallic, t = m_cTrans;
+  if (m_mrTexture) {
+    float3 mr = m_mrTexture->sample(uv);
+    m *= mr.x();
+    r *= mr.y();
+  }
+  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
 
   // Init GGX microfacet distribution for sampled roughness
   GGX mf(r, m_anisotropic);
 
   // Calculate probabilities of sampling each lobe
-  const float pMetallic = m_cMetallic;
-  const float pDielectric = (1.0f - m_cMetallic) * m_cTrans;
-  const float pGlossy = (1.0f - m_cMetallic) * (1.0f - m_cTrans);
+  const float pMetallic = m;
+  const float pDielectric = (1.0f - m) * t;
+  const float pGlossy = (1.0f - m) * (1.0f - t);
 
   float pdf = 0.0f;
   if (pMetallic > 0.0f) pdf += pMetallic * pdfMetallic(wo, wi, mf);
@@ -88,15 +108,22 @@ BSDFSample ParametricBSDF::sampleImpl(
   float3 base = m_base;
   if (m_baseTexture) base = m_baseTexture->sample(uv);
 
-  float r = m_roughness;
+  float r = m_roughness, m = m_cMetallic, t = m_cTrans;
+  if (m_mrTexture) {
+    float3 mr = m_mrTexture->sample(uv);
+    m *= mr.x();
+    r *= mr.y();
+  }
+  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
+
   if (regularized) r = roughen(r);
 
   // Init GGX microfacet distribution for sampled roughness
   GGX mf(r, m_anisotropic);
 
   // Calculate probabilities of sampling each lobe
-  const float pMetallic = m_cMetallic;
-  const float pDielectric = m_cMetallic + (1.0f - m_cMetallic) * m_cTrans;
+  const float pMetallic = m;
+  const float pDielectric = m + (1.0f - m) * t;
 
   // Rotate wo for anisotropy rotation
   float3 wo = m_localRotation * _wo;

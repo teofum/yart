@@ -43,7 +43,11 @@ float3 MetalBSDF::fImpl(
   return fss + fms;
 }
 
-float MetalBSDF::pdfImpl(const float3& _wo, const float3& _wi) const {
+float MetalBSDF::pdfImpl(
+  const float3& _wo,
+  const float3& _wi,
+  const float2& uv
+) const {
   if (m_microfacets.smooth()) return 0;
 
   float3 wo = m_localRotation * _wo, wi = m_localRotation * _wi;

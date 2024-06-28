@@ -17,7 +17,8 @@ using Sampler = yart::SobolSampler<yart::FastOwenScrambler>;
 using Integrator = yart::cpu::MISIntegrator;
 
 int main() {
-  yart::Buffer buffer(800, 600);
+//  yart::Buffer buffer(800, 600);
+  yart::Buffer buffer(1600, 1200);
 //  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(400, 400); // Furnace test
 
@@ -28,7 +29,7 @@ int main() {
   );
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
-  camera.moveAndLookAt({6.0f, 3.0f, 0.0f}, {0.0f, 3.0f, 0.0f}); // Sponza
+  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
 
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_multimat_test_3.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_mat_metal.glb");
@@ -45,7 +46,7 @@ int main() {
 
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = scene.get();
-  renderer.samples = 256;
+  renderer.samples = 4096;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

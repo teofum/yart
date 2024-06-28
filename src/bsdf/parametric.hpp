@@ -15,6 +15,8 @@ public:
   explicit ParametricBSDF(
     const float3& baseColor,
     const Texture<float3>* baseTexture = nullptr,
+    const Texture<float3>* mrTexture = nullptr,
+    const Texture<float3>* transmissionTexture = nullptr,
     float metallic = 0.0f,
     float roughness = 0.0f,
     float transmission = 0.0f,
@@ -37,7 +39,9 @@ private:
   float m_ior, m_roughness, m_anisotropic;
 
   // Textures
-  const Texture<float3>* m_baseTexture;
+  const Texture<float3>* m_baseTexture;         // Base color
+  const Texture<float3>* m_mrTexture;           // Metallic + roughness
+  const Texture<float3>* m_transmissionTexture; // Transmission
 
   // Anisotropy data
   float3x3 m_localRotation, m_invRotation;
@@ -50,7 +54,8 @@ private:
 
   [[nodiscard]] float pdfImpl(
     const float3& wo,
-    const float3& wi
+    const float3& wi,
+    const float2& uv
   ) const override;
 
   [[nodiscard]] BSDFSample sampleImpl(
