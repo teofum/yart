@@ -92,6 +92,7 @@ set(SRC_CORE
         src/core/sobol-matrices.cpp
         src/core/sobol-matrices.hpp
         src/core/texture.hpp
+        src/core/color-utils.hpp
 )
 
 set(SRC_IO

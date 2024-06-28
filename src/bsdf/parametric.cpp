@@ -5,9 +5,9 @@ namespace yart {
 
 ParametricBSDF::ParametricBSDF(
   const float3& baseColor,
-  const Texture<float3>* baseTexture,
-  const Texture<float3>* mrTexture,
-  const Texture<float3>* transmissionTexture,
+  const Texture* baseTexture,
+  const Texture* mrTexture,
+  const Texture* transmissionTexture,
   float metallic,
   float roughness,
   float transmission,
@@ -36,11 +36,11 @@ float3 ParametricBSDF::fImpl(
 ) const {
   // Sample textures
   float3 base = m_base;
-  if (m_baseTexture) base *= m_baseTexture->sample(uv);
+  if (m_baseTexture) base *= float3(m_baseTexture->sample(uv));
 
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   if (m_mrTexture) {
-    float3 mr = m_mrTexture->sample(uv);
+    float2 mr = float2(m_mrTexture->sample(uv));
     m *= mr.x();
     r *= mr.y();
   }
@@ -74,7 +74,7 @@ float ParametricBSDF::pdfImpl(
   // Sample textures
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   if (m_mrTexture) {
-    float3 mr = m_mrTexture->sample(uv);
+    float2 mr = float2(m_mrTexture->sample(uv));
     m *= mr.x();
     r *= mr.y();
   }
@@ -106,11 +106,11 @@ BSDFSample ParametricBSDF::sampleImpl(
 ) const {
   // Sample textures
   float3 base = m_base;
-  if (m_baseTexture) base = m_baseTexture->sample(uv);
+  if (m_baseTexture) base *= float3(m_baseTexture->sample(uv));
 
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   if (m_mrTexture) {
-    float3 mr = m_mrTexture->sample(uv);
+    float2 mr = float2(m_mrTexture->sample(uv));
     m *= mr.x();
     r *= mr.y();
   }

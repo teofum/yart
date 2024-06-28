@@ -19,6 +19,7 @@
 #include "tonemapping.hpp"
 #include "estimator.hpp"
 #include "sobol-matrices.hpp"
+#include "color-utils.hpp"
 #include "utils.hpp"
 
 #endif //YART_CORE_HPP

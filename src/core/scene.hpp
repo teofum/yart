@@ -94,12 +94,15 @@ public:
     m_materials.push_back(std::move(matPtr));
   }
 
-  [[nodiscard]] constexpr const Texture<float3>& texture(size_t i) const noexcept {
+  [[nodiscard]] constexpr const Texture& texture(size_t i) const noexcept {
     return *(m_textures[i]);
   }
 
-  constexpr void addTexture(std::unique_ptr<Texture<float3>>&& tPtr) noexcept {
+  constexpr Texture* addTexture(std::unique_ptr<Texture>&& tPtr) noexcept {
+    uint32_t i = m_textures.size();
     m_textures.push_back(std::move(tPtr));
+
+    return m_textures[i].get();
   }
 
   [[nodiscard]] constexpr size_t nLights() const noexcept {
@@ -131,7 +134,7 @@ public:
 private:
   std::unique_ptr<Node> m_root = nullptr;
   std::vector<std::unique_ptr<BSDF>> m_materials;
-  std::vector<std::unique_ptr<Texture<float3>>> m_textures;
+  std::vector<std::unique_ptr<Texture>> m_textures;
   std::vector<std::unique_ptr<Light>> m_lights;
 };
 

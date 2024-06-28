@@ -11,7 +11,7 @@ class GlossyBSDF : public BSDF {
 public:
   explicit GlossyBSDF(
     const float3& baseColor,
-    const Texture<float3>* baseTexture = nullptr,
+    const Texture* baseTexture = nullptr,
     float roughness = 0.0f,
     float ior = 1.5f,
     float anisotropic = 0.0f,
@@ -29,7 +29,7 @@ private:
   float3 m_base, m_emission;
   float m_ior, m_roughness;
 
-  const Texture<float3>* m_baseTexture;
+  const Texture* m_baseTexture;
 
   GGX m_microfacets, m_mfRoughened;
   float3x3 m_localRotation, m_invRotation;

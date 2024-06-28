@@ -5,7 +5,7 @@ namespace yart {
 
 GlossyBSDF::GlossyBSDF(
   const float3& baseColor,
-  const Texture<float3>* baseTexture,
+  const Texture* baseTexture,
   float roughness,
   float ior,
   float anisotropic,

@@ -7,8 +7,8 @@ namespace yart {
 using namespace math;
 
 class Buffer {
-private:
-  size_t m_width, m_height;
+protected:
+  uint32_t m_width, m_height;
   std::vector<float4> m_data;
 
 public:
@@ -16,11 +16,11 @@ public:
     : m_width(width), m_height(height), m_data(width * height, float4()) {
   }
 
-  [[nodiscard]] constexpr const size_t& width() const {
+  [[nodiscard]] constexpr const uint32_t& width() const {
     return m_width;
   }
 
-  [[nodiscard]] constexpr const size_t& height() const {
+  [[nodiscard]] constexpr const uint32_t& height() const {
     return m_height;
   }
 

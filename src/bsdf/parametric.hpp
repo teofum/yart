@@ -14,9 +14,9 @@ class ParametricBSDF : public BSDF {
 public:
   explicit ParametricBSDF(
     const float3& baseColor,
-    const Texture<float3>* baseTexture = nullptr,
-    const Texture<float3>* mrTexture = nullptr,
-    const Texture<float3>* transmissionTexture = nullptr,
+    const Texture* baseTexture = nullptr,
+    const Texture* mrTexture = nullptr,
+    const Texture* transmissionTexture = nullptr,
     float metallic = 0.0f,
     float roughness = 0.0f,
     float transmission = 0.0f,
@@ -39,9 +39,9 @@ private:
   float m_ior, m_roughness, m_anisotropic;
 
   // Textures
-  const Texture<float3>* m_baseTexture;         // Base color
-  const Texture<float3>* m_mrTexture;           // Metallic + roughness
-  const Texture<float3>* m_transmissionTexture; // Transmission
+  const Texture* m_baseTexture;         // Base color
+  const Texture* m_mrTexture;           // Metallic + roughness
+  const Texture* m_transmissionTexture; // Transmission
 
   // Anisotropy data
   float3x3 m_localRotation, m_invRotation;

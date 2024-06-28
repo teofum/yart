@@ -16,10 +16,12 @@ static float4x4 rotationFromQuat(std::array<float, 4> q) noexcept {
   return half * 2.0f;
 }
 
-static std::unique_ptr<Texture<float3>> loadTexture(
+static std::unique_ptr<Texture> loadTexture(
   const fastgltf::Asset& asset,
-  const fastgltf::Texture& gltfTex
+  size_t index,
+  Texture::Type type
 ) {
+  const fastgltf::Texture& gltfTex = asset.textures[index];
   if (!gltfTex.imageIndex) return nullptr;
 
   uint32_t imgIdx = gltfTex.imageIndex.value();
@@ -39,42 +41,48 @@ static std::unique_ptr<Texture<float3>> loadTexture(
     reinterpret_cast<const uint8_t*>(&bytes->bytes[bv.byteOffset]);
   int32_t len = int32_t(bv.byteLength);
 
-  return std::make_unique<Texture<float3>>(Texture<float3>::loadRGB(data, len));
+  return std::make_unique<Texture>(Texture::load(data, len, type));
 }
 
 static std::unique_ptr<BSDF> processMaterial(
   const fastgltf::Asset& asset,
   const fastgltf::Material& gltfMat,
-  const Scene& scene
+  Scene& scene
 ) noexcept {
   // Base color
   const auto base = gltfMat.pbrData.baseColorFactor;
   const float3 baseColor = float3(base[0], base[1], base[2]);
-  const Texture<float3>* baseTexture = nullptr;
+  const Texture* baseTexture = nullptr;
   if (gltfMat.pbrData.baseColorTexture) {
     uint32_t idx = gltfMat.pbrData.baseColorTexture.value().textureIndex;
-    baseTexture = &scene.texture(idx);
+    baseTexture = scene.addTexture(
+      loadTexture(asset, idx, Texture::Type::sRGB)
+    );
   }
 
   // Roughness + metallic
   float roughness = gltfMat.pbrData.roughnessFactor;
   float metallic = gltfMat.pbrData.metallicFactor;
-  Texture<float3>* mrTexture = nullptr;
+  Texture* mrTexture = nullptr;
   if (gltfMat.pbrData.metallicRoughnessTexture) {
     uint32_t idx = gltfMat.pbrData.metallicRoughnessTexture.value()
                           .textureIndex;
-    mrTexture = (Texture<float3>*) &scene.texture(idx);
+    mrTexture = scene.addTexture(
+      loadTexture(asset, idx, Texture::Type::NonColor)
+    );
   }
 
   // Transmission
   float transmission = 0.0f;
-  const Texture<float3>* transmissionTexture = nullptr;
+  const Texture* transmissionTexture = nullptr;
   if (gltfMat.transmission) {
     transmission = gltfMat.transmission->transmissionFactor;
     if (gltfMat.transmission->transmissionTexture) {
       uint32_t idx = gltfMat.transmission->transmissionTexture.value()
                             .textureIndex;
-      transmissionTexture = &scene.texture(idx);
+      transmissionTexture = scene.addTexture(
+        loadTexture(asset, idx, Texture::Type::NonColor)
+      );
     }
   }
 
@@ -264,9 +272,6 @@ std::unique_ptr<Scene> load(const fs::path& path) noexcept {
 
   Node root;
   Scene scene(std::move(root));
-
-  for (const auto& texture: asset.textures)
-    scene.addTexture(loadTexture(asset, texture));
 
   for (const auto& material: asset.materials)
     scene.addMaterial(processMaterial(asset, material, scene));
