@@ -31,7 +31,11 @@ public:
     x = cross(n, y);
   }
 
-  constexpr explicit Frame(const float3& n, const float3& t) noexcept: z(n) {
+  constexpr explicit Frame(
+    const float3& n,
+    const float3& t,
+    float handedness = 1.0f
+  ) noexcept: z(n) {
     if (absDot(t, n) > 0.9f) [[unlikely]] {
       // Ignore degenerate tangents
       const float3 a = std::abs(n.x()) > 0.5 ? axis_y<float> : axis_x<float>;
@@ -40,7 +44,7 @@ public:
       x = cross(n, y);
     } else [[likely]] {
       // Otherwise, ensure orthogonality
-      y = normalized(cross(n, t));
+      y = normalized(cross(n, t)) * handedness;
       x = cross(y, z);
     }
   }

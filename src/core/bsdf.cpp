@@ -7,14 +7,14 @@ float3 BSDF::f(
   const float3& wi,
   const float3& n,
   const float3& t,
-  const float3& st,
+  const float4& st,
   const float2& uv
 ) const {
   float3 sn = n;
 
   if (m_normalTexture) {
     float3 sampledNormal = float3(m_normalTexture->sample(uv)) * 2.0f - 1.0f;
-    Frame normalMapFrame = Frame(sn, st);
+    Frame normalMapFrame = Frame(sn, float3(st), st.w());
     sn = normalized(normalMapFrame.ltw(sampledNormal));
   }
 
@@ -27,14 +27,14 @@ float BSDF::pdf(
   const float3& wi,
   const float3& n,
   const float3& t,
-  const float3& st,
+  const float4& st,
   const float2& uv
 ) const {
   float3 sn = n;
 
   if (m_normalTexture) {
     float3 sampledNormal = float3(m_normalTexture->sample(uv)) * 2.0f - 1.0f;
-    Frame normalMapFrame = Frame(sn, st);
+    Frame normalMapFrame = Frame(sn, float3(st), st.w());
     sn = normalized(normalMapFrame.ltw(sampledNormal));
   }
 
@@ -46,7 +46,7 @@ BSDFSample BSDF::sample(
   const float3& wo,
   const float3& n,
   const float3& t,
-  const float3& st,
+  const float4& st,
   const float2& uv,
   const float2& u,
   float uc,
@@ -57,7 +57,7 @@ BSDFSample BSDF::sample(
 
   if (m_normalTexture) {
     float3 sampledNormal = float3(m_normalTexture->sample(uv)) * 2.0f - 1.0f;
-    Frame normalMapFrame = Frame(sn, st);
+    Frame normalMapFrame = Frame(sn, float3(st), st.w());
     sn = normalized(normalMapFrame.ltw(sampledNormal));
   }
 

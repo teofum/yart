@@ -7,7 +7,8 @@ namespace yart {
 using namespace math;
 
 struct Vertex {
-  float3 p, normal, tangent;
+  float3 p, normal;
+  float4 tangent;
   float2 texCoords;
 };
 
@@ -27,7 +28,8 @@ struct TrianglePositions {
 };
 
 struct TriangleData {
-  float3 n[3], t[3];
+  float3 n[3];
+  float4 t[3];
   float2 texCoords[3];
 };
 
