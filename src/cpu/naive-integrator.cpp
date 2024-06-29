@@ -28,6 +28,7 @@ float3 NaiveIntegrator::LiImpl(
     -ray.dir,
     hit.n,
     hit.tg,
+    hit.st,
     hit.uv,
     m_sampler.get2D(),
     m_sampler.get1D(),

@@ -8,13 +8,15 @@ ParametricBSDF::ParametricBSDF(
   const Texture* baseTexture,
   const Texture* mrTexture,
   const Texture* transmissionTexture,
+  const Texture* normalTexture,
   float metallic,
   float roughness,
   float transmission,
   float ior,
   float anisotropic,
   float anisoRotation,
-  const float3& emission
+  const float3& emission,
+  float normalScale
 ) noexcept: m_cTrans(transmission),
             m_cMetallic(metallic),
             m_base(baseColor),
@@ -27,6 +29,8 @@ ParametricBSDF::ParametricBSDF(
             m_transmissionTexture(transmissionTexture) {
   m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
+  m_normalTexture = normalTexture;
+  m_normalScale = normalScale;
 }
 
 float ParametricBSDF::alpha(const float2& uv) const {

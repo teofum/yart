@@ -14,13 +14,15 @@ public:
     const Texture* baseTexture = nullptr,
     const Texture* mrTexture = nullptr,
     const Texture* transmissionTexture = nullptr,
+    const Texture* normalTexture = nullptr,
     float metallic = 0.0f,
     float roughness = 0.0f,
     float transmission = 0.0f,
     float ior = 1.5f,
     float anisotropic = 0.0f,
     float anisoRotation = 0.0f,
-    const float3& emission = float3()
+    const float3& emission = float3(),
+    float normalScale = 1.0f
   ) noexcept;
 
   [[nodiscard]] float alpha(const float2& uv) const override;

@@ -36,6 +36,7 @@ float3 MISIntegrator::Li(const Ray& r) {
       -ray.dir,
       hit.n,
       hit.tg,
+      hit.st,
       hit.uv,
       u,
       uc,
@@ -106,10 +107,10 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   // Sample the light
   LightSample ls = l.light.sample(hit.p, hit.n, u, 0.0f);
 
-  float3 f = hit.bsdf->f(wo, ls.wi, hit.n, hit.tg, hit.uv);
+  float3 f = hit.bsdf->f(wo, ls.wi, hit.n, hit.tg, hit.st, hit.uv);
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};
 
-  float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg, hit.uv);
+  float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg, hit.st, hit.uv);
   float pdfLight = l.p * ls.pdf * length2(hit.p - ls.p) / absDot(ls.n, -ls.wi);
 
   return ls.Li * f * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);

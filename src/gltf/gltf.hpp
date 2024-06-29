@@ -12,13 +12,18 @@ namespace fs = std::filesystem;
 using namespace yart::math;
 
 template<>
+struct fastgltf::ElementTraits<float2>
+  : fastgltf::ElementTraitsBase<float2, AccessorType::Vec2, float> {
+};
+
+template<>
 struct fastgltf::ElementTraits<float3>
   : fastgltf::ElementTraitsBase<float3, AccessorType::Vec3, float> {
 };
 
 template<>
-struct fastgltf::ElementTraits<float2>
-  : fastgltf::ElementTraitsBase<float2, AccessorType::Vec2, float> {
+struct fastgltf::ElementTraits<float4>
+  : fastgltf::ElementTraitsBase<float4, AccessorType::Vec4, float> {
 };
 
 namespace yart::gltf {

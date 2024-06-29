@@ -5,6 +5,7 @@
 
 #include <math/math.hpp>
 #include "ray.hpp"
+#include "texture.hpp"
 
 namespace yart {
 using namespace math;
@@ -44,6 +45,7 @@ public:
     const float3& wi,
     const float3& n,
     const float3& t,
+    const float3& st,
     const float2& uv
   ) const;
 
@@ -52,6 +54,7 @@ public:
     const float3& wi,
     const float3& n,
     const float3& t,
+    const float3& st,
     const float2& uv
   ) const;
 
@@ -59,6 +62,7 @@ public:
     const float3& wo,
     const float3& n,
     const float3& t,
+    const float3& st,
     const float2& uv,
     const float2& u,
     float uc,
@@ -71,6 +75,9 @@ public:
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
 
 protected:
+  const Texture* m_normalTexture = nullptr;
+  float m_normalScale = 1.0f;
+
   [[nodiscard]] virtual float3 fImpl(
     const float3& wo,
     const float3& wi,

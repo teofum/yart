@@ -63,7 +63,7 @@ static std::unique_ptr<BSDF> processMaterial(
   // Roughness + metallic
   float roughness = gltfMat.pbrData.roughnessFactor;
   float metallic = gltfMat.pbrData.metallicFactor;
-  Texture* mrTexture = nullptr;
+  const Texture* mrTexture = nullptr;
   if (gltfMat.pbrData.metallicRoughnessTexture) {
     uint32_t idx = gltfMat.pbrData.metallicRoughnessTexture.value()
                           .textureIndex;
@@ -98,18 +98,32 @@ static std::unique_ptr<BSDF> processMaterial(
   const float3 emission =
     float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
 
+  // Normal maps
+  Texture* normalTexture = nullptr;
+  float normalScale = 1.0f;
+  if (gltfMat.normalTexture) {
+    uint32_t idx = gltfMat.normalTexture.value().textureIndex;
+    normalTexture = scene.addTexture(
+      loadTexture(asset, idx, Texture::Type::NonColor)
+    );
+
+    normalScale = gltfMat.normalTexture.value().scale;
+  }
+
   ParametricBSDF bsdf(
     baseColor,
     baseTexture,
     mrTexture,
     transmissionTexture,
+    normalTexture,
     metallic,
     roughness,
     transmission,
     gltfMat.ior,
     anisotropic,
     anisoRotation,
-    emission
+    emission,
+    normalScale
   );
 
   return std::make_unique<ParametricBSDF>(std::move(bsdf));
@@ -161,13 +175,13 @@ static Mesh processMesh(
     for (const float2& tc: tcIt)
       vertices[tcIdx++].texCoords = tc;
 
-//    const auto* tangentIt = primitive.findAttribute("TANGENT");
-//    if (tangentIt) {
-//      const auto& tanAccessor = asset.accessors[tangentIt->second];
-//      const auto& tanIt = fastgltf::iterateAccessor<float3>(asset, tanAccessor);
-//      size_t tIdx = 0;
-//      for (const float3& tan: tanIt) vertices[tIdx++].tangent = tan;
-//    }
+    const auto* tangentIt = primitive.findAttribute("TANGENT");
+    if (tangentIt) {
+      const auto& tanAccessor = asset.accessors[tangentIt->second];
+      const auto& tanIt = fastgltf::iterateAccessor<float4>(asset, tanAccessor);
+      size_t tIdx = 0;
+      for (const float4& tan: tanIt) vertices[tIdx++].tangent = float3(tan);
+    }
 
     meshVertices.reserve(meshVertices.size() + vertices.size());
     meshVertices.insert(meshVertices.end(), vertices.begin(), vertices.end());

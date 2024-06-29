@@ -177,6 +177,7 @@ bool RayIntegrator::testTriangle(
 
   hit.t = t;
   hit.n = w * d.n[0] + u * d.n[1] + v * d.n[2];
+  hit.st = w * d.t[0] + u * d.t[1] + v * d.t[2];
   hit.uv = uv;
   hit.p = ray(t);
   hit.idx = idx;
