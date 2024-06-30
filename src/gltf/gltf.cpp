@@ -286,12 +286,9 @@ std::unique_ptr<Scene> load(const fs::path& path) noexcept {
 
   for (const auto& material: asset.materials)
     scene.addMaterial(processMaterial(asset, material, scene));
-
-  size_t i = 0;
-  for (const auto& mesh: asset.meshes) {
+  
+  for (const auto& mesh: asset.meshes)
     scene.addMesh(processMesh(asset, mesh, scene));
-    std::cout << i++ << "\n";
-  }
 
   for (size_t nodeIdx: gltfScene.nodeIndices)
     scene.root().appendChild(processNode(asset, nodeIdx, scene, Transform()));

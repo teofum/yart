@@ -39,19 +39,8 @@ public:
 
     updateBounds(root);
     subdivide(root);
-//    printStats();
+    printStats();
   }
-
-//  constexpr BVH(const BVH& other, const std::vector<Triangle>& tris) noexcept
-//    : m_tris(&tris), m_triIdx(other.m_triIdx), m_nodes(other.m_nodes),
-//      m_rootIdx(other.m_rootIdx), m_nodesUsed(other.m_nodesUsed) {}
-//
-//  constexpr BVH(BVH&& other, const std::vector<Triangle>& tris) noexcept
-//    : m_tris(&tris),
-//      m_triIdx(std::move(other.m_triIdx)),
-//      m_nodes(std::move(other.m_nodes)),
-//      m_rootIdx(other.m_rootIdx),
-//      m_nodesUsed(other.m_nodesUsed) {}
 
   [[nodiscard]] constexpr const BVHNode& operator[](size_t i) const {
     return m_nodes[i];
