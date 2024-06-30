@@ -30,6 +30,7 @@ int main() {
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
   camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
+//  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
 
@@ -38,6 +39,7 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/furnace_glass_dl.glb");
   std::unique_ptr<yart::Scene> scene = load("models/sponza.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
+//  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
 
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;
@@ -49,7 +51,7 @@ int main() {
 
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = scene.get();
-  renderer.samples = 512;
+  renderer.samples = 4;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

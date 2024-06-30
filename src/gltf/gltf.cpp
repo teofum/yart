@@ -129,13 +129,11 @@ static std::unique_ptr<BSDF> processMaterial(
   return std::make_unique<ParametricBSDF>(std::move(bsdf));
 }
 
-static Mesh processMesh(
+static std::unique_ptr<Mesh> processMesh(
   const fastgltf::Asset& asset,
-  size_t meshIdx,
+  const fastgltf::Mesh& gltfMesh,
   Scene& scene
 ) noexcept {
-  const auto gltfMesh = asset.meshes[meshIdx];
-
   const auto primitives = gltfMesh.primitives;
   std::vector<Vertex> meshVertices;
   std::vector<Face> meshFaces;
@@ -209,7 +207,7 @@ static Mesh processMesh(
     meshFaces.insert(meshFaces.end(), faces.begin(), faces.end());
   }
 
-  return {meshVertices, meshFaces};
+  return std::make_unique<Mesh>(Mesh(meshVertices, meshFaces));
 }
 
 static Node processNode(
@@ -221,8 +219,7 @@ static Node processNode(
   const auto gltfNode = asset.nodes[nodeIdx];
 
   const auto meshIdx = gltfNode.meshIndex;
-  Node node = meshIdx ? Node(processMesh(asset, meshIdx.value(), scene))
-                      : Node();
+  Node node = meshIdx ? Node(&scene.mesh(meshIdx.value())) : Node();
 
   auto trs = std::get_if<fastgltf::TRS>(&gltfNode.transform);
   if (trs) {
@@ -289,6 +286,12 @@ std::unique_ptr<Scene> load(const fs::path& path) noexcept {
 
   for (const auto& material: asset.materials)
     scene.addMaterial(processMaterial(asset, material, scene));
+
+  size_t i = 0;
+  for (const auto& mesh: asset.meshes) {
+    scene.addMesh(processMesh(asset, mesh, scene));
+    std::cout << i++ << "\n";
+  }
 
   for (size_t nodeIdx: gltfScene.nodeIndices)
     scene.root().appendChild(processNode(asset, nodeIdx, scene, Transform()));

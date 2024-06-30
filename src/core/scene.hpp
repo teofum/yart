@@ -14,23 +14,21 @@ public:
 
   constexpr Node() noexcept = default;
 
-  constexpr explicit Node(Mesh&& mesh) noexcept {
-    for (const TrianglePositions& tri: mesh.triangles()) {
+  constexpr explicit Node(Mesh* mesh) noexcept: m_mesh(mesh) {
+    for (const TrianglePositions& tri: mesh->triangles()) {
       m_meshBounds.expandToInclude(tri.p0);
       m_meshBounds.expandToInclude(tri.p1);
       m_meshBounds.expandToInclude(tri.p2);
     }
     m_bounds = m_meshBounds;
-
-    m_mesh = std::make_unique<Mesh>(std::move(mesh));
   }
 
   [[nodiscard]] constexpr const Mesh* mesh() const noexcept {
-    return m_mesh.get();
+    return m_mesh;
   }
 
   [[nodiscard]] constexpr Mesh* mesh() noexcept {
-    return m_mesh.get();
+    return m_mesh;
   }
 
   [[nodiscard]] constexpr const fbounds3& boundingBox() const noexcept {
@@ -56,7 +54,7 @@ public:
   }
 
 private:
-  std::unique_ptr<Mesh> m_mesh = nullptr;
+  Mesh* m_mesh = nullptr;
   std::vector<std::unique_ptr<Node>> m_children;
 
   fbounds3 m_meshBounds;
@@ -78,6 +76,18 @@ public:
 
   [[nodiscard]] constexpr Node& root() noexcept {
     return *m_root;
+  }
+
+  [[nodiscard]] constexpr const Mesh& mesh(size_t i) const noexcept {
+    return *(m_meshes[i]);
+  }
+
+  [[nodiscard]] constexpr Mesh& mesh(size_t i) noexcept {
+    return *(m_meshes[i]);
+  }
+
+  constexpr void addMesh(std::unique_ptr<Mesh>&& meshPtr) noexcept {
+    m_meshes.push_back(std::move(meshPtr));
   }
 
   [[nodiscard]] constexpr const BSDF& material(size_t i) const noexcept {
@@ -133,6 +143,7 @@ public:
 
 private:
   std::unique_ptr<Node> m_root = nullptr;
+  std::vector<std::unique_ptr<Mesh>> m_meshes;
   std::vector<std::unique_ptr<BSDF>> m_materials;
   std::vector<std::unique_ptr<Texture>> m_textures;
   std::vector<std::unique_ptr<Light>> m_lights;

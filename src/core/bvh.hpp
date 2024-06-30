@@ -39,7 +39,7 @@ public:
 
     updateBounds(root);
     subdivide(root);
-    printStats();
+//    printStats();
   }
 
 //  constexpr BVH(const BVH& other, const std::vector<Triangle>& tris) noexcept
