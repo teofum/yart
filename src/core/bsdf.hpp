@@ -45,7 +45,6 @@ public:
     const float3& wi,
     const float3& n,
     const float3& t,
-    const float4& st,
     const float2& uv
   ) const;
 
@@ -54,7 +53,6 @@ public:
     const float3& wi,
     const float3& n,
     const float3& t,
-    const float4& st,
     const float2& uv
   ) const;
 
@@ -62,13 +60,18 @@ public:
     const float3& wo,
     const float3& n,
     const float3& t,
-    const float4& st,
     const float2& uv,
     const float2& u,
     float uc,
     float uc2,
     bool regularized = false
   ) const;
+
+  [[nodiscard]] float3 normal(
+    const float3& n,
+    const float4& t,
+    const float2& uv
+  ) const noexcept;
 
   [[nodiscard]] virtual float alpha(const float2& uv) const = 0;
 

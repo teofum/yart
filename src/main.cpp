@@ -51,10 +51,10 @@ int main() {
 
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = scene.get();
-  renderer.samples = 4;
+  renderer.samples = 32;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
-  renderer.tonemapper = &tonemapper;
+//  renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);
   frontend.start();
