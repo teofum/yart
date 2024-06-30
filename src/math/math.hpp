@@ -134,6 +134,12 @@ namespace yart::math {
   return (leftShift2(y) << 1) | leftShift2(x);
 }
 
+[[nodiscard]] constexpr float2 sphericalUV(const float3& dir) noexcept {
+  float phi = atan2(dir.z(), dir.x());
+  if (phi < 0.0f) phi += 2.0f * float(pi);
+  return {phi / (2.0f * float(pi)), (1.0f - dir.y()) / 2.0f};
+}
+
 }
 
 #endif //YART_MATH_HPP

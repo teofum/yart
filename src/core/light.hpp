@@ -25,6 +25,8 @@ public:
 
   [[nodiscard]] virtual Type type() const noexcept = 0;
 
+  [[nodiscard]] virtual float3 Le(const float3& wi) const noexcept = 0;
+
   [[nodiscard]] virtual float power() const noexcept = 0;
 
   [[nodiscard]] virtual float pdf() const noexcept = 0;
@@ -55,6 +57,8 @@ public:
 
   [[nodiscard]] Type type() const noexcept override;
 
+  [[nodiscard]] float3 Le(const float3& wi) const noexcept override;
+
   [[nodiscard]] float power() const noexcept override;
 
   [[nodiscard]] float pdf() const noexcept override;
@@ -72,6 +76,33 @@ private:
 
   float m_area;
   float3 m_emission;
+};
+
+class InfiniteLight : public Light {
+public:
+  InfiniteLight(float sceneRadius, const float3& emission) noexcept;
+
+  InfiniteLight(float sceneRadius, const Texture* emissionTexture) noexcept;
+
+  [[nodiscard]] Type type() const noexcept override;
+
+  [[nodiscard]] float3 Le(const float3& wi) const noexcept override;
+
+  [[nodiscard]] float power() const noexcept override;
+
+  [[nodiscard]] float pdf() const noexcept override;
+
+  [[nodiscard]] LightSample sample(
+    const float3& p,
+    const float3& n,
+    const float2& u,
+    float uc
+  ) const noexcept override;
+
+private:
+  float m_sceneRadius;
+  float3 m_emission;
+  const Texture* m_emissionTexture;
 };
 
 }

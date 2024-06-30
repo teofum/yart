@@ -173,13 +173,13 @@ static std::unique_ptr<Mesh> processMesh(
     for (const float2& tc: tcIt)
       vertices[tcIdx++].texCoords = tc;
 
-    const auto* tangentIt = primitive.findAttribute("TANGENT");
-    if (tangentIt) {
-      const auto& tanAccessor = asset.accessors[tangentIt->second];
-      const auto& tanIt = fastgltf::iterateAccessor<float4>(asset, tanAccessor);
-      size_t tIdx = 0;
-      for (const float4& tan: tanIt) vertices[tIdx++].tangent = tan;
-    }
+//    const auto* tangentIt = primitive.findAttribute("TANGENT");
+//    if (tangentIt) {
+//      const auto& tanAccessor = asset.accessors[tangentIt->second];
+//      const auto& tanIt = fastgltf::iterateAccessor<float4>(asset, tanAccessor);
+//      size_t tIdx = 0;
+//      for (const float4& tan: tanIt) vertices[tIdx++].tangent = tan;
+//    }
 
     meshVertices.reserve(meshVertices.size() + vertices.size());
     meshVertices.insert(meshVertices.end(), vertices.begin(), vertices.end());
@@ -286,7 +286,7 @@ std::unique_ptr<Scene> load(const fs::path& path) noexcept {
 
   for (const auto& material: asset.materials)
     scene.addMaterial(processMaterial(asset, material, scene));
-  
+
   for (const auto& mesh: asset.meshes)
     scene.addMesh(processMesh(asset, mesh, scene));
 

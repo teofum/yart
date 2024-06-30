@@ -39,6 +39,13 @@ namespace yart::math::samplers {
   return {r * std::cos(theta), r * std::sin(theta)};
 }
 
+[[nodiscard]] constexpr float3 sampleSphereUniform(const float2& u) noexcept {
+  const float z = 1.0f - 2.0f * u[0];
+  const float r = std::sqrt(1.0f - z * z);
+  const float phi = 2.0f * float(pi) * u[1];
+  return {r * std::cos(phi), r * std::sin(phi), z};
+}
+
 [[nodiscard]] constexpr float3 sampleTriUniform(const float2& u) noexcept {
   float b0, b1;
   if (u.x() < u.y()) {

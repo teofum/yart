@@ -29,17 +29,20 @@ int main() {
   );
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
-  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
+//  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
-//  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
+  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
 
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_multimat_test_3.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_mat_metal.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/furnace_glass_dl.glb");
-  std::unique_ptr<yart::Scene> scene = load("models/sponza.glb");
-//  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
+//  std::unique_ptr<yart::Scene> scene = load("models/sponza_unlit.glb");
+  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
+
+  yart::Texture hdri = yart::Texture::loadHDR("hdris/autumn_field_4k.hdr");
+  scene->addLight(yart::InfiniteLight(100.0f, &hdri));
 
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;
@@ -51,7 +54,7 @@ int main() {
 
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = scene.get();
-  renderer.samples = 2048;
+  renderer.samples = 256;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

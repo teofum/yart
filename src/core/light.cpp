@@ -1,4 +1,6 @@
 #include "core.hpp"
+#include "light.hpp"
+
 
 namespace yart {
 
@@ -62,6 +64,62 @@ LightSample AreaLight::sample(
     normal,
     pdf
   };
+}
+
+float3 AreaLight::Le(const float3& wi) const noexcept {
+  return m_emission;
+}
+
+InfiniteLight::InfiniteLight(float sceneRadius, const float3& emission) noexcept
+  : Light({}),
+    m_sceneRadius(sceneRadius),
+    m_emission(emission),
+    m_emissionTexture(nullptr) {}
+
+InfiniteLight::InfiniteLight(
+  float sceneRadius,
+  const Texture* emissionTexture
+) noexcept
+  : Light({}),
+    m_sceneRadius(sceneRadius),
+    m_emission(float3{}),
+    m_emissionTexture(emissionTexture) {}
+
+Light::Type InfiniteLight::type() const noexcept {
+  return Light::Type::Infinite;
+}
+
+float InfiniteLight::power() const noexcept {
+  return 4.0f * float(pi) * float(pi) * m_sceneRadius * m_sceneRadius *
+         length(m_emission);
+}
+
+float InfiniteLight::pdf() const noexcept {
+  return 0.25f * float(invPi); // 1 / 4pi
+}
+
+LightSample InfiniteLight::sample(
+  const float3& p,
+  const float3& n,
+  const float2& u,
+  float uc
+) const noexcept {
+  float3 wi = samplers::sampleSphereUniform(u);
+  float pdf = 0.25f * float(invPi);
+  return {
+    Le(wi),
+    wi,
+    wi * m_sceneRadius,
+    -wi,
+    pdf
+  };
+}
+
+float3 InfiniteLight::Le(const float3& wi) const noexcept {
+  if (m_emissionTexture)
+    return float3(m_emissionTexture->sample(sphericalUV(wi)));
+
+  return m_emission;
 }
 
 }

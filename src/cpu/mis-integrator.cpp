@@ -24,6 +24,12 @@ float3 MISIntegrator::Li(const Ray& r) {
     Hit hit;
     bool didHit = testNode(ray, 0.001f, hit, scene->root());
     if (!didHit) {
+      for (const auto& light: scene->lights()) {
+        if (light.type() == Light::Type::Infinite) {
+          L += attenuation * light.Le(ray.dir);
+        }
+      }
+
       L += attenuation * backgroundColor;
       break;
     }
@@ -110,7 +116,8 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};
 
   float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg, hit.uv);
-  float pdfLight = l.p * ls.pdf * length2(hit.p - ls.p) / absDot(ls.n, -ls.wi);
+  float pdfLight = l.p * ls.pdf / absDot(ls.n, -ls.wi);
+  if (l.light.type() == Light::Type::Area) pdfLight *= length2(hit.p - ls.p);
 
   return ls.Li * f * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);
 }

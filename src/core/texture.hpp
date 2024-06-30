@@ -41,6 +41,46 @@ public:
     return texture;
   }
 
+  static Texture load(const char* filename, Type type) {
+    int32_t w, h;
+    const uint8_t* pixels = stbi_load(filename, &w, &h, nullptr, 4);
+
+    Texture texture(w, h);
+    for (uint32_t i = 0; i < w * h; i++) {
+      uint32_t iPixel = i * 4;
+      texture.m_data[i] = float4(
+        pixels[iPixel + 0],
+        pixels[iPixel + 1],
+        pixels[iPixel + 2],
+        pixels[iPixel + 3]
+      ) / 255.0f;
+
+      if (type == Type::sRGB)
+        texture.m_data[i] = sRGBDecode(texture.m_data[i]);
+    }
+
+    return texture;
+  }
+
+
+  static Texture loadHDR(const char* filename) {
+    int32_t w, h;
+    const float* pixels = stbi_loadf(filename, &w, &h, nullptr, 4);
+
+    Texture texture(w, h);
+    for (uint32_t i = 0; i < w * h; i++) {
+      uint32_t iPixel = i * 4;
+      texture.m_data[i] = float4(
+        pixels[iPixel + 0],
+        pixels[iPixel + 1],
+        pixels[iPixel + 2],
+        pixels[iPixel + 3]
+      );
+    }
+
+    return texture;
+  }
+
   constexpr Texture(unsigned width, unsigned height) noexcept
     : Buffer(width, height) {}
 

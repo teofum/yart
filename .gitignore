@@ -3,5 +3,6 @@ out*.*
 profile.json
 fastgltf/
 models/
+hdris/
 .DS_Store
 *.metallib
