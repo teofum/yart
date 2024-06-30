@@ -36,7 +36,7 @@ float AreaLight::power() const noexcept {
   return length(m_emission) * m_area * float(pi) * (twoSided ? 2.0f : 1.0f);
 }
 
-float AreaLight::pdf() const noexcept {
+float AreaLight::pdf(const float3& wi) const noexcept {
   return 1.0f / m_area;
 }
 
@@ -66,39 +66,36 @@ LightSample AreaLight::sample(
   };
 }
 
-float3 AreaLight::Le(const float3& wi) const noexcept {
+float3 AreaLight::Le(const float2& uv) const noexcept {
   return m_emission;
 }
 
-InfiniteLight::InfiniteLight(float sceneRadius, const float3& emission) noexcept
-  : Light({}),
-    m_sceneRadius(sceneRadius),
-    m_emission(emission),
-    m_emissionTexture(nullptr) {}
-
-InfiniteLight::InfiniteLight(
+UniformInfiniteLight::UniformInfiniteLight(
   float sceneRadius,
-  const Texture* emissionTexture
+  const float3& emission
 ) noexcept
   : Light({}),
     m_sceneRadius(sceneRadius),
-    m_emission(float3{}),
-    m_emissionTexture(emissionTexture) {}
+    m_emission(emission) {}
 
-Light::Type InfiniteLight::type() const noexcept {
+Light::Type UniformInfiniteLight::type() const noexcept {
   return Light::Type::Infinite;
 }
 
-float InfiniteLight::power() const noexcept {
+float3 UniformInfiniteLight::Le(const float2& uv) const noexcept {
+  return m_emission;
+}
+
+float UniformInfiniteLight::power() const noexcept {
   return 4.0f * float(pi) * float(pi) * m_sceneRadius * m_sceneRadius *
          length(m_emission);
 }
 
-float InfiniteLight::pdf() const noexcept {
+float UniformInfiniteLight::pdf(const float3& wi) const noexcept {
   return 0.25f * float(invPi); // 1 / 4pi
 }
 
-LightSample InfiniteLight::sample(
+LightSample UniformInfiniteLight::sample(
   const float3& p,
   const float3& n,
   const float2& u,
@@ -107,7 +104,7 @@ LightSample InfiniteLight::sample(
   float3 wi = samplers::sampleSphereUniform(u);
   float pdf = 0.25f * float(invPi);
   return {
-    Le(wi),
+    m_emission,
     wi,
     wi * m_sceneRadius,
     -wi,
@@ -115,11 +112,76 @@ LightSample InfiniteLight::sample(
   };
 }
 
-float3 InfiniteLight::Le(const float3& wi) const noexcept {
-  if (m_emissionTexture)
-    return float3(m_emissionTexture->sample(sphericalUV(wi)));
+ImageInfiniteLight::ImageInfiniteLight(
+  float sceneRadius,
+  const Texture* emissionTexture
+) noexcept
+  : Light({}),
+    m_sceneRadius(sceneRadius),
+    m_emissionTexture(emissionTexture) {
+  m_Lavg = 0.0f;
 
-  return m_emission;
+  uint32_t w = m_emissionTexture->width(), h = m_emissionTexture->height();
+  std::vector<float> d(w * h);
+  for (uint32_t y = 0; y < h; y++) {
+    for (uint32_t x = 0; x < w; x++) {
+      float value = sum(float3((*m_emissionTexture)(x, y))) / 3.0f;
+      d[y * w + x] = value;
+      m_Lavg += value;
+    }
+  }
+
+  m_Lavg /= float(w * h);
+
+  m_distribution = samplers::PiecewiseConstant2D(
+    d, fbounds2({0, 0}, {1, 1}), w, h
+  );
+
+  float avg = std::accumulate(d.begin(), d.end(), 0.0f) / float(d.size());
+  for (float& v: d) v = max(v - avg, 0.0f);
+
+  m_compensatedDistribution = samplers::PiecewiseConstant2D(
+    d, fbounds2({0, 0}, {1, 1}), w, h
+  );
+}
+
+Light::Type ImageInfiniteLight::type() const noexcept {
+  return Light::Type::Infinite;
+}
+
+float3 ImageInfiniteLight::Le(const float2& uv) const noexcept {
+  return float3(m_emissionTexture->sample(uv));
+}
+
+float ImageInfiniteLight::power() const noexcept {
+  return 4.0f * float(pi) * float(pi) * m_sceneRadius * m_sceneRadius * m_Lavg;
+}
+
+float ImageInfiniteLight::pdf(const float3& wi) const noexcept {
+  float2 uv = sphericalUV(wi);
+  float pdf = m_compensatedDistribution.pdf(uv) / (4.0f * float(pi));
+  return pdf;
+}
+
+LightSample ImageInfiniteLight::sample(
+  const float3& p,
+  const float3& n,
+  const float2& u,
+  float uc
+) const noexcept {
+  float pdf;
+  float2 uv = m_compensatedDistribution.sample(u, &pdf);
+  if (pdf == 0.0f) return {};
+
+  float3 wi = invSphericalUV(uv);
+  pdf /= 4.0f * float(pi);
+  return {
+    Le(uv),
+    wi,
+    wi * m_sceneRadius,
+    -wi,
+    pdf
+  };
 }
 
 }

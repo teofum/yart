@@ -63,7 +63,8 @@ set(SRC_MATH
         src/core/ray.hpp
         src/math/transform.hpp
         src/math/frame.hpp
-        src/math/complex.hpp)
+        src/math/complex.hpp
+        src/math/sampling.cpp)
 
 set(SRC_CORE
         src/core/buffer.hpp

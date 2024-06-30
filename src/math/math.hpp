@@ -140,6 +140,13 @@ namespace yart::math {
   return {phi / (2.0f * float(pi)), (1.0f - dir.y()) / 2.0f};
 }
 
+[[nodiscard]] constexpr float3 invSphericalUV(const float2& uv) noexcept {
+  float y = 1.0f - uv.y() * 2.0f;
+  float r = std::sqrt(1.0f - y * y);
+  float phi = uv.x() * 2.0f * float(pi);
+  return {std::cos(phi) * r, y, std::sin(phi) * r};
+}
+
 }
 
 #endif //YART_MATH_HPP

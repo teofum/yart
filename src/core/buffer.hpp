@@ -36,6 +36,10 @@ public:
     return m_data.size();
   }
 
+  [[nodiscard]] constexpr const std::vector<float4>& dataVec() const {
+    return m_data;
+  }
+
   [[nodiscard]] constexpr const float4* data() const {
     return m_data.data();
   }

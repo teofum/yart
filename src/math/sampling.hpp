@@ -1,7 +1,10 @@
 #ifndef YART_SAMPLING_HPP
 #define YART_SAMPLING_HPP
 
+#include <span>
+
 #include "vec.hpp"
+#include "bounds.hpp"
 
 namespace yart::math::samplers {
 
@@ -58,67 +61,6 @@ namespace yart::math::samplers {
   return {b0, b1, 1.0f - b0 - b1};
 }
 
-[[nodiscard]] constexpr float3 sampleTriSpherical(
-  const float3& v0,
-  const float3& v1,
-  const float3& v2,
-  const float3& p,
-  const float2& u,
-  float& pdf
-) noexcept {
-  // Do some trig magic to uniformly sample a direction w
-  // See pbrt, section 6.5.4
-  float3 a = normalized(v0 - p), b = normalized(v1 - p), c = normalized(v2 - p);
-  float3 n_ab = cross(a, b), n_bc = cross(b, c), n_ca = cross(c, a);
-  if (length2(n_ab) == 0 || length2(n_bc) == 0 || length2(n_ca) == 0) return {};
-  n_ab = normalized(n_ab);
-  n_bc = normalized(n_bc);
-  n_ca = normalized(n_ca);
-
-  const float
-    alpha = angleBetween(n_ab, -n_ca),
-    beta = angleBetween(n_bc, -n_ab),
-    gamma = angleBetween(n_ca, -n_bc);
-
-  const float Api = alpha + beta + gamma;
-  const float Ap = lerp(float(pi), Api, u.x());
-  const float A = Api - float(pi);
-  pdf = (A <= 0) ? 0 : 1.0f / A;
-
-  float cosAlpha = std::cos(alpha), sinAlpha = std::sin(alpha);
-  float sinAp = std::sin(Ap), cosAp = std::cos(Ap);
-  float sinPhi = sinAp * cosAlpha - cosAp * sinAlpha;
-  float cosPhi = cosAp * cosAlpha + sinAp * sinAlpha;
-  float k1 = cosPhi + cosAlpha;
-  float k2 = sinPhi - sinAlpha * dot(a, b);
-  float cosBp = (k2 + (k2 * cosPhi - k1 * sinPhi) * cosAlpha) /
-                ((k2 * sinPhi + k1 * cosPhi) * sinAlpha);
-  cosBp = std::clamp(cosBp, -1.0f, 1.0f);
-  float sinBp = std::sqrt(1.0f - cosBp);
-  float3 cp = cosBp * a + sinBp * normalized(gramSchmidt(c, a));
-
-  float cosTheta = 1.0f - u.y() * (1.0f - dot(cp, b));
-  float sinTheta = std::sqrt(1.0f - cosTheta);
-  float3 w = cosTheta * b + sinTheta * normalized(gramSchmidt(cp, b));
-
-  // Find the barycentric coords from w using a partial Möller-Trumbore
-  float3 e1 = v1 - v0, e2 = v2 - v0;
-  float3 s1 = cross(w, e2);
-  float det = dot(s1, e1);
-  float invDet = 1.0f / det;
-  float3 s = p - v0;
-  float b1 = dot(s, s1) * invDet;
-  float b2 = dot(w, cross(s, e1)) * invDet;
-  b1 = std::clamp(b1, 0.0f, 1.0f);
-  b2 = std::clamp(b2, 0.0f, 1.0f);
-  if (b1 + b2 > 1.0f) {
-    b1 /= b1 + b2;
-    b2 /= b1 + b2;
-  }
-
-  return {1.0f - b1 - b2, b1, b2};
-}
-
 [[nodiscard]] constexpr float sampleLinear(float u, float a, float b) noexcept {
   if (u == 0.0f && a == 0.0f) return 0.0f;
   return u * (a + b) / (a + std::sqrt(lerp(a * a, b * b, u)));
@@ -146,50 +88,85 @@ namespace yart::math::samplers {
          (w[0] + w[1] + w[2] + w[3]);
 }
 
-// Stolen from pbrt
-[[nodiscard]] constexpr float2 invertSphericalSample(
-  const float3& v0,
-  const float3& v1,
-  const float3& v2,
-  const float3& p,
-  const float3& wi
-) noexcept {
-  float3 a = normalized(v0 - p), b = normalized(v1 - p), c = normalized(v2 - p);
+class PiecewiseConstant1D {
+public:
+  constexpr PiecewiseConstant1D() = default;
 
-  // Compute normalized cross products of all direction pairs
-  float3 n_ab = cross(a, b), n_bc = cross(b, c), n_ca = cross(c, a);
-  if (length2(n_ab) == 0 || length2(n_bc) == 0 || length2(n_ca) == 0) return {};
-  n_ab = normalized(n_ab);
-  n_bc = normalized(n_bc);
-  n_ca = normalized(n_ca);
+  constexpr PiecewiseConstant1D(const std::span<float>& f, float min, float max)
+    : m_func(f.begin(), f.end()), m_cdf(f.size() + 1), m_min(min), m_max(max) {
+    // Take absolute value of f
+    for (float& x: m_func) x = std::abs(x);
 
-  float alpha = angleBetween(n_ab, -n_ca);
-  float beta = angleBetween(n_bc, -n_ab);
-  float gamma = angleBetween(n_ca, -n_bc);
+    // Compute the function integral
+    m_cdf[0] = 0.0f;
+    size_t n = m_func.size();
+    for (size_t i = 1; i < n + 1; i++)
+      m_cdf[i] = m_cdf[i - 1] + m_func[i - 1] * (max - min) / float(n);
 
-  float3 cp = normalized(cross(cross(b, wi), cross(c, a)));
-  if (dot(cp, a + c) < 0)
-    cp = -cp;
-
-  float u0;
-  if (dot(a, cp) > 0.99999847691f /* 0.1 degrees */)
-    u0 = 0;
-  else {
-    float3 n_cpb = cross(cp, b), n_acp = cross(a, cp);
-    if (length2(n_cpb) == 0 || length2(n_acp) == 0) return {0.5, 0.5};
-    n_cpb = normalized(n_cpb);
-    n_acp = normalized(n_acp);
-    float Ap =
-      alpha + angleBetween(n_ab, n_cpb) + angleBetween(n_acp, -n_cpb) -
-      float(pi);
-
-    float A = alpha + beta + gamma - float(pi);
-    u0 = Ap / A;
+    // Initialize the CDF
+    m_integral = m_cdf[n];
+    if (m_integral == 0.0f) {
+      // Handle the zero integral case by sampling uniformly
+      for (size_t i = 1; i < n + 1; i++) m_cdf[i] = float(i) / float(n);
+    } else {
+      for (size_t i = 1; i < n + 1; i++) m_cdf[i] /= m_integral;
+    }
   }
 
-  float u1 = (1 - dot(wi, b)) / (1 - dot(cp, b));
-  return {std::clamp(u0, 0.0f, 1.0f), std::clamp(u1, 0.0f, 1.0f)};
-}
+  [[nodiscard]] constexpr float integral() const noexcept { return m_integral; }
+
+  [[nodiscard]] constexpr float f(size_t i) const noexcept { return m_func[i]; }
+
+  [[nodiscard]] constexpr size_t size() const noexcept { return m_func.size(); }
+
+  [[nodiscard]] float sample(
+    float u,
+    float* pdf = nullptr,
+    uint32_t* offset = nullptr
+  ) const noexcept;
+
+private:
+  std::vector<float> m_func, m_cdf;
+  float m_min = 0.0f, m_max = 0.0f, m_integral = 0.0f;
+};
+
+class PiecewiseConstant2D {
+public:
+  constexpr PiecewiseConstant2D() = default;
+
+  constexpr PiecewiseConstant2D(
+    const std::span<float>& f,
+    const fbounds2& domain,
+    uint32_t nu,
+    uint32_t nv
+  ) {
+    for (uint32_t v = 0; v < nv; v++)
+      m_conditional
+        .emplace_back(f.subspan(v * nu, nu), domain.min[0], domain.max[0]);
+
+    std::vector<float> marginalFunc(nv);
+    for (uint32_t v = 0; v < nv; v++)
+      marginalFunc[v] = m_conditional[v].integral();
+    m_marginal = PiecewiseConstant1D(
+      marginalFunc,
+      domain.min[1],
+      domain.max[1]
+    );
+  }
+
+  [[nodiscard]] constexpr float integral() const noexcept {
+    return m_marginal.integral();
+  }
+
+  [[nodiscard]] float2 sample(float2 u, float* pdf = nullptr) const noexcept;
+
+  [[nodiscard]] float pdf(const float2& uv) const noexcept;
+
+private:
+  fbounds2 domain;
+  std::vector<PiecewiseConstant1D> m_conditional;
+  PiecewiseConstant1D m_marginal;
+};
 
 }
 

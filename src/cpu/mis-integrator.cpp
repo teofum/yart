@@ -26,7 +26,7 @@ float3 MISIntegrator::Li(const Ray& r) {
     if (!didHit) {
       for (const auto& light: scene->lights()) {
         if (light.type() == Light::Type::Infinite) {
-          L += attenuation * light.Le(ray.dir);
+          L += attenuation * light.Le(sphericalUV(ray.dir));
         }
       }
 
@@ -55,7 +55,7 @@ float3 MISIntegrator::Li(const Ray& r) {
         L += attenuation * res.Le * absDot(res.wi, hit.n);
       } else if (hit.lightIdx != -1) {
         const Light& light = scene->light(hit.lightIdx);
-        float pdfLight = light.pdf() * length2(lastHit - hit.p) /
+        float pdfLight = light.pdf(ray.dir) * length2(lastHit - hit.p) /
                          (absDot(hit.n, -ray.dir) *
                           m_lightSampler.p(hit.p, hit.n, hit.lightIdx));
 

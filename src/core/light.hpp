@@ -25,11 +25,11 @@ public:
 
   [[nodiscard]] virtual Type type() const noexcept = 0;
 
-  [[nodiscard]] virtual float3 Le(const float3& wi) const noexcept = 0;
+  [[nodiscard]] virtual float3 Le(const float2& uv) const noexcept = 0;
 
   [[nodiscard]] virtual float power() const noexcept = 0;
 
-  [[nodiscard]] virtual float pdf() const noexcept = 0;
+  [[nodiscard]] virtual float pdf(const float3& wi) const noexcept = 0;
 
   [[nodiscard]] virtual LightSample sample(
     const float3& p,
@@ -57,11 +57,11 @@ public:
 
   [[nodiscard]] Type type() const noexcept override;
 
-  [[nodiscard]] float3 Le(const float3& wi) const noexcept override;
+  [[nodiscard]] float3 Le(const float2& uv) const noexcept override;
 
   [[nodiscard]] float power() const noexcept override;
 
-  [[nodiscard]] float pdf() const noexcept override;
+  [[nodiscard]] float pdf(const float3& wi) const noexcept override;
 
   [[nodiscard]] LightSample sample(
     const float3& p,
@@ -78,19 +78,17 @@ private:
   float3 m_emission;
 };
 
-class InfiniteLight : public Light {
+class UniformInfiniteLight : public Light {
 public:
-  InfiniteLight(float sceneRadius, const float3& emission) noexcept;
-
-  InfiniteLight(float sceneRadius, const Texture* emissionTexture) noexcept;
+  UniformInfiniteLight(float sceneRadius, const float3& emission) noexcept;
 
   [[nodiscard]] Type type() const noexcept override;
 
-  [[nodiscard]] float3 Le(const float3& wi) const noexcept override;
+  [[nodiscard]] float3 Le(const float2& uv) const noexcept override;
 
   [[nodiscard]] float power() const noexcept override;
 
-  [[nodiscard]] float pdf() const noexcept override;
+  [[nodiscard]] float pdf(const float3& wi) const noexcept override;
 
   [[nodiscard]] LightSample sample(
     const float3& p,
@@ -102,7 +100,34 @@ public:
 private:
   float m_sceneRadius;
   float3 m_emission;
+};
+
+class ImageInfiniteLight : public Light {
+public:
+  ImageInfiniteLight(
+    float sceneRadius,
+    const Texture* emissionTexture
+  ) noexcept;
+
+  [[nodiscard]] Type type() const noexcept override;
+
+  [[nodiscard]] float3 Le(const float2& uv) const noexcept override;
+
+  [[nodiscard]] float power() const noexcept override;
+
+  [[nodiscard]] float pdf(const float3& wi) const noexcept override;
+
+  [[nodiscard]] LightSample sample(
+    const float3& p,
+    const float3& n,
+    const float2& u,
+    float uc
+  ) const noexcept override;
+
+private:
+  float m_sceneRadius, m_Lavg = 0.0f;
   const Texture* m_emissionTexture;
+  samplers::PiecewiseConstant2D m_distribution, m_compensatedDistribution;
 };
 
 }
