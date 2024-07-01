@@ -27,6 +27,8 @@ public:
 
   [[nodiscard]] virtual float3 Le(const float2& uv) const noexcept = 0;
 
+  [[nodiscard]] virtual float3 Lavg() const noexcept = 0;
+
   [[nodiscard]] virtual float power() const noexcept = 0;
 
   [[nodiscard]] virtual float pdf(const float3& wi) const noexcept = 0;
@@ -59,6 +61,8 @@ public:
 
   [[nodiscard]] float3 Le(const float2& uv) const noexcept override;
 
+  [[nodiscard]] float3 Lavg() const noexcept override;
+
   [[nodiscard]] float power() const noexcept override;
 
   [[nodiscard]] float pdf(const float3& wi) const noexcept override;
@@ -85,6 +89,8 @@ public:
   [[nodiscard]] Type type() const noexcept override;
 
   [[nodiscard]] float3 Le(const float2& uv) const noexcept override;
+
+  [[nodiscard]] float3 Lavg() const noexcept override;
 
   [[nodiscard]] float power() const noexcept override;
 
@@ -113,6 +119,8 @@ public:
 
   [[nodiscard]] float3 Le(const float2& uv) const noexcept override;
 
+  [[nodiscard]] float3 Lavg() const noexcept override;
+
   [[nodiscard]] float power() const noexcept override;
 
   [[nodiscard]] float pdf(const float3& wi) const noexcept override;
@@ -125,7 +133,8 @@ public:
   ) const noexcept override;
 
 private:
-  float m_sceneRadius, m_Lavg = 0.0f;
+  float m_sceneRadius;
+  float3 m_Lavg;
   const Texture* m_emissionTexture;
   samplers::PiecewiseConstant2D m_distribution, m_compensatedDistribution;
 };

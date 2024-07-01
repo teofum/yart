@@ -70,6 +70,10 @@ float3 AreaLight::Le(const float2& uv) const noexcept {
   return m_emission;
 }
 
+float3 AreaLight::Lavg() const noexcept {
+  return m_emission;
+}
+
 UniformInfiniteLight::UniformInfiniteLight(
   float sceneRadius,
   const float3& emission
@@ -112,6 +116,10 @@ LightSample UniformInfiniteLight::sample(
   };
 }
 
+float3 UniformInfiniteLight::Lavg() const noexcept {
+  return m_emission;
+}
+
 ImageInfiniteLight::ImageInfiniteLight(
   float sceneRadius,
   const Texture* emissionTexture
@@ -119,8 +127,6 @@ ImageInfiniteLight::ImageInfiniteLight(
   : Light({}),
     m_sceneRadius(sceneRadius),
     m_emissionTexture(emissionTexture) {
-  m_Lavg = 0.0f;
-
   uint32_t w = m_emissionTexture->width(), h = m_emissionTexture->height();
   std::vector<float> d(w * h);
   for (uint32_t y = 0; y < h; y++) {
@@ -128,9 +134,10 @@ ImageInfiniteLight::ImageInfiniteLight(
     float z = 1.0f - v * 2.0f;
     float sinTheta = std::sqrt(1.0f - z * z);
     for (uint32_t x = 0; x < w; x++) {
-      float value = sum(float3((*m_emissionTexture)(x, y))) / 3.0f;
+      float3 sampled = float3((*m_emissionTexture)(x, y));
+      float value = sum(sampled) / 3.0f;
       d[y * w + x] = value * sinTheta;
-      m_Lavg += value;
+      m_Lavg += sampled;
     }
   }
 
@@ -157,12 +164,13 @@ float3 ImageInfiniteLight::Le(const float2& uv) const noexcept {
 }
 
 float ImageInfiniteLight::power() const noexcept {
-  return 4.0f * float(pi) * float(pi) * m_sceneRadius * m_sceneRadius * m_Lavg;
+  return 4.0f * float(pi) * float(pi) * m_sceneRadius * m_sceneRadius *
+         sum(m_Lavg) / 3.0f;
 }
 
 float ImageInfiniteLight::pdf(const float3& wi) const noexcept {
   float2 uv = sphericalUV(wi);
-  float pdf = m_compensatedDistribution.pdf(uv) / (4.0f * float(pi));
+  float pdf = m_distribution.pdf(uv) / (4.0f * float(pi));
   return pdf;
 }
 
@@ -173,7 +181,7 @@ LightSample ImageInfiniteLight::sample(
   float uc
 ) const noexcept {
   float pdf;
-  float2 uv = m_compensatedDistribution.sample(u, &pdf);
+  float2 uv = m_distribution.sample(u, &pdf);
   if (pdf == 0.0f) return {};
 
   float3 wi = invSphericalUV(uv);
@@ -185,6 +193,10 @@ LightSample ImageInfiniteLight::sample(
     -wi,
     pdf
   };
+}
+
+float3 ImageInfiniteLight::Lavg() const noexcept {
+  return m_Lavg;
 }
 
 }

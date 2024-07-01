@@ -56,7 +56,7 @@ public:
     std::sort(
       m_acc.begin(),
       m_acc.end(),
-      [](const float3& a, const float3& b) { return luma(a) - luma(b); }
+      [](const float3& a, const float3& b) { return luma(a) < luma(b); }
     );
 
     // Return the median of means
@@ -86,7 +86,7 @@ public:
     std::sort(
       m_acc.begin(),
       m_acc.end(),
-      [](const float3& a, const float3& b) { return luma(a) - luma(b); }
+      [](const float3& a, const float3& b) { return luma(a) < luma(b); }
     );
 
     // Calculate the Gini function
@@ -128,7 +128,7 @@ public:
     std::sort(
       m_acc.begin(),
       m_acc.end(),
-      [](const float3& a, const float3& b) { return luma(a) - luma(b); }
+      [](const float3& a, const float3& b) { return luma(a) < luma(b); }
     );
 
     // Calculate the Gini function

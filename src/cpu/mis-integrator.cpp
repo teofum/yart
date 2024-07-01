@@ -29,14 +29,15 @@ float3 MISIntegrator::Li(const Ray& r) {
         if (light.type() == Light::Type::Infinite) {
           float3 Le = light.Le(sphericalUV(ray.dir));
 
-          if (depth > 0) {
-            float pdfLight = light.pdf(ray.dir) / absDot(lastHit.n, -ray.dir);
+          if (depth == 0 || specularBounce) {
+            L += attenuation * Le;
+          } else {
+            float pdfLight = light.pdf(ray.dir);
             float wBSDF = lastPdf / (lastPdf + pdfLight);
-            Le *= wBSDF;
+
+            L += attenuation * wBSDF * Le;
           }
 
-//          Le = min(Le, float3(1.0f));
-          L += attenuation * Le;
         }
       }
 
@@ -62,15 +63,14 @@ float3 MISIntegrator::Li(const Ray& r) {
     // Calculate indirect lighting (ie, if the ray happens to hit a light)
     if (res.is(BSDFSample::Emitted)) {
       if (depth == 0 || specularBounce) {
-        L += attenuation * res.Le * absDot(res.wi, lastHit.n);
+        L += attenuation * res.Le * absDot(res.wi, hit.n);
       } else if (hit.lightIdx != -1) {
         const Light& light = scene->light(hit.lightIdx);
         float pdfLight = light.pdf(-ray.dir) * length2(lastHit.p - hit.p) *
-                         m_lightSampler.p(lastHit.p, lastHit.n, hit.lightIdx) /
-                         absDot(hit.n, -ray.dir);
+                         m_lightSampler.p(lastHit.p, lastHit.n, hit.lightIdx);
 
         float wBSDF = lastPdf / (lastPdf + pdfLight);
-        L += attenuation * wBSDF * res.Le * absDot(res.wi, lastHit.n);
+        L += attenuation * wBSDF * res.Le * absDot(res.wi, hit.n);
       }
     }
 
@@ -101,8 +101,6 @@ float3 MISIntegrator::Li(const Ray& r) {
     }
   }
 
-//  L = min(L, float3(1.0f));
-//  L /= L + 1.0f;
   return L;
 }
 
@@ -126,7 +124,7 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};
 
   float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg, hit.uv);
-  float pdfLight = l.p * ls.pdf / absDot(ls.n, -ls.wi);
+  float pdfLight = l.p * ls.pdf;
   if (l.light.type() == Light::Type::Area) pdfLight *= length2(hit.p - ls.p);
 
   return ls.Li * f * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);
