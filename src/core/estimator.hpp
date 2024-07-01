@@ -38,20 +38,26 @@ private:
   float3 m_acc;
 };
 
-template<std::size_t M>
 class MoNEstimator : public Estimator {
 public:
-  constexpr explicit MoNEstimator(size_t nSamples) noexcept
-    : m_samples(nSamples) {
-    m_acc.fill(float3());
-  }
+  constexpr explicit MoNEstimator(int32_t n, int32_t mMax) noexcept
+    : m(min(mMax, max(1, 1 + 2 * ((n - 5) / 10)))),
+      m_acc(m), m_smp(m) {}
 
   constexpr void addSample(const float3& sample) noexcept override {
-    m_acc[m_idx] += sample;
-    m_idx = (m_idx + 1) % M;
+    if (!hasnan(sample)) {
+      m_acc[m_idx] += sample;
+      m_smp[m_idx]++;
+    }
+    m_idx = (m_idx + 1) % m;
   }
 
   [[nodiscard]] constexpr float3 getValue() noexcept override {
+    if (m == 1) return m_acc[0] / float(m_smp[0]);
+
+    // Divide buckets by number of samples
+    for (size_t i = 0; i < m; i++) m_acc[i] /= float(m_smp[i]);
+
     // Sort means by total value
     std::sort(
       m_acc.begin(),
@@ -60,28 +66,35 @@ public:
     );
 
     // Return the median of means
-    return m_acc[M / 2] / float(m_samples) * float(M);
+    return m_acc[m / 2];
   }
 
 private:
-  size_t m_samples, m_idx = 0;
-  std::array<float3, M> m_acc;
+  size_t m, m_idx = 0;
+  std::vector<float3> m_acc;
+  std::vector<size_t> m_smp;
 };
 
-template<std::size_t M>
 class GMoNbEstimator : public Estimator {
 public:
-  constexpr explicit GMoNbEstimator(size_t nSamples) noexcept
-    : m_samples(nSamples) {
-    m_acc.fill(float3());
-  }
+  constexpr explicit GMoNbEstimator(int32_t n, int32_t mMax) noexcept
+    : m(min(mMax, max(1, 1 + 2 * ((n - 5) / 10)))),
+      m_acc(m), m_smp(m) {}
 
   constexpr void addSample(const float3& sample) noexcept override {
-    m_acc[m_idx] += sample;
-    m_idx = (m_idx + 1) % M;
+    if (!hasnan(sample)) {
+      m_acc[m_idx] += sample;
+      m_smp[m_idx]++;
+    }
+    m_idx = (m_idx + 1) % m;
   }
 
   [[nodiscard]] constexpr float3 getValue() noexcept override {
+    if (m == 1) return m_acc[0] / float(m_smp[0]);
+
+    // Divide buckets by number of samples
+    for (size_t i = 0; i < m; i++) m_acc[i] /= float(m_smp[i]);
+
     // Sort means by total value
     std::sort(
       m_acc.begin(),
@@ -91,39 +104,46 @@ public:
 
     // Calculate the Gini function
     float3 sum, weightedSum;
-    for (size_t i = 0; i < M; i++) {
+    for (size_t i = 0; i < m; i++) {
       sum += m_acc[i];
       weightedSum += (i + 1) * m_acc[i];
     }
-    float G = (2.0f * luma(weightedSum)) / (float(M) * luma(sum)) -
-              float(M + 1) / float(M);
+    float G = (2.0f * luma(weightedSum)) / (float(m) * luma(sum)) -
+              float(m + 1) / float(m);
 
     // If G is below the threshold return the mean
-    if (G <= 0.25f) return sum / float(m_samples);
+    if (G <= 0.25f) return sum / float(m);
 
     // Return the median of means
-    return m_acc[M / 2] / float(m_samples) * float(M);
+    return m_acc[m / 2];
   }
 
 private:
-  size_t m_samples, m_idx = 0;
-  std::array<float3, M> m_acc;
+  size_t m, m_idx = 0;
+  std::vector<float3> m_acc;
+  std::vector<size_t> m_smp;
 };
 
-template<std::size_t M>
 class GMoNEstimator : public Estimator {
 public:
-  constexpr explicit GMoNEstimator(size_t nSamples) noexcept
-    : m_samples(nSamples) {
-    m_acc.fill(float3());
-  }
+  constexpr explicit GMoNEstimator(int32_t n, int32_t mMax) noexcept
+    : m(min(mMax, max(1, 1 + 2 * ((n - 5) / 10)))),
+      m_acc(m), m_smp(m) {}
 
   constexpr void addSample(const float3& sample) noexcept override {
-    m_acc[m_idx] += sample;
-    m_idx = (m_idx + 1) % M;
+    if (!hasnan(sample)) {
+      m_acc[m_idx] += sample;
+      m_smp[m_idx]++;
+    }
+    m_idx = (m_idx + 1) % m;
   }
 
   [[nodiscard]] constexpr float3 getValue() noexcept override {
+    if (m == 1) return m_acc[0] / float(m_smp[0]);
+
+    // Divide buckets by number of samples
+    for (size_t i = 0; i < m; i++) m_acc[i] /= float(m_smp[i]);
+
     // Sort means by total value
     std::sort(
       m_acc.begin(),
@@ -133,23 +153,24 @@ public:
 
     // Calculate the Gini function
     float3 sum, weightedSum;
-    for (size_t i = 0; i < M; i++) {
+    for (size_t i = 0; i < m; i++) {
       sum += m_acc[i];
       weightedSum += (i + 1) * m_acc[i];
     }
-    float G = (2.0f * luma(weightedSum)) / (float(M) * luma(sum)) -
-              float(M + 1) / float(M);
+    float G = (2.0f * luma(weightedSum)) / (float(m) * luma(sum)) -
+              float(m + 1) / float(m);
 
-    auto c = size_t(G * float(M / 2));
+    auto c = size_t(G * float(m / 2)); // NOLINT(*-integer-division)
     sum = float3(0.0f);
-    for (size_t i = c; i < M - c; i++) sum += m_acc[i];
+    for (size_t i = c; i < m - c; i++) sum += m_acc[i];
 
-    return sum / float(m_samples) * float(M) / float(M - 2 * c);
+    return sum / float(m - 2 * c);
   }
 
 private:
-  size_t m_samples, m_idx = 0;
-  std::array<float3, M> m_acc;
+  size_t m, m_idx = 0;
+  std::vector<float3> m_acc;
+  std::vector<size_t> m_smp;
 };
 
 }
