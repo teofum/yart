@@ -35,7 +35,7 @@ float2 PiecewiseConstant2D::sample(float2 u, float* pdf) const noexcept {
 }
 
 float PiecewiseConstant2D::pdf(const float2& uv) const noexcept {
-  float2 p = (uv - domain.min) / domain.size();
+  float2 p = (uv - m_domain.min) / m_domain.size();
   uint32_t iu = std::clamp<uint32_t>(
     uint32_t(p.x() * float(m_conditional[0].size())),
     0,

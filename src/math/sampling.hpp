@@ -2,6 +2,7 @@
 #define YART_SAMPLING_HPP
 
 #include <span>
+#include <utility>
 
 #include "vec.hpp"
 #include "bounds.hpp"
@@ -136,21 +137,21 @@ public:
 
   constexpr PiecewiseConstant2D(
     const std::span<float>& f,
-    const fbounds2& domain,
+    fbounds2 domain,
     uint32_t nu,
     uint32_t nv
-  ) {
+  ) : m_domain(std::move(domain)) {
     for (uint32_t v = 0; v < nv; v++)
       m_conditional
-        .emplace_back(f.subspan(v * nu, nu), domain.min[0], domain.max[0]);
+        .emplace_back(f.subspan(v * nu, nu), m_domain.min[0], m_domain.max[0]);
 
     std::vector<float> marginalFunc(nv);
     for (uint32_t v = 0; v < nv; v++)
       marginalFunc[v] = m_conditional[v].integral();
     m_marginal = PiecewiseConstant1D(
       marginalFunc,
-      domain.min[1],
-      domain.max[1]
+      m_domain.min[1],
+      m_domain.max[1]
     );
   }
 
@@ -163,7 +164,7 @@ public:
   [[nodiscard]] float pdf(const float2& uv) const noexcept;
 
 private:
-  fbounds2 domain;
+  fbounds2 m_domain;
   std::vector<PiecewiseConstant1D> m_conditional;
   PiecewiseConstant1D m_marginal;
 };

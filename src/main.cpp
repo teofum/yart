@@ -55,8 +55,6 @@ int main() {
 
   renderer.scene = scene.get();
   renderer.samples = 256;
-  renderer.firstWaveSamples = 128;
-  renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);
