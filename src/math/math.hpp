@@ -135,16 +135,18 @@ namespace yart::math {
 }
 
 [[nodiscard]] constexpr float2 sphericalUV(const float3& dir) noexcept {
-  float phi = atan2(dir.z(), dir.x());
+  float phi = atan2(-dir.z(), -dir.x());
   if (phi < 0.0f) phi += 2.0f * float(pi);
-  return {phi / (2.0f * float(pi)), (1.0f - dir.y()) / 2.0f};
+
+  float theta = acos(dir.y());
+  return {phi / (2.0f * float(pi)), theta / float(pi)};
 }
 
 [[nodiscard]] constexpr float3 invSphericalUV(const float2& uv) noexcept {
-  float y = 1.0f - uv.y() * 2.0f;
-  float r = std::sqrt(1.0f - y * y);
+  float y = std::cos(uv.y() * float(pi));
+  float r = std::sin(uv.y() * float(pi));
   float phi = uv.x() * 2.0f * float(pi);
-  return {std::cos(phi) * r, y, std::sin(phi) * r};
+  return {-std::cos(phi) * r, y, -std::sin(phi) * r};
 }
 
 }

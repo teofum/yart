@@ -124,9 +124,12 @@ ImageInfiniteLight::ImageInfiniteLight(
   uint32_t w = m_emissionTexture->width(), h = m_emissionTexture->height();
   std::vector<float> d(w * h);
   for (uint32_t y = 0; y < h; y++) {
+    float v = (float(y) + 0.5f) / float(h);
+    float z = 1.0f - v * 2.0f;
+    float sinTheta = std::sqrt(1.0f - z * z);
     for (uint32_t x = 0; x < w; x++) {
       float value = sum(float3((*m_emissionTexture)(x, y))) / 3.0f;
-      d[y * w + x] = value;
+      d[y * w + x] = value * sinTheta;
       m_Lavg += value;
     }
   }
@@ -178,7 +181,7 @@ LightSample ImageInfiniteLight::sample(
   return {
     Le(uv),
     wi,
-    wi * m_sceneRadius,
+    wi * 2.0f * m_sceneRadius,
     -wi,
     pdf
   };

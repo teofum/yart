@@ -18,13 +18,14 @@ using Integrator = yart::cpu::MISIntegrator;
 
 int main() {
 //  yart::Buffer buffer(800, 600);
-  yart::Buffer buffer(1600, 1200);
-//  yart::Buffer buffer(800, 400); // Material test
+//  yart::Buffer buffer(1600, 1200);
+  yart::Buffer buffer(800, 400); // Material test
+//  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(30.0f),
+    radians(20.0f),
     {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
   );
 
@@ -42,7 +43,7 @@ int main() {
   std::unique_ptr<yart::Scene> scene = load("models/hdri_test.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
 
-  yart::Texture hdri = yart::Texture::loadHDR("hdris/autumn_field_4k.hdr");
+  yart::Texture hdri = yart::Texture::loadHDR("hdris/autumn_park_4k.hdr");
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri));
 
   yart::tonemap::AgX tonemapper;
@@ -55,7 +56,7 @@ int main() {
 
 //  renderer.backgroundColor = float3(0.5f);
   renderer.scene = scene.get();
-  renderer.samples = 256;
+  renderer.samples = 128;
   renderer.firstWaveSamples = 1;
   renderer.maxWaveSamples = 128;
   renderer.tonemapper = &tonemapper;

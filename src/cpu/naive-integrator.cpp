@@ -22,7 +22,19 @@ float3 NaiveIntegrator::LiImpl(
 
   Hit hit;
   bool didHit = testNode(ray, 0.001f, hit, root);
-  if (!didHit) return backgroundColor;
+  if (!didHit) {
+    float3 L;
+    for (const auto& light: scene->lights()) {
+      if (light.type() == Light::Type::Infinite) {
+        float3 Le = light.Le(sphericalUV(ray.dir));
+//          Le = min(Le, float3(1.0f));
+        L += Le;
+      }
+    }
+
+    L += backgroundColor;
+    return L;
+  }
 
   BSDFSample res = hit.bsdf->sample(
     -ray.dir,

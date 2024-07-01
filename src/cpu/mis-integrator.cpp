@@ -11,7 +11,8 @@ MISIntegrator::MISIntegrator(
 ) noexcept: RayIntegrator(buffer, camera, sampler) {}
 
 float3 MISIntegrator::Li(const Ray& r) {
-  float3 L(0.0f), attenuation(1.0f), lastHit;
+  Hit lastHit;
+  float3 L(0.0f), attenuation(1.0f);
   uint32_t depth = 0;
   bool specularBounce = false, regularized = false;
   float lastPdf = 0.0f, accRoughness = 0.0f;
@@ -26,7 +27,16 @@ float3 MISIntegrator::Li(const Ray& r) {
     if (!didHit) {
       for (const auto& light: scene->lights()) {
         if (light.type() == Light::Type::Infinite) {
-          L += attenuation * light.Le(sphericalUV(ray.dir));
+          float3 Le = light.Le(sphericalUV(ray.dir));
+
+          if (depth > 0) {
+            float pdfLight = light.pdf(ray.dir) / absDot(lastHit.n, -ray.dir);
+            float wBSDF = lastPdf / (lastPdf + pdfLight);
+            Le *= wBSDF;
+          }
+
+//          Le = min(Le, float3(1.0f));
+          L += attenuation * Le;
         }
       }
 
@@ -52,15 +62,15 @@ float3 MISIntegrator::Li(const Ray& r) {
     // Calculate indirect lighting (ie, if the ray happens to hit a light)
     if (res.is(BSDFSample::Emitted)) {
       if (depth == 0 || specularBounce) {
-        L += attenuation * res.Le * absDot(res.wi, hit.n);
+        L += attenuation * res.Le * absDot(res.wi, lastHit.n);
       } else if (hit.lightIdx != -1) {
         const Light& light = scene->light(hit.lightIdx);
-        float pdfLight = light.pdf(ray.dir) * length2(lastHit - hit.p) /
-                         (absDot(hit.n, -ray.dir) *
-                          m_lightSampler.p(hit.p, hit.n, hit.lightIdx));
+        float pdfLight = light.pdf(-ray.dir) * length2(lastHit.p - hit.p) *
+                         m_lightSampler.p(lastHit.p, lastHit.n, hit.lightIdx) /
+                         absDot(hit.n, -ray.dir);
 
         float wBSDF = lastPdf / (lastPdf + pdfLight);
-        L += attenuation * wBSDF * res.Le * absDot(res.wi, hit.n);
+        L += attenuation * wBSDF * res.Le * absDot(res.wi, lastHit.n);
       }
     }
 
@@ -80,7 +90,7 @@ float3 MISIntegrator::Li(const Ray& r) {
     accRoughness += res.roughness;
     regularized = accRoughness > REG_ROUGHNESS_THRESHOLD;
     lastPdf = res.pdf;
-    lastHit = hit.p;
+    lastHit = hit;
     depth++;
 
     // Russian roulette
