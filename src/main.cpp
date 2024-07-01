@@ -34,7 +34,6 @@ int main() {
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
-
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_metaldragon.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_mat_metal.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/furnace_glass_dl.glb");
@@ -54,7 +53,6 @@ int main() {
     camera
   );
 
-//  renderer.backgroundColor = float3(0.5f);
   renderer.scene = scene.get();
   renderer.samples = 256;
   renderer.firstWaveSamples = 128;
