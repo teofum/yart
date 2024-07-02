@@ -39,6 +39,8 @@ private:
   }
 
 public:
+  float exposure = 0.0f;
+
   constexpr Camera(
     const uint2& imageSize,
     float vfov,

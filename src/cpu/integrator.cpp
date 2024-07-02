@@ -19,7 +19,7 @@ void Integrator::render() {
         m_sampler.startPixelSample({i + ox, j + oy}, s + sampleOffset);
 
         float3 sampled = sample(i + ox, j + oy);
-        estimator.addSample(sampled);
+        estimator.addSample(sampled * std::exp2(m_camera.exposure));
       }
       m_target(i, j) = float4(estimator.getValue(), 1.0f);
     }
