@@ -159,6 +159,7 @@ public:
     }
     float G = (2.0f * luma(weightedSum)) / (float(m) * luma(sum)) -
               float(m + 1) / float(m);
+    if (G > 1.0f) G = 1.0f;
 
     auto c = size_t(G * float(m / 2)); // NOLINT(*-integer-division)
     sum = float3(0.0f);

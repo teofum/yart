@@ -13,9 +13,10 @@ SampledLight UniformLightSampler::sample(
   const float3& n,
   float u
 ) const {
-  auto lightIdx = size_t(u * (float(m_scene->nLights()) - 0.01f));
+  size_t nl = m_scene->nLights();
+  size_t lightIdx = min(size_t(u * float(nl) - 0.01f), nl - 1);
   const Light& light = m_scene->light(lightIdx);
-  const float pl = 1.0f / float(m_scene->nLights());
+  const float pl = 1.0f / float(nl);
 
   return {light, pl};
 }

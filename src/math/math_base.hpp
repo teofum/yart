@@ -96,21 +96,21 @@ template<numeric T, numeric C, numeric... Args>
 
 /**
  * Given a size and a predicate f, returns the first value in the range
- * [0; size) for which f(x) is true and f(x + 1) is false (or oob)
+ * [0; size) for which f(x) is false
  */
 [[nodiscard]] constexpr int64_t findFirst(
   int64_t size,
   const std::function<bool(int64_t)>& f
 ) noexcept {
-  int64_t sz = int64_t(size - 1), first = 1;
+  int64_t sz = int64_t(size - 1), first = 0;
 
   while (sz > 0) {
     int64_t half = sz >> 1, middle = first + half;
     bool res = f(middle);
-    first = res ? middle + 1 : first;
+    first = res ? (middle + 1) : first;
     sz = res ? sz - (half + 1) : half;
   }
-  return std::clamp(first - 1, int64_t(0), size - 1);
+  return std::clamp(first, int64_t(0), size - 1);
 }
 
 /**

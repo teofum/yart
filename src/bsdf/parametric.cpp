@@ -276,7 +276,7 @@ float3 ParametricBSDF::fDielectric(
       mf.mdf(wm) * mf.g(wo, wi) * dwm_dwi /
       (std::abs(cosTheta_i * cosTheta_o));
 
-    return float3(T * Tss / E_o);
+    return T * base * Tss / E_o;
   }
 }
 
@@ -344,7 +344,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
 
       return {
         BSDFSample::Transmitted | BSDFSample::Specular,
-        float3(T / std::abs(wi.z())),
+        T * base / std::abs(wi.z()),
         float3(),
         wi,
         T,
@@ -394,7 +394,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
 
     return {
       BSDFSample::Transmitted | BSDFSample::Glossy,
-      float3((1.0f - Fss) * Tss / E_o),
+      (1.0f - Fss) * Tss * base / E_o,
       float3(),
       wi,
       pdf,
