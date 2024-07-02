@@ -29,6 +29,12 @@ public:
     return max - min;
   }
 
+  [[nodiscard]] constexpr bool includes(vec<T, N> v) const noexcept {
+    for (size_t i = 0; i < N; i++)
+      if (v[i] < min[i] || v[i] > max[i]) return false;
+    return true;
+  }
+
   [[nodiscard]] constexpr float area() const noexcept {
     float3 size = max - min;
     return size.x() * size.y() + size.y() * size.z() + size.z() * size.x();

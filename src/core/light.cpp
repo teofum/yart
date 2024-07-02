@@ -1,6 +1,8 @@
 #include "core.hpp"
 #include "light.hpp"
 
+#include <utility>
+
 
 namespace yart {
 
@@ -122,19 +124,27 @@ float3 UniformInfiniteLight::Lavg() const noexcept {
 
 ImageInfiniteLight::ImageInfiniteLight(
   float sceneRadius,
-  const Texture* emissionTexture
+  const Texture* emissionTexture,
+  fbounds2 bounds
 ) noexcept
   : Light({}),
     m_sceneRadius(sceneRadius),
+    m_bounds(std::move(bounds)),
     m_emissionTexture(emissionTexture) {
   uint32_t w = m_emissionTexture->width(), h = m_emissionTexture->height();
+  uint32_t x0 = uint32_t(float(w) * bounds.min.x());
+  uint32_t y0 = uint32_t(float(h) * bounds.min.y());
+  uint32_t x1 = uint32_t(float(w) * bounds.max.x());
+  uint32_t y1 = uint32_t(float(h) * bounds.max.y());
+  w = x1 - x0, h = y1 - y0;
+
   std::vector<float> d(w * h);
   for (uint32_t y = 0; y < h; y++) {
     float v = (float(y) + 0.5f) / float(h);
     float z = 1.0f - v * 2.0f;
     float sinTheta = std::sqrt(1.0f - z * z);
     for (uint32_t x = 0; x < w; x++) {
-      float3 sampled = float3((*m_emissionTexture)(x, y));
+      float3 sampled = float3((*m_emissionTexture)(x + x0, y + y0));
       float value = sum(sampled) / 3.0f;
       d[y * w + x] = value * sinTheta;
       m_Lavg += sampled;
@@ -144,15 +154,21 @@ ImageInfiniteLight::ImageInfiniteLight(
   m_Lavg /= float(w * h);
 
   m_distribution = samplers::PiecewiseConstant2D(
-    d, fbounds2({0, 0}, {1, 1}), w, h
+    d, m_bounds, w, h
   );
 
   float avg = std::accumulate(d.begin(), d.end(), 0.0f) / float(d.size());
   for (float& v: d) v = max(v - avg, 0.0f);
 
   m_compensatedDistribution = samplers::PiecewiseConstant2D(
-    d, fbounds2({0, 0}, {1, 1}), w, h
+    d, m_bounds, w, h
   );
+
+  float phi0 = m_bounds.min.x() * 2.0f * float(pi);
+  float phi1 = m_bounds.max.x() * 2.0f * float(pi);
+  float theta0 = m_bounds.min.y() * float(pi);
+  float theta1 = m_bounds.max.y() * float(pi);
+  m_surfaceArea = (phi1 - phi0) * (std::cos(theta0) - std::cos(theta1));
 }
 
 Light::Type ImageInfiniteLight::type() const noexcept {
@@ -160,17 +176,21 @@ Light::Type ImageInfiniteLight::type() const noexcept {
 }
 
 float3 ImageInfiniteLight::Le(const float2& uv) const noexcept {
+  if (!m_bounds.includes(uv)) return {};
+
   return float3(m_emissionTexture->sample(uv));
 }
 
 float ImageInfiniteLight::power() const noexcept {
-  return 4.0f * float(pi) * float(pi) * m_sceneRadius * m_sceneRadius *
+  return m_surfaceArea * float(pi) * m_sceneRadius * m_sceneRadius *
          sum(m_Lavg) / 3.0f;
 }
 
 float ImageInfiniteLight::pdf(const float3& wi) const noexcept {
   float2 uv = sphericalUV(wi);
-  float pdf = m_distribution.pdf(uv) / (4.0f * float(pi));
+  if (!m_bounds.includes(uv)) return 0;
+
+  float pdf = m_distribution.pdf(uv) / m_surfaceArea;
   return pdf;
 }
 
@@ -185,7 +205,7 @@ LightSample ImageInfiniteLight::sample(
   if (pdf == 0.0f) return {};
 
   float3 wi = invSphericalUV(uv);
-  pdf /= 4.0f * float(pi);
+  pdf /= m_surfaceArea;
   return {
     Le(uv),
     wi,

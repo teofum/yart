@@ -112,7 +112,9 @@ class ImageInfiniteLight : public Light {
 public:
   ImageInfiniteLight(
     float sceneRadius,
-    const Texture* emissionTexture
+    const Texture* emissionTexture,
+    fbounds2 bounds = {{0, 0},
+                       {1, 1}}
   ) noexcept;
 
   [[nodiscard]] Type type() const noexcept override;
@@ -133,8 +135,9 @@ public:
   ) const noexcept override;
 
 private:
-  float m_sceneRadius;
+  float m_sceneRadius, m_surfaceArea = 4.0f * float(pi);
   float3 m_Lavg;
+  fbounds2 m_bounds;
   const Texture* m_emissionTexture;
   samplers::PiecewiseConstant2D m_distribution, m_compensatedDistribution;
 };
