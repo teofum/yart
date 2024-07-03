@@ -15,12 +15,15 @@ public:
     const Texture* mrTexture = nullptr,
     const Texture* transmissionTexture = nullptr,
     const Texture* normalTexture = nullptr,
+    const Texture* clearcoatTexture = nullptr,
     float metallic = 0.0f,
     float roughness = 0.0f,
     float transmission = 0.0f,
     float ior = 1.5f,
     float anisotropic = 0.0f,
     float anisoRotation = 0.0f,
+    float clearcoat = 0.0f,
+    float clearcoatRoughness = 0.0f,
     const float3& emission = float3(),
     float normalScale = 1.0f
   ) noexcept;
@@ -38,11 +41,13 @@ private:
   // Common BSDF prameters
   float3 m_base, m_emission;
   float m_ior, m_roughness, m_anisotropic;
+  float m_clearcoat, m_clearcoatRoughness;
 
   // Textures
   const Texture* m_baseTexture;         // Base color
   const Texture* m_mrTexture;           // Metallic + roughness
   const Texture* m_transmissionTexture; // Transmission
+  const Texture* m_clearcoatTexture;    // Clearcoat
 
   // Anisotropy data
   float3x3 m_localRotation, m_invRotation;
@@ -126,6 +131,27 @@ private:
   [[nodiscard]] BSDFSample sampleGlossy(
     const float3& wo,
     const float3& base,
+    const GGX& mf,
+    const float2& u,
+    float uc
+  ) const;
+
+  [[nodiscard]] float3 fClearcoat(
+    const float3& wo,
+    const float3& wi,
+    const GGX& mf,
+    float* Fc
+  ) const;
+
+  [[nodiscard]] float pdfClearcoat(
+    const float3& wo,
+    const float3& wi,
+    const GGX& mf,
+    float* Fc
+  ) const;
+
+  [[nodiscard]] BSDFSample sampleClearcoat(
+    const float3& wo,
     const GGX& mf,
     const float2& u,
     float uc

@@ -93,6 +93,13 @@ static std::unique_ptr<BSDF> processMaterial(
     anisoRotation = gltfMat.anisotropy->anisotropyRotation;
   }
 
+  // Clearcoat
+  float clearcoat = 0.0f, clearcoatRoughness = 0.03f;
+  if (gltfMat.clearcoat) {
+    clearcoat = gltfMat.clearcoat->clearcoatFactor;
+    clearcoatRoughness = gltfMat.clearcoat->clearcoatRoughnessFactor;
+  }
+
   // Emission
   const auto em = gltfMat.emissiveFactor;
   const float3 emission =
@@ -116,12 +123,15 @@ static std::unique_ptr<BSDF> processMaterial(
     mrTexture,
     transmissionTexture,
     normalTexture,
+    nullptr,
     metallic,
     roughness,
     transmission,
     gltfMat.ior,
     anisotropic,
     anisoRotation,
+    clearcoat,
+    clearcoatRoughness,
     emission,
     normalScale
   );
@@ -265,7 +275,8 @@ std::unique_ptr<Scene> load(const fs::path& path) noexcept {
     fastgltf::Extensions::KHR_materials_emissive_strength |
     fastgltf::Extensions::KHR_materials_transmission |
     fastgltf::Extensions::KHR_materials_ior |
-    fastgltf::Extensions::KHR_materials_anisotropy
+    fastgltf::Extensions::KHR_materials_anisotropy |
+    fastgltf::Extensions::KHR_materials_clearcoat
   );
   auto result = parser.loadGltf(
     &buffer,

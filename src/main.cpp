@@ -27,33 +27,33 @@ int main() {
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(55.0f),
+    radians(18.0f),
     {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
   );
-  camera.exposure = 4.0f;
+//  camera.exposure = 4.0f;
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
-  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
-//  camera.moveAndLookAt({6.1f, 0.4f, 0.46f}, {0.0f, 0.9f, 0.25f}); // Car
+//  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
+  camera.moveAndLookAt({6.1f, 0.4f, 0.46f}, {0.0f, 0.5f, 0.25f}); // Car
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_metaldragon.glb");
-//  std::unique_ptr<yart::Scene> scene = load("models/cornell_mat_metal.glb");
+//  std::unique_ptr<yart::Scene> scene = load("models/cornell_mat_coat_rough.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/furnace_glass_dl.glb");
-  std::unique_ptr<yart::Scene> scene = load("models/sponza_unlit.glb");
+//  std::unique_ptr<yart::Scene> scene = load("models/sponza_unlit.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/hdri_test.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
-//  std::unique_ptr<yart::Scene> scene = load("models/car_lights.glb");
+  std::unique_ptr<yart::Scene> scene = load("models/car_metallic.glb");
 
-  yart::Texture hdri = yart::Texture::loadHDR("hdris/kloetzle_blei_4k.hdr");
-  fbounds2 hdriBounds({0.0f, 0.0f}, {1.0f, 0.5f});
-  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri, hdriBounds));
+//  yart::Texture hdri = yart::Texture::loadHDR("hdris/kloetzle_blei_4k.hdr");
+//  fbounds2 hdriBounds({0.0f, 0.0f}, {1.0f, 0.5f});
+//  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri, hdriBounds));
 
-//  yart::Texture hdri2 = yart::Texture::loadHDR("hdris/autumn_park_4k.hdr");
-//  fbounds2 hdriBounds2({0.5f, 0.1f}, {0.98f, 0.5f});
-//  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri2, hdriBounds2));
+  yart::Texture hdri2 = yart::Texture::loadHDR("hdris/autumn_park_4k.hdr");
+  fbounds2 hdriBounds2({0.0f, 0.0f}, {1.0f, 1.0f});
+  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri2, hdriBounds2));
 
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;
@@ -63,7 +63,7 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 1024;
+  renderer.samples = 256;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);

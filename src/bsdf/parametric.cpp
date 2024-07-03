@@ -9,12 +9,15 @@ ParametricBSDF::ParametricBSDF(
   const Texture* mrTexture,
   const Texture* transmissionTexture,
   const Texture* normalTexture,
+  const Texture* clearcoatTexture,
   float metallic,
   float roughness,
   float transmission,
   float ior,
   float anisotropic,
   float anisoRotation,
+  float clearcoat,
+  float clearcoatRoughness,
   const float3& emission,
   float normalScale
 ) noexcept: m_cTrans(transmission),
@@ -24,9 +27,12 @@ ParametricBSDF::ParametricBSDF(
             m_ior(ior),
             m_roughness(roughness),
             m_anisotropic(anisotropic),
+            m_clearcoat(clearcoat),
+            m_clearcoatRoughness(clearcoatRoughness),
             m_baseTexture(baseTexture),
             m_mrTexture(mrTexture),
-            m_transmissionTexture(transmissionTexture) {
+            m_transmissionTexture(transmissionTexture),
+            m_clearcoatTexture(clearcoatTexture) {
   m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
   m_normalTexture = normalTexture;
@@ -48,12 +54,18 @@ float3 ParametricBSDF::fImpl(
   if (m_baseTexture) base *= float3(m_baseTexture->sample(uv));
 
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
+  float c = m_clearcoat, cr = m_clearcoatRoughness;
   if (m_mrTexture) {
     float3 mr = float3(m_mrTexture->sample(uv));
     r *= mr.y();
     m *= mr.z();
   }
   if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
+  if (m_clearcoatTexture) {
+    float2 ccr = float2(m_clearcoatTexture->sample(uv));
+    c *= ccr.x();
+    cr *= ccr.y();
+  }
 
   // Init GGX microfacet distribution for sampled roughness
   GGX mf(r, m_anisotropic);
@@ -72,6 +84,14 @@ float3 ParametricBSDF::fImpl(
   if (cDielectric > 0.0f) val += cDielectric * fDielectric(wo, wi, base, mf);
   if (cGlossy > 0.0f) val += cGlossy * fGlossy(wo, wi, base, mf);
 
+  // Add clearcoat, if any
+  if (c > 0.0f) {
+    GGX mfClearcoat(cr);
+    float Fc = 0.0f;
+    float3 valClear = fClearcoat(wo, wi, mfClearcoat, &Fc);
+    val = (1.0f - c * Fc) * val + c * valClear;
+  }
+
   return val;
 }
 
@@ -82,12 +102,18 @@ float ParametricBSDF::pdfImpl(
 ) const {
   // Sample textures
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
+  float c = m_clearcoat, cr = m_clearcoatRoughness;
   if (m_mrTexture) {
     float3 mr = float3(m_mrTexture->sample(uv));
     r *= mr.y();
     m *= mr.z();
   }
   if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
+  if (m_clearcoatTexture) {
+    float2 ccr = float2(m_clearcoatTexture->sample(uv));
+    c *= ccr.x();
+    cr *= ccr.y();
+  }
 
   // Init GGX microfacet distribution for sampled roughness
   GGX mf(r, m_anisotropic);
@@ -101,6 +127,14 @@ float ParametricBSDF::pdfImpl(
   if (pMetallic > 0.0f) pdf += pMetallic * pdfMetallic(wo, wi, mf);
   if (pDielectric > 0.0f) pdf += pDielectric * pdfDielectric(wo, wi, mf);
   if (pGlossy > 0.0f) pdf += pGlossy * pdfGlossy(wo, wi, mf);
+
+  // Mix clearcoat pdf, if any
+  if (c > 0.0f) {
+    GGX mfClearcoat(cr);
+    float Fc = 0.0f;
+    float pdfClear = pdfClearcoat(wo, wi, mfClearcoat, &Fc);
+    pdf = (1.0f - c * Fc) * pdf + c * pdfClear;
+  }
 
   return pdf;
 }
@@ -118,37 +152,55 @@ BSDFSample ParametricBSDF::sampleImpl(
   if (m_baseTexture) base *= float3(m_baseTexture->sample(uv));
 
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
+  float c = m_clearcoat, cr = m_clearcoatRoughness;
   if (m_mrTexture) {
     float3 mr = float3(m_mrTexture->sample(uv));
     r *= mr.y();
     m *= mr.z();
   }
   if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
+  if (m_clearcoatTexture) {
+    float2 ccr = float2(m_clearcoatTexture->sample(uv));
+    c *= ccr.x();
+    cr *= ccr.y();
+  }
 
-  if (regularized) r = roughen(r);
-
-  // Init GGX microfacet distribution for sampled roughness
-  GGX mf(r, m_anisotropic);
+  if (regularized) {
+    r = roughen(r);
+    cr = roughen(cr);
+  }
 
   // Calculate probabilities of sampling each lobe
-  const float pMetallic = m;
-  const float pDielectric = m + (1.0f - m) * t;
-
-  // Rotate wo for anisotropy rotation
-  float3 wo = m_localRotation * _wo;
+  const float pClearcoat = c * fresnelDielectric(std::abs(_wo.z()), 1.5f);
+  const float pMetallic = (1.0f - c) * m;
+  const float pDielectric = (1.0f - c) * (m + (1.0f - m) * t);
 
   // Sample the BSDF
   BSDFSample sample;
-  if (uc2 < pMetallic) {
-    sample = sampleMetallic(wo, base, mf, u, uc);
-  } else if (uc2 < pDielectric) {
-    sample = sampleDielectric(wo, base, mf, u, uc);
+  if (uc2 < pClearcoat) {
+    // Init GGX microfacet distribution for sampled clearcoat roughness
+    GGX mfClearcoat(cr);
+
+    sample = sampleClearcoat(_wo, mfClearcoat, u, uc);
   } else {
-    sample = sampleGlossy(wo, base, mf, u, uc);
+    // Init GGX microfacet distribution for sampled roughness
+    GGX mf(r, m_anisotropic);
+
+    // Rotate wo for anisotropy rotation
+    float3 wo = m_localRotation * _wo;
+
+    if (uc2 < pMetallic) {
+      sample = sampleMetallic(wo, base, mf, u, uc);
+    } else if (uc2 < pDielectric) {
+      sample = sampleDielectric(wo, base, mf, u, uc);
+    } else {
+      sample = sampleGlossy(wo, base, mf, u, uc);
+    }
+
+    // Rotate wi for anisotropy rotation
+    sample.wi = m_invRotation * sample.wi;
   }
 
-  // Rotate wi for anisotropy rotation
-  sample.wi = m_invRotation * sample.wi;
   return sample;
 }
 
@@ -544,7 +596,106 @@ BSDFSample ParametricBSDF::sampleGlossy(
     BSDFSample::Reflected | BSDFSample::Glossy,
     float3(Fss * Mss + Fms * Mms),
     float3(),
-    m_invRotation * wi,
+    wi,
+    pdf,
+    m_roughness
+  };
+}
+
+float3 ParametricBSDF::fClearcoat(
+  const float3& wo,
+  const float3& wi,
+  const GGX& mf,
+  float* Fc
+) const {
+  if (mf.smooth()) return {};
+
+  const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
+  if (cosTheta_i == 0 || cosTheta_o == 0) return {};
+
+  float3 wm = wo + wi;
+  if (length2(wm) == 0.0f) return {};
+  wm = normalized(wm.z() < 0.0f ? -wm : wm);
+
+  // Dielectric single scattering component
+  const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
+  const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
+                    (4 * cosTheta_o * cosTheta_i);
+
+  // Attenuation fresnel factor
+  *Fc = max(
+    fresnelDielectric(cosTheta_o, 1.5f),
+    fresnelDielectric(cosTheta_i, 1.5f)
+  );
+
+  // Final BSDF
+  return float3(Fss * Mss);
+}
+
+float ParametricBSDF::pdfClearcoat(
+  const float3& wo,
+  const float3& wi,
+  const GGX& mf,
+  float* Fc
+) const {
+  if (mf.smooth()) return 0;
+
+  float3 wm = wo + wi;
+  if (length2(wm) == 0.0f) return 0;
+  wm = normalized(wm.z() < 0.0f ? -wm : wm);
+
+  const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
+
+  // Attenuation fresnel factor
+  *Fc = max(
+    fresnelDielectric(std::abs(wo.z()), 1.5f),
+    fresnelDielectric(std::abs(wi.z()), 1.5f)
+  );
+
+  return Fss * mf.vmdf(wo, wm) / (4 * absDot(wo, wm));
+}
+
+BSDFSample ParametricBSDF::sampleClearcoat(
+  const float3& wo,
+  const GGX& mf,
+  const float2& u,
+  float uc
+) const {
+  const float cosTheta_o = wo.z();
+
+  // Handle perfect specular case
+  if (mf.smooth()) {
+    const float F = fresnelDielectric(wo.z(), m_ior);
+    float3 wi(-wo.x(), -wo.y(), wo.z());
+
+    return {
+      BSDFSample::Reflected | BSDFSample::Specular,
+      float3(F / std::abs(wi.z())),
+      float3(),
+      wi,
+      F,
+      0.0f
+    };
+  }
+
+  // Rough (glossy) reflection
+  float3 wm = mf.sampleVisibleMicrofacet(wo, u);
+  const float3 wi = reflect(wo, wm);
+  const float cosTheta_i = wi.z();
+  if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
+
+  const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
+  const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
+                    (4 * cosTheta_o * cosTheta_i);
+
+  const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) *
+                    fresnelDielectric(cosTheta_o, 1.5f);
+
+  return {
+    BSDFSample::Reflected | BSDFSample::Glossy,
+    float3(Fss * Mss),
+    float3(),
+    wi,
     pdf,
     m_roughness
   };
