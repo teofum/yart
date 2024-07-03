@@ -10,6 +10,7 @@ class Ray {
 public:
   float3 origin, dir, idir, odir;
   vec3<uint8_t> sign;
+  bool nee = false;
 
   constexpr Ray(const float3& origin, const float3& dir) noexcept
     : origin(origin), dir(dir) {

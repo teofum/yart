@@ -86,6 +86,9 @@ static std::unique_ptr<BSDF> processMaterial(
     }
   }
 
+  // Abuse of the glTF doubleSided property to enable thin dielectrics
+  bool thinTransmission = !gltfMat.doubleSided;
+
   // Anisotropy
   float anisotropic = 0.0f, anisoRotation = 0.0f;
   if (gltfMat.anisotropy) {
@@ -133,7 +136,8 @@ static std::unique_ptr<BSDF> processMaterial(
     clearcoat,
     clearcoatRoughness,
     emission,
-    normalScale
+    normalScale,
+    thinTransmission
   );
 
   return std::make_unique<ParametricBSDF>(std::move(bsdf));

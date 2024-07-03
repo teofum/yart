@@ -19,7 +19,8 @@ ParametricBSDF::ParametricBSDF(
   float clearcoat,
   float clearcoatRoughness,
   const float3& emission,
-  float normalScale
+  float normalScale,
+  bool thinTransmission
 ) noexcept: m_cTrans(transmission),
             m_cMetallic(metallic),
             m_base(baseColor),
@@ -29,6 +30,7 @@ ParametricBSDF::ParametricBSDF(
             m_anisotropic(anisotropic),
             m_clearcoat(clearcoat),
             m_clearcoatRoughness(clearcoatRoughness),
+            m_thinTransmission(thinTransmission),
             m_baseTexture(baseTexture),
             m_mrTexture(mrTexture),
             m_transmissionTexture(transmissionTexture),
@@ -42,6 +44,10 @@ ParametricBSDF::ParametricBSDF(
 float ParametricBSDF::alpha(const float2& uv) const {
   if (m_baseTexture) return m_baseTexture->sample(uv).w();
   return 1.0f;
+}
+
+bool ParametricBSDF::transparent() const {
+  return m_thinTransmission && m_cTrans > 0.0f;
 }
 
 float3 ParametricBSDF::fImpl(
@@ -320,6 +326,16 @@ float3 ParametricBSDF::fDielectric(
                       (4 * cosTheta_o * cosTheta_i);
 
     return float3(Fss * Mss / E_o);
+  } else if (m_thinTransmission) {
+    float3 wip = reflect(-wi, axis_z<float>);
+    wm = normalized(wip + wo);
+    const float cosTheta_ip = wip.z();
+
+    // Single-scattering term
+    const float Tss = mf.mdf(wm) * mf.g(wo, wip) /
+                      (4 * cosTheta_o * cosTheta_ip);
+
+    return T * base * Tss / E_o;
   } else {
     const float temp = dot(wi, wm) * ior + dot(wo, wm);
     const float dwm_dwi = absDot(wi, wm) * absDot(wo, wm) / (temp * temp);
@@ -357,6 +373,11 @@ float ParametricBSDF::pdfDielectric(
   float pdf;
   if (isReflection) {
     pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * F;
+  } else if (m_thinTransmission) {
+    float3 wip = reflect(-wi, axis_z<float>);
+    wm = normalized(wip + wo);
+
+    pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * T;
   } else {
     const float temp = dot(wi, wm) + dot(wo, wm) / ior;
     const float dwm_dwi = absDot(wo, wm) / (temp * temp);
@@ -392,7 +413,9 @@ BSDFSample ParametricBSDF::sampleDielectric(
       };
     } else {
       float3 wi;
-      if (!refract(wo, axis_z<float>, m_ior, wi)) return {BSDFSample::Absorbed};
+      if (m_thinTransmission) wi = -wo;
+      else if (!refract(wo, axis_z<float>, m_ior, wi))
+        return {BSDFSample::Absorbed};
 
       return {
         BSDFSample::Transmitted | BSDFSample::Specular,
@@ -424,6 +447,22 @@ BSDFSample ParametricBSDF::sampleDielectric(
     return {
       BSDFSample::Reflected | BSDFSample::Glossy,
       float3(Fss * Mss / E_o),
+      float3(),
+      wi,
+      pdf,
+      m_roughness
+    };
+  } else if (m_thinTransmission) {
+    const float3 wi = reflect(wo, wm) * float3(1, 1, -1);
+
+    const float cosTheta_i = std::abs(wi.z());
+    const float Tss = mf.mdf(wm) * mf.g(wo, wi) / (4 * cosTheta_o * cosTheta_i);
+
+    const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * (1.0f - Fss);
+
+    return {
+      BSDFSample::Transmitted | BSDFSample::Glossy,
+      (1.0f - Fss) * Tss * base / E_o,
       float3(),
       wi,
       pdf,

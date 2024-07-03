@@ -75,6 +75,8 @@ public:
 
   [[nodiscard]] virtual float alpha(const float2& uv) const = 0;
 
+  [[nodiscard]] virtual bool transparent() const = 0;
+
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
 
 protected:

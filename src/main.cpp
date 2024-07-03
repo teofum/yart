@@ -22,12 +22,12 @@ int main() {
 //  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
-//  yart::Buffer buffer(900, 600); // 3:2
-  yart::Buffer buffer(1920, 1200); // 16:10 large
+  yart::Buffer buffer(900, 600); // 3:2
+//  yart::Buffer buffer(1920, 1200); // 16:10 large
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(18.0f),
+    radians(30.0f),
     {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
   );
 //  camera.exposure = 4.0f;
@@ -45,15 +45,15 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/hdri_test.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
-  std::unique_ptr<yart::Scene> scene = load("models/car_metallic.glb");
+  std::unique_ptr<yart::Scene> scene = load("models/car_lights_metallic.glb");
 
-//  yart::Texture hdri = yart::Texture::loadHDR("hdris/kloetzle_blei_4k.hdr");
-//  fbounds2 hdriBounds({0.0f, 0.0f}, {1.0f, 0.5f});
-//  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri, hdriBounds));
+  yart::Texture hdri = yart::Texture::loadHDR("hdris/kloetzle_blei_4k.hdr");
+  fbounds2 hdriBounds({0.0f, 0.0f}, {1.0f, 1.0f});
+  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri, hdriBounds));
 
-  yart::Texture hdri2 = yart::Texture::loadHDR("hdris/autumn_park_4k.hdr");
-  fbounds2 hdriBounds2({0.0f, 0.0f}, {1.0f, 1.0f});
-  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri2, hdriBounds2));
+//  yart::Texture hdri2 = yart::Texture::loadHDR("hdris/autumn_park_4k.hdr");
+//  fbounds2 hdriBounds2({0.0f, 0.0f}, {1.0f, 1.0f});
+//  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri2, hdriBounds2));
 
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;
@@ -63,7 +63,7 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 256;
+  renderer.samples = 512;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);

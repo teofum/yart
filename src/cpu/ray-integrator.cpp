@@ -19,10 +19,11 @@ bool RayIntegrator::testNode(
   Hit& hit,
   const Node& node
 ) const {
-  const Ray rayObjSpace(
+  Ray rayObjSpace(
     node.transform.inverse(ray.origin, Transform::Type::Point),
     node.transform.inverse(ray.dir, Transform::Type::Vector)
   );
+  rayObjSpace.nee = ray.nee;
 
   float d;
   if (!testBoundingBox(rayObjSpace, {tMin, hit.t}, node.boundingBox(), &d) ||
@@ -144,6 +145,9 @@ bool RayIntegrator::testTriangle(
   uint32_t idx,
   const BSDF& bsdf
 ) const {
+  // Skip transparent BSDF for NEE rays
+  if (ray.nee && bsdf.transparent()) return false;
+
   const float3 edge1 = tri.p1 - tri.p0;
   const float3 edge2 = tri.p2 - tri.p0;
 
@@ -179,7 +183,7 @@ bool RayIntegrator::testTriangle(
   float3 n = w * d.n[0] + u * d.n[1] + v * d.n[2];
   float4 tg = w * d.t[0] + u * d.t[1] + v * d.t[2];
   hit.n = bsdf.normal(n, tg, uv);
-  
+
   hit.uv = uv;
   hit.p = ray(t);
   hit.idx = idx;

@@ -25,7 +25,8 @@ public:
     float clearcoat = 0.0f,
     float clearcoatRoughness = 0.0f,
     const float3& emission = float3(),
-    float normalScale = 1.0f
+    float normalScale = 1.0f,
+    bool thinTransmission = false
   ) noexcept;
 
   [[nodiscard]] float alpha(const float2& uv) const override;
@@ -33,6 +34,8 @@ public:
   [[nodiscard]] constexpr const float3* emission() const noexcept override {
     return length2(m_emission) > 0.0f ? &m_emission : nullptr;
   }
+
+  [[nodiscard]] bool transparent() const override;
 
 private:
   // Lobe weights
@@ -42,6 +45,7 @@ private:
   float3 m_base, m_emission;
   float m_ior, m_roughness, m_anisotropic;
   float m_clearcoat, m_clearcoatRoughness;
+  bool m_thinTransmission;
 
   // Textures
   const Texture* m_baseTexture;         // Base color

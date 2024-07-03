@@ -132,6 +132,8 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
 
 bool MISIntegrator::unoccluded(const float3& from, const float3& to) const {
   Ray occlusionRay(from, normalized(to - from));
+  occlusionRay.nee = true;
+
   Hit occlusionHit;
   occlusionHit.t = length(to - from) - 0.001f;
   return !testNode(occlusionRay, 0.001f, occlusionHit, scene->root());

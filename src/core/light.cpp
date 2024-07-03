@@ -190,7 +190,7 @@ float ImageInfiniteLight::power() const noexcept {
 float ImageInfiniteLight::pdf(const float3& wi) const noexcept {
   float2 uv = sphericalUV(wi);
   if (!m_bounds.includes(uv))return 0;
-  
+
   float pdf = m_distribution.pdf(uv) / (4.0f * float(pi));
   return pdf;
 }
