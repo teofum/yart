@@ -22,15 +22,15 @@ int main() {
 //  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
-  yart::Buffer buffer(900, 600); // 3:2
-//  yart::Buffer buffer(1920, 1200); // 16:10 large
+//  yart::Buffer buffer(900, 600); // 3:2
+  yart::Buffer buffer(1920, 1200); // 16:10 large
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
     radians(55.0f),
     {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
   );
-  camera.exposure = 3.0f;
+  camera.exposure = 4.0f;
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
   camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
@@ -63,7 +63,7 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 64;
+  renderer.samples = 1024;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);

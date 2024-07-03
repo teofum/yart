@@ -176,7 +176,8 @@ Light::Type ImageInfiniteLight::type() const noexcept {
 }
 
 float3 ImageInfiniteLight::Le(const float2& uv) const noexcept {
-  if (!m_bounds.includes(uv)) return {};
+  if (!m_bounds.includes(uv))
+    return {};
 
   return float3(m_emissionTexture->sample(uv));
 }
@@ -188,9 +189,9 @@ float ImageInfiniteLight::power() const noexcept {
 
 float ImageInfiniteLight::pdf(const float3& wi) const noexcept {
   float2 uv = sphericalUV(wi);
-  if (!m_bounds.includes(uv)) return 0;
-
-  float pdf = m_distribution.pdf(uv) / m_surfaceArea;
+  if (!m_bounds.includes(uv))return 0;
+  
+  float pdf = m_distribution.pdf(uv) / (4.0f * float(pi));
   return pdf;
 }
 
