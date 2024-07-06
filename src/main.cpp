@@ -45,9 +45,9 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/hdri_test.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
-  std::unique_ptr<yart::Scene> scene = load("models/car_lights_metallic.glb");
+  std::unique_ptr<yart::Scene> scene = load("models/car_metallic.glb");
 
-  yart::Texture hdri = yart::Texture::loadHDR("hdris/kloetzle_blei_4k.hdr");
+  yart::Texture hdri = yart::Texture::loadHDR("hdris/citrus_orchard_road_4k.hdr");
   fbounds2 hdriBounds({0.0f, 0.0f}, {1.0f, 1.0f});
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri, hdriBounds));
 

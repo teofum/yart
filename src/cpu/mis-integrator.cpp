@@ -25,19 +25,16 @@ float3 MISIntegrator::Li(const Ray& r) {
     Hit hit;
     bool didHit = testNode(ray, 0.001f, hit, scene->root());
     if (!didHit) {
-      for (const auto& light: scene->lights()) {
-        if (light.type() == Light::Type::Infinite) {
-          float3 Le = light.Le(sphericalUV(ray.dir));
+      for (const auto* light: m_infiniteLights) {
+        float3 Le = light->Le(sphericalUV(ray.dir));
 
-          if (depth == 0 || specularBounce) {
-            L += attenuation * Le;
-          } else {
-            float pdfLight = light.pdf(ray.dir);
-            float wBSDF = lastPdf / (lastPdf + pdfLight);
+        if (depth == 0 || specularBounce) {
+          L += attenuation * Le;
+        } else {
+          float pdfLight = light->pdf(ray.dir);
+          float wBSDF = lastPdf / (lastPdf + pdfLight);
 
-            L += attenuation * wBSDF * Le;
-          }
-
+          L += attenuation * wBSDF * Le;
         }
       }
 
@@ -141,6 +138,11 @@ bool MISIntegrator::unoccluded(const float3& from, const float3& to) const {
 
 void MISIntegrator::setup() {
   m_lightSampler.init(scene);
+  m_infiniteLights.clear();
+
+  for (const auto& light: scene->lights())
+    if (light.type() == Light::Type::Infinite)
+      m_infiniteLights.push_back(&light);
 }
 
 }

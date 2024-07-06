@@ -18,6 +18,7 @@ public:
 
 private:
   PowerLightSampler m_lightSampler;
+  std::vector<const Light*> m_infiniteLights;
 
   void setup() override;
 
