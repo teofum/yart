@@ -27,7 +27,7 @@ int main() {
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(30.0f),
+    radians(20.0f),
     {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
   );
 //  camera.exposure = 4.0f;
@@ -48,7 +48,7 @@ int main() {
   std::unique_ptr<yart::Scene> scene = load("models/car_metallic.glb");
 
   yart::Texture hdri = yart::Texture::loadHDR(
-    "hdris/citrus_orchard_road_oct.hdr"
+    "hdris/autumn_park_oct.hdr"
   );
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri));
 
@@ -64,7 +64,7 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 512;
+  renderer.samples = 256;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);

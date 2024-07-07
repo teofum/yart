@@ -123,14 +123,22 @@ public:
     const float cos2Theta = w.z() * w.z();
     const float sin2Theta = std::max(0.0f, 1.0f - cos2Theta);
     const float tan2Theta = sin2Theta / cos2Theta;
-    if (isinf(tan2Theta)) return 0;
+
+    // Checking for infinity is surprisingly slow, and unlikely enough we can
+    // just let it blow up and throw away the sample
+//    if (isinf(tan2Theta)) return 0;
 
     const float cos4Theta = cos2Theta * cos2Theta;
-    const float cos2Phi = sin2Theta == 0.0f ? 1.0f : w.x() * w.x() / sin2Theta;
-    const float sin2Phi = sin2Theta == 0.0f ? 1.0f : w.y() * w.y() / sin2Theta;
+    float k = tan2Theta;
 
-    const float k = tan2Theta * (cos2Phi / (m_alphaX * m_alphaX) +
-                                 sin2Phi / (m_alphaY * m_alphaY));
+    if (m_alphaX != m_alphaY) {
+      float cos2Phi = sin2Theta == 0.0f ? 1.0f : w.x() * w.x() / sin2Theta;
+      float sin2Phi = sin2Theta == 0.0f ? 1.0f : w.y() * w.y() / sin2Theta;
+      k *= (cos2Phi / (m_alphaX * m_alphaX) + sin2Phi / (m_alphaY * m_alphaY));
+    } else {
+      k /= (m_alphaX * m_alphaX);
+    }
+
     const float k2 = (1.0f + k) * (1.0f + k);
     return 1.0f / (float(pi) * m_alphaX * m_alphaY * cos4Theta * k2);
   }
@@ -197,13 +205,15 @@ private:
     const float cos2Theta = w.z() * w.z();
     const float sin2Theta = (1.0f - cos2Theta);
     const float tan2Theta = sin2Theta / cos2Theta;
-    if (isinf(tan2Theta)) return 0;
 
-    const float cos2Phi = sin2Theta == 0.0f ? 1.0f : w.x() * w.x() / sin2Theta;
-    const float sin2Phi = sin2Theta == 0.0f ? 0.0f : w.y() * w.y() / sin2Theta;
+    float alpha2 = m_alphaX * m_alphaX;
 
-    const float alpha2 = m_alphaX * m_alphaX * cos2Phi
-                         + m_alphaY * m_alphaY * sin2Phi;
+    if (m_alphaX != m_alphaY) {
+      float cos2Phi = sin2Theta == 0.0f ? 1.0f : w.x() * w.x() / sin2Theta;
+      float sin2Phi = sin2Theta == 0.0f ? 0.0f : w.y() * w.y() / sin2Theta;
+      alpha2 = alpha2 * cos2Phi + m_alphaY * m_alphaY * sin2Phi;
+    }
+
     return (std::sqrt(1.0f + alpha2 * tan2Theta) - 1.0f) * 0.5f;
   }
 };
