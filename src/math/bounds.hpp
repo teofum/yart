@@ -35,8 +35,8 @@ public:
     return true;
   }
 
-  [[nodiscard]] constexpr float area() const noexcept {
-    float3 size = max - min;
+  [[nodiscard]] constexpr float area() const noexcept requires (N == 3) {
+    vec<T, N> size = max - min;
     return size.x() * size.y() + size.y() * size.z() + size.z() * size.x();
   }
 

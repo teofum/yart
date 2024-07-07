@@ -132,43 +132,33 @@ ImageInfiniteLight::ImageInfiniteLight(
     m_bounds(std::move(bounds)),
     m_emissionTexture(emissionTexture) {
   uint32_t w = m_emissionTexture->width(), h = m_emissionTexture->height();
-  uint32_t x0 = uint32_t(float(w) * bounds.min.x());
-  uint32_t y0 = uint32_t(float(h) * bounds.min.y());
-  uint32_t x1 = uint32_t(float(w) * bounds.max.x());
-  uint32_t y1 = uint32_t(float(h) * bounds.max.y());
-  w = x1 - x0, h = y1 - y0;
 
-  std::vector<float> d(w * h);
+  std::vector<float> radiance(w * h);
+  float L = 0.0f, Lmax = 0.0f;
+
   for (uint32_t y = 0; y < h; y++) {
-    float v = (float(y) + 0.5f) / float(h);
-    float z = 1.0f - v * 2.0f;
-    float sinTheta = std::sqrt(1.0f - z * z);
     for (uint32_t x = 0; x < w; x++) {
-      float3 sampled = float3((*m_emissionTexture)(x + x0, y + y0));
+      float3 sampled = float3((*m_emissionTexture)(x, y));
       float value = sum(sampled) / 3.0f;
-      d[y * w + x] = value * sinTheta;
+      radiance[y * w + x] = value;
+      L += value;
+      Lmax = max(Lmax, value);
       m_Lavg += sampled;
     }
   }
 
   m_Lavg /= float(w * h);
 
-  m_distribution = samplers::PiecewiseConstant2D(
-    d, m_bounds, w, h
-  );
+  float Lavg = sum(m_Lavg) / 3.0f, Lstd = 0.0f;
+  for (const float& Lp: radiance) {
+    float k = std::abs(Lp - Lavg);
+    Lstd += k * k;
+  }
+  Lstd /= float(w * h);
+  Lstd = std::sqrt(Lstd);
 
-  float avg = std::accumulate(d.begin(), d.end(), 0.0f) / float(d.size());
-  for (float& v: d) v = max(v - avg, 0.0f);
-
-  m_compensatedDistribution = samplers::PiecewiseConstant2D(
-    d, m_bounds, w, h
-  );
-
-  float phi0 = m_bounds.min.x() * 2.0f * float(pi);
-  float phi1 = m_bounds.max.x() * 2.0f * float(pi);
-  float theta0 = m_bounds.min.y() * float(pi);
-  float theta1 = m_bounds.max.y() * float(pi);
-  m_surfaceArea = (phi1 - phi0) * (std::cos(theta0) - std::cos(theta1));
+  float Lmin = Lmax + Lavg * 1e4f * Lstd / max(Lmax - Lavg, 1e-8f);
+  subdivide(radiance, L, Lmin, fbounds2({0, 0}, {1, 1}));
 }
 
 Light::Type ImageInfiniteLight::type() const noexcept {
@@ -189,10 +179,16 @@ float ImageInfiniteLight::power() const noexcept {
 
 float ImageInfiniteLight::pdf(const float3& wi) const noexcept {
   float2 uv = octahedralUV(wi);
-  if (!m_bounds.includes(uv))return 0;
+  if (!m_bounds.includes(uv)) return 0;
 
-  float pdf = m_distribution.pdf(uv) / (4.0f * float(pi));
-  return pdf;
+  for (const fbounds2& bin: m_bins) {
+    if (bin.includes(uv)) {
+      float binArea = bin.size().x() * bin.size().y();
+      return binArea / (4.0f * float(pi));
+    }
+  }
+
+  return 0;
 }
 
 LightSample ImageInfiniteLight::sample(
@@ -201,9 +197,12 @@ LightSample ImageInfiniteLight::sample(
   const float2& u,
   float uc
 ) const noexcept {
-  float pdf;
-  float2 uv = m_distribution.sample(u, &pdf);
-  if (pdf == 0.0f) return {};
+  uint32_t nBins = m_bins.size();
+  uint32_t idx = min(nBins - 1, uint32_t(uc * nBins));
+  const fbounds2& bin = m_bins[idx];
+  float2 size = bin.size();
+  float2 uv = bin.min + u * size;
+  float pdf = 1.0f / (nBins * size.x() * size.y());
 
   float3 wi = invOctahedralUV(uv);
   pdf /= m_surfaceArea;
@@ -218,6 +217,44 @@ LightSample ImageInfiniteLight::sample(
 
 float3 ImageInfiniteLight::Lavg() const noexcept {
   return m_Lavg;
+}
+
+void ImageInfiniteLight::subdivide(
+  const std::vector<float>& Le,
+  float L,
+  float Lmin,
+  const fbounds2& b
+) {
+  uint32_t w = m_emissionTexture->width(), h = m_emissionTexture->height();
+
+  float2 size = b.size();
+  if (L <= Lmin || (size.x() * w) * (size.y() * h) <= 1) {
+    m_bins.push_back(b);
+    return;
+  }
+
+  float2 center = b.min + size / 2.0f;
+  fbounds2 b0(b), b1(b);
+
+  uint32_t splitAxis = size.x() > size.y() ? 0 : 1;
+  b0.max[splitAxis] = center[splitAxis];
+  b1.min[splitAxis] = center[splitAxis];
+
+  float L0 = 0.0f;
+  uint32_t x0 = b0.min.x() * w, x1 = b0.max.x() * w;
+  uint32_t y0 = b0.min.y() * h, y1 = b0.max.y() * h;
+
+  for (uint32_t y = y0; y < y1; y++) {
+    for (uint32_t x = x0; x < x1; x++) {
+      float3 sampled = float3((*m_emissionTexture)(x, y));
+      float value = sum(sampled) / 3.0f;
+      L0 += value;
+    }
+  }
+  float L1 = L - L0;
+
+  subdivide(Le, L0, Lmin, b0);
+  subdivide(Le, L1, Lmin, b1);
 }
 
 }

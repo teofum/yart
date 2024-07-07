@@ -109,13 +109,14 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
 
   m_rayCounter++;
   float uc = m_sampler.get1D();
+  float uc2 = m_sampler.get1D();
   float2 u = m_sampler.get2D();
 
   // Pick a random light for sampling
   SampledLight l = m_lightSampler.sample(hit.p, hit.n, uc);
 
   // Sample the light
-  LightSample ls = l.light.sample(hit.p, hit.n, u, 0.0f);
+  LightSample ls = l.light.sample(hit.p, hit.n, u, uc2);
 
   float3 f = hit.bsdf->f(wo, ls.wi, hit.n, hit.tg, hit.uv);
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};

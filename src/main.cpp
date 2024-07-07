@@ -45,10 +45,10 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/hdri_test.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
-  std::unique_ptr<yart::Scene> scene = load("models/car_metallic.glb");
+  std::unique_ptr <yart::Scene> scene = load("models/car_metallic.glb");
 
   yart::Texture hdri = yart::Texture::loadHDR(
-    "hdris/citrus_orchard_road_oct.hdr"
+    "hdris/autumn_park_oct.hdr"
   );
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri));
 
@@ -59,12 +59,12 @@ int main() {
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;
 
-  yart::cpu::TileRenderer<Sampler, Integrator> renderer(
+  yart::cpu::TileRenderer <Sampler, Integrator> renderer(
     std::move(buffer),
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 512;
+  renderer.samples = 32;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);

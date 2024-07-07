@@ -139,7 +139,14 @@ private:
   float3 m_Lavg;
   fbounds2 m_bounds;
   const Texture* m_emissionTexture;
-  samplers::PiecewiseConstant2D m_distribution, m_compensatedDistribution;
+  std::vector<fbounds2> m_bins;
+
+  void subdivide(
+    const std::vector<float>& Le,
+    float L,
+    float Lmin,
+    const fbounds2& b
+  );
 };
 
 }
