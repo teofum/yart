@@ -26,7 +26,7 @@ float3 NaiveIntegrator::LiImpl(
     float3 L;
     for (const auto& light: scene->lights()) {
       if (light.type() == Light::Type::Infinite) {
-        float3 Le = light.Le(sphericalUV(ray.dir));
+        float3 Le = light.Le(octahedralUV(ray.dir));
 //          Le = min(Le, float3(1.0f));
         L += Le;
       }

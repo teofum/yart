@@ -188,7 +188,7 @@ float ImageInfiniteLight::power() const noexcept {
 }
 
 float ImageInfiniteLight::pdf(const float3& wi) const noexcept {
-  float2 uv = sphericalUV(wi);
+  float2 uv = octahedralUV(wi);
   if (!m_bounds.includes(uv))return 0;
 
   float pdf = m_distribution.pdf(uv) / (4.0f * float(pi));
@@ -205,7 +205,7 @@ LightSample ImageInfiniteLight::sample(
   float2 uv = m_distribution.sample(u, &pdf);
   if (pdf == 0.0f) return {};
 
-  float3 wi = invSphericalUV(uv);
+  float3 wi = invOctahedralUV(uv);
   pdf /= m_surfaceArea;
   return {
     Le(uv),

@@ -26,7 +26,7 @@ float3 MISIntegrator::Li(const Ray& r) {
     bool didHit = testNode(ray, 0.001f, hit, scene->root());
     if (!didHit) {
       for (const auto* light: m_infiniteLights) {
-        float3 Le = light->Le(sphericalUV(ray.dir));
+        float3 Le = light->Le(octahedralUV(ray.dir));
 
         if (depth == 0 || specularBounce) {
           L += attenuation * Le;

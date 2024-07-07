@@ -50,7 +50,7 @@ include_directories(/opt/homebrew/Cellar/sdl2/2.30.4/include)
 link_directories(/opt/homebrew/Cellar/sdl2/2.30.4/lib)
 
 # stb_image
-add_library(stb_image stb-image/impl.cpp stb-image/stb_image.h)
+add_library(stb_image stb-image/impl.cpp stb-image/stb_image.h stb-image/stb_image_write.h)
 include_directories(stb-image)
 
 set(SRC_MATH
@@ -139,3 +139,9 @@ add_executable(yart src/main.cpp
         yart.metallib
 )
 target_link_libraries(yart fastgltf metal_cpp sdl2 stb_image)
+
+add_executable(convert-hdri tools/convert-hdri.cpp
+        ${SRC_CORE}
+        ${SRC_MATH}
+)
+target_link_libraries(convert-hdri stb_image)

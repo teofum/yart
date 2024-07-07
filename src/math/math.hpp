@@ -149,6 +149,36 @@ namespace yart::math {
   return {-std::cos(phi) * r, y, -std::sin(phi) * r};
 }
 
+[[nodiscard]] constexpr float2 octahedralUV(float3 v) noexcept {
+  float2 res;
+  float3 vAbs = abs(v);
+  v /= sum(vAbs);
+  vAbs /= sum(vAbs);
+  if (v.y() >= 0) {
+    res = {v.x(), v.z()};
+  } else {
+    res = {
+      (1.0f - vAbs.z()) * std::copysign(1.0f, v.x()),
+      (1.0f - vAbs.x()) * std::copysign(1.0f, v.z())
+    };
+  }
+
+  return (res + 1.0f) * 0.5f;
+}
+
+[[nodiscard]] constexpr float3 invOctahedralUV(const float2& uv) noexcept {
+  float3 res;
+  res.x() = 2.0f * uv.x() - 1.0f;
+  res.z() = 2.0f * uv.y() - 1.0f;
+  res.y() = 1.0f - (std::abs(res.x()) + std::abs(res.z()));
+  if (res.y() < 0.0f) {
+    float xo = res.x();
+    res.x() = (1.0f - std::abs(res.z())) * std::copysign(1.0f, res.x());
+    res.z() = (1.0f - std::abs(xo)) * std::copysign(1.0f, res.z());
+  }
+  return normalized(res);
+}
+
 }
 
 #endif //YART_MATH_HPP

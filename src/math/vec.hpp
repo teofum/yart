@@ -416,6 +416,13 @@ template<numeric T>
 }
 
 template<numeric T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> abs(const vec<T, N>& v) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++) ret[i] = std::abs(v[i]);
+  return ret;
+}
+
+template<numeric T, std::size_t N>
 [[nodiscard]] constexpr vec<T, N> min(
   const vec<T, N>& lhs,
   const vec<T, N>& rhs

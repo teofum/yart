@@ -8,10 +8,19 @@ float PiecewiseConstant1D::sample(
   uint32_t* offset
 ) const noexcept {
   // Find CDF segment to sample
-  int64_t o = findInterval(
-    int64_t(m_cdf.size()),
-    [&](int64_t i) { return m_cdf[i] <= u; }
-  );
+  int64_t size = int64_t(m_cdf.size() - 2), first = 1, half, middle;
+
+  while (size > 0) {
+    half = size >> 1;
+    middle = first + half;
+    if (m_cdf[middle] < u) {
+      first = middle + 1;
+      size -= half + 1;
+    } else {
+      size = half;
+    }
+  }
+  int64_t o = std::clamp<int64_t>(first - 1, 0, int64_t(m_cdf.size()) - 2);
   if (offset) *offset = uint32_t(o);
 
   // Calculate offset along segment
