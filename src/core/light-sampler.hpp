@@ -64,6 +64,7 @@ public:
 private:
   float m_totalPower;
   std::vector<float> m_lightPowers;
+  std::vector<const Light*> m_lights, m_infiniteLights;
 };
 
 }

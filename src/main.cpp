@@ -27,7 +27,7 @@ int main() {
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(20.0f),
+    radians(30.0f),
     {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
   );
 //  camera.exposure = 4.0f;
@@ -45,7 +45,7 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/deccer.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/hdri_test.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
-  std::unique_ptr<yart::Scene> scene = load("models/car_metallic.glb");
+  std::unique_ptr<yart::Scene> scene = load("models/car_orange.glb");
 
   yart::Texture hdri = yart::Texture::loadHDR("hdris/canary_wharf_oct.hdr");
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri));
@@ -58,7 +58,7 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 256;
+  renderer.samples = 512;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);

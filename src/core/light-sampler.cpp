@@ -33,10 +33,17 @@ void PowerLightSampler::init(const Scene* scene) noexcept {
   LightSampler::init(scene);
 
   m_lightPowers.clear();
+  m_lights.clear();
+  m_infiniteLights.clear();
   m_totalPower = 0.0f;
   for (const Light& light: scene->lights()) {
-    m_lightPowers.push_back(m_totalPower + light.power());
-    m_totalPower += light.power();
+    if (light.type() == Light::Type::Infinite) {
+      m_infiniteLights.push_back(&light);
+    } else {
+      m_lights.push_back(&light);
+      m_lightPowers.push_back(m_totalPower + light.power());
+      m_totalPower += light.power();
+    }
   }
 }
 
@@ -45,14 +52,25 @@ SampledLight PowerLightSampler::sample(
   const float3& n,
   float u
 ) const {
+  size_t infCount = m_infiniteLights.size();
+  float pInfinite = m_lights.empty() ? 1.0f
+                                     : float(infCount) / float(infCount + 1);
+
+  if (u < pInfinite) {
+    u /= pInfinite;
+    size_t idx = min(infCount - 1, size_t(u * infCount));
+    return {*m_infiniteLights[idx], pInfinite / float(infCount)};
+  }
+
+  u = (u - pInfinite) / (1.0f - pInfinite);
   u *= m_totalPower;
   int64_t i = findFirst(
     int64_t(m_lightPowers.size()),
     [&](int64_t i) { return m_lightPowers[i] < u; }
   );
 
-  float pl = m_scene->light(i).power() / m_totalPower;
-  return {m_scene->light(i), pl};
+  float pl = m_lights[i]->power() / m_totalPower * (1.0f - pInfinite);
+  return {*m_lights[i], pl};
 }
 
 float PowerLightSampler::p(
@@ -60,7 +78,14 @@ float PowerLightSampler::p(
   const float3& n,
   size_t lightIdx
 ) const {
-  return m_scene->light(lightIdx).power() / m_totalPower;
+  size_t infCount = m_infiniteLights.size();
+  float pInfinite = m_lights.empty() ? 1.0f
+                                     : float(infCount) / float(infCount + 1);
+
+  const Light& light = m_scene->light(lightIdx);
+  if (light.type() == Light::Type::Infinite)
+    return pInfinite / float(infCount);
+  return light.power() / m_totalPower * (1.0f - pInfinite);
 }
 
 }
