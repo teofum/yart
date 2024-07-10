@@ -19,15 +19,15 @@ using Integrator = yart::cpu::MISIntegrator;
 int main() {
 //  yart::Buffer buffer(800, 600);
 //  yart::Buffer buffer(1600, 1200);
-//  yart::Buffer buffer(800, 400); // Material test
+  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
-  yart::Buffer buffer(900, 600); // 3:2
+//  yart::Buffer buffer(900, 600); // 3:2
 //  yart::Buffer buffer(1920, 1200); // 16:10 large
 
   yart::Camera camera(
     {buffer.width(), buffer.height()},
-    radians(30.0f),
+    radians(20.0f),
     {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
   );
 //  camera.exposure = 4.0f;
@@ -38,7 +38,7 @@ int main() {
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
-//  std::unique_ptr<yart::Scene> scene = load("models/cornell_metaldragon.glb");
+//  std::unique_ptr<yart::Scene> scene = load("models/cornell_nee_tint.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/cornell_mat_coat_rough.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/furnace_glass_dl.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/sponza_unlit.glb");

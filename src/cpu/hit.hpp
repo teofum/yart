@@ -9,7 +9,7 @@ class Hit {
 public:
   float t = std::numeric_limits<float>::infinity();
   float2 uv;
-  float3 p, n, tg;
+  float3 p, n, tg, attenuation = float3(1.0f);
   const BSDF* bsdf = nullptr;
   const TrianglePositions* tri = nullptr;
   int32_t lightIdx = -1;

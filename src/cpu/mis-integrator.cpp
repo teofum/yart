@@ -118,22 +118,29 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   LightSample ls = l.light.sample(hit.p, hit.n, u, 0.0f);
 
   float3 f = hit.bsdf->f(wo, ls.wi, hit.n, hit.tg, hit.uv);
-  if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p)) return {};
+  float3 att(1.0f);
+  if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p, &att)) return {};
 
   float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg, hit.uv);
   float pdfLight = l.p * ls.pdf;
   if (l.light.type() == Light::Type::Area) pdfLight *= length2(hit.p - ls.p);
 
-  return ls.Li * f * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);
+  return ls.Li * f * att * absDot(ls.wi, hit.n) / (pdfBSDF + pdfLight);
 }
 
-bool MISIntegrator::unoccluded(const float3& from, const float3& to) const {
+bool MISIntegrator::unoccluded(
+  const float3& from,
+  const float3& to,
+  float3* attenuation
+) const {
   Ray occlusionRay(from, normalized(to - from));
   occlusionRay.nee = true;
 
   Hit occlusionHit;
   occlusionHit.t = length(to - from) - 0.001f;
-  return !testNode(occlusionRay, 0.001f, occlusionHit, scene->root());
+  bool occluded = testNode(occlusionRay, 0.001f, occlusionHit, scene->root());
+  *attenuation = occlusionHit.attenuation;
+  return !occluded;
 }
 
 void MISIntegrator::setup() {

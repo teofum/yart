@@ -26,7 +26,11 @@ private:
 
   [[nodiscard]] float3 Ld(const float3& wo, const Hit& hit);
 
-  [[nodiscard]] bool unoccluded(const float3& from, const float3& to) const;
+  [[nodiscard]] bool unoccluded(
+    const float3& from,
+    const float3& to,
+    float3* attenuation
+  ) const;
 };
 
 }

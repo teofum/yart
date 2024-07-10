@@ -46,6 +46,11 @@ float ParametricBSDF::alpha(const float2& uv) const {
   return 1.0f;
 }
 
+float3 ParametricBSDF::base(const float2& uv) const {
+  if (m_baseTexture) return float3(m_baseTexture->sample(uv));
+  return m_base;
+}
+
 bool ParametricBSDF::transparent() const {
   return m_thinTransmission && m_cTrans > 0.0f;
 }

@@ -145,9 +145,6 @@ bool RayIntegrator::testTriangle(
   uint32_t idx,
   const BSDF& bsdf
 ) const {
-  // Skip transparent BSDF for NEE rays
-  if (ray.nee && bsdf.transparent()) return false;
-
   const float3 edge1 = tri.p1 - tri.p0;
   const float3 edge2 = tri.p2 - tri.p0;
 
@@ -179,8 +176,15 @@ bool RayIntegrator::testTriangle(
   float alpha = bsdf.alpha(uv);
   if (alpha < 1.0f && m_sampler.get1D() > alpha) return false;
 
-  hit.t = t;
   float3 n = w * d.n[0] + u * d.n[1] + v * d.n[2];
+
+  // Skip transparent BSDF for NEE rays
+  if (ray.nee && bsdf.transparent()) {
+    hit.attenuation *= absDot(n, ray.dir) * bsdf.base(uv);
+    return false;
+  }
+
+  hit.t = t;
   float4 tg = w * d.t[0] + u * d.t[1] + v * d.t[2];
   hit.n = bsdf.normal(n, tg, uv);
 
