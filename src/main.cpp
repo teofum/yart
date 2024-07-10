@@ -47,14 +47,8 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
   std::unique_ptr<yart::Scene> scene = load("models/car_metallic.glb");
 
-  yart::Texture hdri = yart::Texture::loadHDR(
-    "hdris/autumn_park_oct.hdr"
-  );
+  yart::Texture hdri = yart::Texture::loadHDR("hdris/canary_wharf_oct.hdr");
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri));
-
-//  yart::Texture hdri2 = yart::Texture::loadHDR("hdris/autumn_park_4k.hdr");
-//  fbounds2 hdriBounds2({0.0f, 0.0f}, {1.0f, 1.0f});
-//  scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri2, hdriBounds2));
 
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;

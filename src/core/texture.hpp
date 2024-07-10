@@ -84,14 +84,27 @@ public:
   constexpr Texture(unsigned width, unsigned height) noexcept
     : Buffer(width, height) {}
 
-  [[nodiscard]] constexpr const float4& sample(float2 uv) const {
+  [[nodiscard]] constexpr float4 sample(float2 uv) const {
     uv.x() -= std::floor(uv.x());
     uv.y() -= std::floor(uv.y());
 
-    uint32_t x = min(m_width - 1, float(m_width) * uv.x());
-    uint32_t y = min(m_height - 1, float(m_height) * uv.y());
+    uv.x() *= float(m_width - 1);
+    uv.y() *= float(m_height - 1);
 
-    return m_data[y * m_width + x];
+    uint32_t x = min(m_width - 2, uv.x());
+    uint32_t y = min(m_height - 2, uv.y());
+
+    uv.x() -= x;
+    uv.y() -= y;
+
+    return bilerp(
+      m_data[y * m_width + x],
+      m_data[(y + 1) * m_width + x],
+      m_data[y * m_width + x + 1],
+      m_data[(y + 1) * m_width + x + 1],
+      uv.x(),
+      uv.y()
+    );
   }
 };
 
