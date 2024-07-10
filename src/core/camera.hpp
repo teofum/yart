@@ -10,7 +10,8 @@ using namespace math;
 class Camera {
 private:
   uint2 m_imageSize;
-  float m_vfov;
+  float m_focalLength, m_fNumber;
+  float2 m_sensorSize;
   float3 m_position, m_forward, m_up;
 
   float m_aspect, m_focusDistance = 1.0;
@@ -18,8 +19,11 @@ private:
   float3 m_pixelDeltaU, m_pixelDeltaV;
 
   constexpr void calcDerivedProperties() noexcept {
+    float sensorAspect = m_sensorSize.x() / m_sensorSize.y();
+    float croppedSensorHeight = m_sensorSize.x() / max(sensorAspect, m_aspect);
+
     m_focusDistance = length(m_forward);
-    float vh = 2.0f * m_focusDistance * std::tan(m_vfov * 0.5f);
+    float vh = m_focusDistance * croppedSensorHeight / m_focalLength;
     float vw = vh * m_aspect;
 
     m_up = normalized(m_up);
@@ -43,13 +47,17 @@ public:
 
   constexpr Camera(
     const uint2& imageSize,
-    float vfov,
-    const float3& position,
+    float focalLength,
+    float fNumber = 0.0f,
+    const float2& sensorSize = {36, 24},
+    const float3& position = {},
     const float3& forward = -axis_z<float>,
     const float3& up = axis_y<float>
   ) noexcept
     : m_imageSize(imageSize),
-      m_vfov(vfov),
+      m_focalLength(focalLength),
+      m_fNumber(fNumber),
+      m_sensorSize(sensorSize),
       m_position(position),
       m_forward(forward),
       m_up(up),

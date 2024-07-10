@@ -19,17 +19,13 @@ using Integrator = yart::cpu::MISIntegrator;
 int main() {
 //  yart::Buffer buffer(800, 600);
 //  yart::Buffer buffer(1600, 1200);
-  yart::Buffer buffer(800, 400); // Material test
+//  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
 //  yart::Buffer buffer(900, 600); // 3:2
-//  yart::Buffer buffer(1920, 1200); // 16:10 large
+  yart::Buffer buffer(1920, 1200); // 16:10 large
 
-  yart::Camera camera(
-    {buffer.width(), buffer.height()},
-    radians(20.0f),
-    {0.0f, 5.0f, 15.0f} // Cornell box / Furnace test
-  );
+  yart::Camera camera({buffer.width(), buffer.height()}, 50.0f);
 //  camera.exposure = 4.0f;
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
@@ -47,7 +43,7 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
   std::unique_ptr<yart::Scene> scene = load("models/car_orange.glb");
 
-  yart::Texture hdri = yart::Texture::loadHDR("hdris/canary_wharf_oct.hdr");
+  yart::Texture hdri = yart::Texture::loadHDR("hdris/autumn_park_oct.hdr");
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri));
 
   yart::tonemap::AgX tonemapper;
