@@ -22,15 +22,15 @@ int main() {
 //  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
-//  yart::Buffer buffer(900, 600); // 3:2
-  yart::Buffer buffer(1920, 1200); // 16:10 large
+  yart::Buffer buffer(900, 600); // 3:2
+//  yart::Buffer buffer(1920, 1200); // 16:10 large
 
-  yart::Camera camera({buffer.width(), buffer.height()}, 50.0f);
+  yart::Camera camera({buffer.width(), buffer.height()}, 70.0f, 22.0f);
 //  camera.exposure = 4.0f;
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
 //  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
-  camera.moveAndLookAt({6.1f, 0.4f, 0.46f}, {0.0f, 0.5f, 0.25f}); // Car
+  camera.moveAndLookAt({6.1f, 0.4f, 0.46f}, {1.5f, 0.5f, 0.3f}); // Car
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 

@@ -9,7 +9,11 @@ RayIntegrator::RayIntegrator(
 ) noexcept: Integrator(buffer, camera, sampler) {}
 
 float3 RayIntegrator::sample(uint32_t sx, uint32_t sy) {
-  auto ray = m_camera.getRay({sx, sy}, m_sampler.getPixel2D());
+  auto ray = m_camera.getRay(
+    {sx, sy},
+    m_sampler.getPixel2D(),
+    m_sampler.get2D()
+  );
   return Li(ray);
 }
 
