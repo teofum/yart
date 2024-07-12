@@ -61,6 +61,10 @@ bool RayIntegrator::testMesh(
 ) const {
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh(), mesh);
   if (didHit) {
+    float4 tg = hit.tg[0] * hit.d->t[0] + hit.tg[1] * hit.d->t[1] +
+                hit.tg[2] * hit.d->t[2];
+    hit.n = hit.bsdf->normal(hit.n, tg, hit.uv);
+
     if (absDot(hit.n, axis_y<float>) > 0.999f) {
       hit.tg = axis_x<float>;
     } else {
@@ -68,7 +72,6 @@ bool RayIntegrator::testMesh(
     }
 
     hit.lightIdx = int32_t(mesh.lightIdx(hit.idx));
-    hit.tri = &mesh.triangle(hit.idx);
   }
 
   return didHit;
@@ -180,22 +183,21 @@ bool RayIntegrator::testTriangle(
   float alpha = bsdf.alpha(uv);
   if (alpha < 1.0f && m_sampler.get1D() > alpha) return false;
 
-  float3 n = w * d.n[0] + u * d.n[1] + v * d.n[2];
+  hit.n = w * d.n[0] + u * d.n[1] + v * d.n[2];
 
   // Skip transparent BSDF for NEE rays
   if (ray.nee && bsdf.transparent()) {
-    hit.attenuation *= absDot(n, ray.dir) * bsdf.base(uv);
+    hit.attenuation *= absDot(hit.n, ray.dir) * bsdf.base(uv);
     return false;
   }
 
   hit.t = t;
-  float4 tg = w * d.t[0] + u * d.t[1] + v * d.t[2];
-  hit.n = bsdf.normal(n, tg, uv);
-
+  hit.tg = float3(w, u, v);
+  hit.bsdf = &bsdf;
+  hit.d = &d;
   hit.uv = uv;
   hit.p = ray(t);
   hit.idx = idx;
-  hit.bsdf = &bsdf;
   return true;
 }
 
