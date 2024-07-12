@@ -6,6 +6,8 @@
 #include "primitives.hpp"
 #include "utils.hpp"
 
+#define MAX_LEAF_SIZE 20
+
 namespace yart {
 
 struct BVHNode {
@@ -260,7 +262,7 @@ private:
     }
 
     float leafCost = (float(node.span) - 0.5f) * node.bounds.area();
-    if (leafCost < minCost) return false;
+    if (node.span <= MAX_LEAF_SIZE && leafCost < minCost) return false;
 
     return true;
   }
