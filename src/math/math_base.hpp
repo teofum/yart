@@ -37,6 +37,11 @@ template<typename T, std::floating_point T_t>
   return (T_t(1.0) - t) * a + t * b;
 }
 
+template<typename T, std::floating_point T_t>
+[[nodiscard]] constexpr T invLerp(const T& a, const T& b, T_t t) noexcept {
+  return (t - a) / (b - a);
+}
+
 template<typename T, std::floating_point T_uv>
 [[nodiscard]] constexpr T bilerp(
   const T& a0,

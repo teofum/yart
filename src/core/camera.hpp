@@ -50,12 +50,13 @@ private:
 
     // Calculate aperture radius from f-number
     // f = (focal length) / (aperture radius)
-    m_apertureRadius = m_fNumber ? (m_focalLength / 1000.0f) / m_fNumber
+    m_apertureRadius = m_fNumber ? (m_focalLength / 2000.0f) / m_fNumber
                                  : 0.0f;
   }
 
 public:
   float exposure = 0.0f;
+  uint32_t apertureSides = 0;
 
   constexpr Camera(
     const uint2& imageSize,
@@ -127,7 +128,11 @@ public:
     float3 origin = m_position;
 
     if (m_apertureRadius > 0.0f) {
-      float3 lensPos(samplers::sampleDiskUniform(uvLens), 0.0f);
+      float2 apertureSample =
+        apertureSides == 0 ? samplers::sampleDiskUniform(uvLens)
+                           : samplers::samplePolyUniform(uvLens, apertureSides);
+
+      float3 lensPos(apertureSample, 0.0f);
       lensPos *= m_apertureRadius;
       origin += m_cameraFrame.ltw(lensPos);
     }

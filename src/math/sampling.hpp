@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "vec.hpp"
+#include "mat.hpp"
 #include "bounds.hpp"
 
 namespace yart::math::samplers {
@@ -60,6 +61,31 @@ namespace yart::math::samplers {
     b0 = u.x() - b1;
   }
   return {b0, b1, 1.0f - b0 - b1};
+}
+
+/**
+ * Sample a regular polygon with outer radius 1 uniformly.
+ * @param u random float2
+ * @param sides number of sides (>= 4)
+ * @return a uniformly sampled point in the polygon
+ */
+[[nodiscard]] constexpr float2 samplePolyUniform(
+  float2 u,
+  uint32_t sides
+) noexcept {
+  u.x() *= sides;
+  uint32_t side = min(sides - 1, uint32_t(u.x()));
+  u.x() -= float(side);
+
+  float3 b = sampleTriUniform(u);
+  float theta1 = float(side) / float(sides) * 2.0f * float(pi);
+  float theta2 = float(side + 1) / float(sides) * 2.0f * float(pi);
+  float c1 = std::cos(theta1), s1 = std::sin(theta1);
+  float c2 = std::cos(theta2), s2 = std::sin(theta2);
+
+  return float2(0, 0) * b[0] +
+         float2(-s1, c1) * b[1] +
+         float2(-s2, c2) * b[2];
 }
 
 [[nodiscard]] constexpr float sampleLinear(float u, float a, float b) noexcept {
