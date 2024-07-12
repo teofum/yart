@@ -39,10 +39,14 @@ ParametricBSDF::ParametricBSDF(
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
   m_normalTexture = normalTexture;
   m_normalScale = normalScale;
+
+  for (const float4& i: m_baseTexture->dataVec())
+    if (i.w() < 1.0f) m_hasAlpha = true;
 }
 
 float ParametricBSDF::alpha(const float2& uv) const {
-  if (m_baseTexture) return m_baseTexture->sample(uv).w();
+  // Skip texture sampling if we know the material has no alpha blending
+  if (m_hasAlpha && m_baseTexture) return m_baseTexture->sample(uv).w();
   return 1.0f;
 }
 

@@ -30,7 +30,7 @@ public:
   ) noexcept;
 
   [[nodiscard]] float alpha(const float2& uv) const override;
-  
+
   [[nodiscard]] float3 base(const float2& uv) const override;
 
   [[nodiscard]] constexpr const float3* emission() const noexcept override {
@@ -47,7 +47,7 @@ private:
   float3 m_base, m_emission;
   float m_ior, m_roughness, m_anisotropic;
   float m_clearcoat, m_clearcoatRoughness;
-  bool m_thinTransmission;
+  bool m_thinTransmission, m_hasAlpha = false;
 
   // Textures
   const Texture* m_baseTexture;         // Base color
