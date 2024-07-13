@@ -40,8 +40,9 @@ ParametricBSDF::ParametricBSDF(
   m_normalTexture = normalTexture;
   m_normalScale = normalScale;
 
-  for (const float4& i: m_baseTexture->dataVec())
-    if (i.w() < 1.0f) m_hasAlpha = true;
+  if (m_baseTexture)
+    for (const float4& i: m_baseTexture->dataVec())
+      if (i.w() < 1.0f) m_hasAlpha = true;
 }
 
 float ParametricBSDF::alpha(const float2& uv) const {

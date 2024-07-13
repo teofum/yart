@@ -22,16 +22,18 @@ int main() {
 //  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
-  yart::Buffer buffer(900, 600); // 3:2
-//  yart::Buffer buffer(1920, 1200); // 16:10 large
+//  yart::Buffer buffer(900, 600); // 3:2
+  yart::Buffer buffer(1920, 1200); // 16:10 large
 
-  yart::Camera camera({buffer.width(), buffer.height()}, 35.0f, 2.8f);
+  yart::Camera camera({buffer.width(), buffer.height()}, 50.0f, 1.2f);
 //  camera.apertureSides = 7;
-  camera.exposure = 1.0f;
+  camera.exposure = 3.0f;
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
 //  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
-  camera.moveAndLookAt({-32.2f, 3.5f, -14.1f}, {-8.2f, 6.1f, -0.95f}); // Bistro
+//  camera.moveAndLookAt({-32.2f, 3.5f, -14.1f}, {-8.2f, 6.1f, -0.95f}); // Bistro
+//  camera.moveAndLookAt({-32.2f, 3.5f, -14.1f}, {-7.1f, 4.0f, -0.95f}); // Bistro
+  camera.moveAndLookAt({-11.2f, 2.0f, -1.7f}, {-8.1f, 2.2f, 0.33f}); // Bistro
 //  camera.moveAndLookAt({6.1f, 0.4f, 0.46f}, {1.5f, 0.5f, 0.3f}); // Car
 //  camera.moveAndLookAt({6.1f, 0.4f, 0.46f}, {1.5f, 0.5f, -0.25f}); // Cars
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
@@ -47,7 +49,7 @@ int main() {
 //  std::unique_ptr<yart::Scene> scene = load("models/small_city.glb");
 //  std::unique_ptr<yart::Scene> scene = load("models/cars.glb");
 
-  yart::Texture hdri = yart::Texture::loadHDR("hdris/kloetzle_blei_oct.hdr");
+  yart::Texture hdri = yart::Texture::loadHDR("hdris/moonless_golf_oct.hdr");
   scene->addLight(yart::ImageInfiniteLight(100.0f, &hdri));
 
   yart::tonemap::AgX tonemapper;
@@ -58,7 +60,7 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 128;
+  renderer.samples = 2048;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);
