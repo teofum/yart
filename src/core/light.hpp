@@ -110,6 +110,8 @@ private:
 
 class ImageInfiniteLight : public Light {
 public:
+  Transform transform;
+
   ImageInfiniteLight(
     float sceneRadius,
     const Texture* emissionTexture,
