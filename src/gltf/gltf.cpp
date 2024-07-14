@@ -105,6 +105,13 @@ static std::unique_ptr<BSDF> processMaterial(
 
   // Emission
   const auto em = gltfMat.emissiveFactor;
+  Texture* emissionTexture = nullptr;
+  if (gltfMat.emissiveTexture) {
+    uint32_t idx = gltfMat.emissiveTexture.value().textureIndex;
+    emissionTexture = scene.addTexture(
+      loadTexture(asset, idx, Texture::Type::sRGB)
+    );
+  }
   const float3 emission =
     float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
 
@@ -127,6 +134,7 @@ static std::unique_ptr<BSDF> processMaterial(
     transmissionTexture,
     normalTexture,
     nullptr,
+    emissionTexture,
     metallic,
     roughness,
     transmission,

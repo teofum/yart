@@ -10,6 +10,7 @@ ParametricBSDF::ParametricBSDF(
   const Texture* transmissionTexture,
   const Texture* normalTexture,
   const Texture* clearcoatTexture,
+  const Texture* emissionTexture,
   float metallic,
   float roughness,
   float transmission,
@@ -34,7 +35,8 @@ ParametricBSDF::ParametricBSDF(
             m_baseTexture(baseTexture),
             m_mrTexture(mrTexture),
             m_transmissionTexture(transmissionTexture),
-            m_clearcoatTexture(clearcoatTexture) {
+            m_clearcoatTexture(clearcoatTexture),
+            m_emissionTexture(emissionTexture) {
   m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
   m_normalTexture = normalTexture;
@@ -43,6 +45,7 @@ ParametricBSDF::ParametricBSDF(
   if (m_baseTexture)
     for (const float4& i: m_baseTexture->dataVec())
       if (i.w() < 1.0f) m_hasAlpha = true;
+  m_hasEmission = length2(m_emission) > 0.0f;
 }
 
 float ParametricBSDF::alpha(const float2& uv) const {
@@ -210,7 +213,11 @@ BSDFSample ParametricBSDF::sampleImpl(
     } else if (uc2 < pDielectric) {
       sample = sampleDielectric(wo, base, mf, u, uc);
     } else {
-      sample = sampleGlossy(wo, base, mf, u, uc);
+      float3 emission = m_emission;
+      if (m_hasEmission && m_emissionTexture) {
+        emission *= float3(m_emissionTexture->sample(uv));
+      }
+      sample = sampleGlossy(wo, base, emission, mf, u, uc);
     }
 
     // Rotate wi for anisotropy rotation
@@ -572,6 +579,7 @@ float ParametricBSDF::pdfGlossy(
 BSDFSample ParametricBSDF::sampleGlossy(
   const float3& wo,
   const float3& base,
+  const float3& emission,
   const GGX& mf,
   const float2& u,
   float uc
@@ -601,9 +609,9 @@ BSDFSample ParametricBSDF::sampleGlossy(
 
     return {
       BSDFSample::Reflected | BSDFSample::Diffuse |
-      (length2(m_emission) > 0.0f ? BSDFSample::Emitted : 0),
+      (length2(emission) > 0.0f ? BSDFSample::Emitted : 0),
       base * cDiffuse,
-      m_emission,
+      emission,
       wi,
       std::abs(wi.z()) * cDiffuse,
       1.0f

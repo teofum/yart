@@ -16,6 +16,7 @@ public:
     const Texture* transmissionTexture = nullptr,
     const Texture* normalTexture = nullptr,
     const Texture* clearcoatTexture = nullptr,
+    const Texture* emissionTexture = nullptr,
     float metallic = 0.0f,
     float roughness = 0.0f,
     float transmission = 0.0f,
@@ -34,7 +35,7 @@ public:
   [[nodiscard]] float3 base(const float2& uv) const override;
 
   [[nodiscard]] constexpr const float3* emission() const noexcept override {
-    return length2(m_emission) > 0.0f ? &m_emission : nullptr;
+    return m_hasEmission > 0.0f ? &m_emission : nullptr;
   }
 
   [[nodiscard]] bool transparent() const override;
@@ -47,13 +48,14 @@ private:
   float3 m_base, m_emission;
   float m_ior, m_roughness, m_anisotropic;
   float m_clearcoat, m_clearcoatRoughness;
-  bool m_thinTransmission, m_hasAlpha = false;
+  bool m_thinTransmission, m_hasAlpha = false, m_hasEmission = false;
 
   // Textures
   const Texture* m_baseTexture;         // Base color
   const Texture* m_mrTexture;           // Metallic + roughness
   const Texture* m_transmissionTexture; // Transmission
   const Texture* m_clearcoatTexture;    // Clearcoat
+  const Texture* m_emissionTexture;     // Emission
 
   // Anisotropy data
   float3x3 m_localRotation, m_invRotation;
@@ -137,6 +139,7 @@ private:
   [[nodiscard]] BSDFSample sampleGlossy(
     const float3& wo,
     const float3& base,
+    const float3& emission,
     const GGX& mf,
     const float2& u,
     float uc
