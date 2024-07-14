@@ -82,12 +82,12 @@ template<std::integral T, std::integral U>
 }
 
 template<numeric T, numeric U>
-[[nodiscard]] constexpr T min(const T& m, const U& n) noexcept {
+[[nodiscard]] constexpr T min(T m, U n) noexcept {
   return m < n ? m : n;
 }
 
 template<numeric T, numeric U>
-[[nodiscard]] constexpr T max(const T& m, const U& n) noexcept {
+[[nodiscard]] constexpr T max(T m, U n) noexcept {
   return m > n ? m : n;
 }
 
