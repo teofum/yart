@@ -349,7 +349,7 @@ float3 ParametricBSDF::fDielectric(
     const float cosTheta_ip = std::abs(wip.z());
 
     // Single-scattering term
-    const float Tss = 1.0f /
+    const float Tss = mf.mdf(wm) * mf.g(wo, wip) /
                       (4 * cosTheta_o * cosTheta_ip);
 
     return T * base * Tss / E_o;
