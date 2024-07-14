@@ -410,7 +410,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
   const float2& u,
   float uc
 ) const {
-  const float ior = wo.z() > 0.0f ? m_ior : 1.0f / m_ior;
+  const float ior = m_thinTransmission || wo.z() > 0.0f ? m_ior : 1.0f / m_ior;
 
   // Handle perfect specular case
   if (mf.smooth()) {
