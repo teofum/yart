@@ -70,8 +70,16 @@ SDRTexture<C> loadTexture(
   for (uint32_t i = 0; i < w * h; i++) {
     uint32_t iPixel = i * 4, iData = i * C;
 
-    for (uint32_t j = 0; j < C; j++)
-      texture.data[iData + j] = pixels[iPixel + channels[j]];
+    for (uint32_t j = 0; j < C; j++) {
+      uint8_t pixel = pixels[iPixel + channels[j]];
+      if (type == TextureType::sRGB) {
+        float val = sRGBDecode(float(pixel) / 255.0f);
+        val = std::sqrt(val); // Gamma 2 encoding
+        pixel = uint8_t(val * 255.0f);
+      }
+
+      texture.data[iData + j] = pixel;
+    }
   }
 
   stbi_image_free((void*) pixels);
@@ -95,7 +103,9 @@ vec<float, C> getValue(const Texture<T, C>& tex, size_t idx) {
   for (uint32_t i = 0; i < C; i++)
     val[i] = float(tex.data[C * idx + i]) / 255.0f;
 
-  if (tex.type() == TextureType::sRGB) val = sRGBDecode(val);
+  // Decode gamma 2 encoding
+  if (tex.type() == TextureType::sRGB)
+    for (uint32_t i = 0; i < min(C, 3); i++) val[i] = val[i] * val[i];
   return val;
 }
 
