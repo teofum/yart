@@ -157,7 +157,8 @@ static std::unique_ptr<Mesh> processMesh(
   Scene& scene
 ) noexcept {
   const auto primitives = gltfMesh.primitives;
-  std::vector<Vertex> meshVertices;
+  std::vector<float3> meshVertices;
+  std::vector<VertexData> meshVertexData;
   std::vector<Face> meshFaces;
   float3 emission;
 
@@ -172,39 +173,47 @@ static std::unique_ptr<Mesh> processMesh(
 
     if (primitive.type != fastgltf::PrimitiveType::Triangles) continue;
 
-    std::vector<Vertex> vertices;
-    std::vector<size_t> indices;
+    std::vector<float3> vertices;
+    std::vector<VertexData> vertexData;
+    std::vector<uint32_t> indices;
 
     const auto* positionIt = primitive.findAttribute("POSITION");
     const auto& posAccesor = asset.accessors[positionIt->second];
     const auto& posIt = fastgltf::iterateAccessor<float3>(asset, posAccesor);
     vertices.reserve(posAccesor.count);
-    for (const float3& pos: posIt)
-      vertices.push_back(Vertex{pos, float3(), float4(), float2()});
+    vertexData.reserve(posAccesor.count);
+    for (const float3& pos: posIt) {
+      vertices.push_back(pos);
+      vertexData.push_back({});
+    }
 
     const auto* normalIt = primitive.findAttribute("NORMAL");
     const auto& normAccessor = asset.accessors[normalIt->second];
     const auto& normIt = fastgltf::iterateAccessor<float3>(asset, normAccessor);
     size_t nIdx = 0;
-    for (const float3& norm: normIt) vertices[nIdx++].normal = norm;
+    for (const float3& norm: normIt) vertexData[nIdx++].normal = norm;
 
     const auto* texIt = primitive.findAttribute("TEXCOORD_0");
     const auto& tcAccessor = asset.accessors[texIt->second];
     const auto& tcIt = fastgltf::iterateAccessor<float2>(asset, tcAccessor);
     size_t tcIdx = 0;
     for (const float2& tc: tcIt)
-      vertices[tcIdx++].texCoords = tc;
+      vertexData[tcIdx++].texCoords = tc;
 
     const auto* tangentIt = primitive.findAttribute("TANGENT");
     if (tangentIt) {
       const auto& tanAccessor = asset.accessors[tangentIt->second];
       const auto& tanIt = fastgltf::iterateAccessor<float4>(asset, tanAccessor);
       size_t tIdx = 0;
-      for (const float4& tan: tanIt) vertices[tIdx++].tangent = tan;
+      for (const float4& tan: tanIt) vertexData[tIdx++].tangent = tan;
     }
 
     meshVertices.reserve(meshVertices.size() + vertices.size());
     meshVertices.insert(meshVertices.end(), vertices.begin(), vertices.end());
+
+    meshVertexData.reserve(meshVertexData.size() + vertexData.size());
+    meshVertexData
+      .insert(meshVertexData.end(), vertexData.begin(), vertexData.end());
 
     const size_t indexAccessorIdx = primitive.indicesAccessor.value();
     const auto& idxAccesor = asset.accessors[indexAccessorIdx];
@@ -229,7 +238,7 @@ static std::unique_ptr<Mesh> processMesh(
     meshFaces.insert(meshFaces.end(), faces.begin(), faces.end());
   }
 
-  return std::make_unique<Mesh>(Mesh(meshVertices, meshFaces));
+  return std::make_unique<Mesh>(Mesh(meshVertices, meshVertexData, meshFaces));
 }
 
 static Node processNode(
@@ -267,7 +276,7 @@ static Node processNode(
       const float3* emission = mat.emission();
 
       if (emission) {
-        AreaLight light(&tri, &node.mesh()->data(i), *emission, localTransform);
+        AreaLight light(&tri, node.mesh(), *emission, localTransform);
         scene.addLight(std::move(light));
         node.mesh()->lightIdx(i) = li++;
       }

@@ -61,8 +61,12 @@ bool RayIntegrator::testMesh(
 ) const {
   bool didHit = testBVH(ray, tMin, hit, mesh.bvh(), mesh);
   if (didHit) {
-    float4 tg = hit.tg[0] * hit.d->t[0] + hit.tg[1] * hit.d->t[1] +
-                hit.tg[2] * hit.d->t[2];
+    const Triangle& tri = mesh.triangle(hit.idx);
+    const float4& t0 = mesh.vertexData()[tri.i0].tangent;
+    const float4& t1 = mesh.vertexData()[tri.i1].tangent;
+    const float4& t2 = mesh.vertexData()[tri.i2].tangent;
+
+    float4 tg = hit.tg[0] * t0 + hit.tg[1] * t1 + hit.tg[2] * t2;
     hit.n = hit.bsdf->normal(hit.n, tg, hit.uv);
 
     if (absDot(hit.n, axis_y<float>) > 0.999f) {
@@ -93,15 +97,26 @@ bool RayIntegrator::testBVH(
 
   if (!testBoundingBox(ray, {tMin, hit.t}, node->bounds, &d)) return false;
 
+  const auto& vertices = mesh.vertices();
+  const auto& vertexData = mesh.vertexData();
+
   while (true) {
     if (d < hit.t) {
       if (node->span > 0) {
         for (size_t i = 0; i < node->span; i++) {
           uint32_t idx = bvh.idx(node->first + i);
-          const TrianglePositions& tri = mesh.triangle(idx);
-          const TriangleData& td = mesh.data(idx);
+          const Triangle& tri = mesh.triangle(idx);
           const BSDF& bsdf = scene->material(mesh.material(idx));
-          didHit |= testTriangle(ray, tMin, hit, tri, td, idx, bsdf);
+          didHit |= testTriangle(
+            ray,
+            tMin,
+            hit,
+            tri,
+            vertices,
+            vertexData,
+            idx,
+            bsdf
+          );
         }
         if (stackIdx == 0) break;
         node = stack[--stackIdx];
@@ -147,13 +162,18 @@ bool RayIntegrator::testTriangle(
   const Ray& ray,
   float tMin,
   Hit& hit,
-  const TrianglePositions& tri,
-  const TriangleData& d,
+  const Triangle& tri,
+  const std::vector<float3>& vertices,
+  const std::vector<VertexData>& vertexData,
   uint32_t idx,
   const BSDF& bsdf
 ) const {
-  const float3 edge1 = tri.p1 - tri.p0;
-  const float3 edge2 = tri.p2 - tri.p0;
+  const float3& p0 = vertices[tri.i0];
+  const float3& p1 = vertices[tri.i1];
+  const float3& p2 = vertices[tri.i2];
+
+  const float3 edge1 = p1 - p0;
+  const float3 edge2 = p2 - p0;
 
   // Cramer's Rule
   const float3 rayEdge2 = cross(ray.dir, edge2);
@@ -163,7 +183,7 @@ bool RayIntegrator::testTriangle(
   if (std::abs(det) < epsilon) return false;
 
   const float invDet = 1.0f / det;
-  const float3 b = ray.origin - tri.p0; // We're solving for Ax = b
+  const float3 b = ray.origin - p0; // We're solving for Ax = b
 
   const float u = dot(b, rayEdge2) * invDet;
   if (u < 0.0f || u > 1.0f) return false;
@@ -177,13 +197,17 @@ bool RayIntegrator::testTriangle(
   const float t = dot(edge2, bEdge1) * invDet;
   if (t <= tMin || hit.t <= t) return false;
 
+  const VertexData& d0 = vertexData[tri.i0];
+  const VertexData& d1 = vertexData[tri.i1];
+  const VertexData& d2 = vertexData[tri.i2];
+
   // Alpha test
   const float w = 1.0f - u - v;
-  float2 uv = w * d.texCoords[0] + u * d.texCoords[1] + v * d.texCoords[2];
+  float2 uv = w * d0.texCoords + u * d1.texCoords + v * d2.texCoords;
   float alpha = bsdf.alpha(uv);
   if (alpha < 1.0f && m_sampler.get1D() > alpha) return false;
 
-  hit.n = w * d.n[0] + u * d.n[1] + v * d.n[2];
+  hit.n = w * d0.normal + u * d1.normal + v * d2.normal;
 
   // Skip transparent BSDF for NEE rays
   if (ray.nee && bsdf.transparent()) {
@@ -194,7 +218,6 @@ bool RayIntegrator::testTriangle(
   hit.t = t;
   hit.tg = float3(w, u, v);
   hit.bsdf = &bsdf;
-  hit.d = &d;
   hit.uv = uv;
   hit.p = ray(t);
   hit.idx = idx;

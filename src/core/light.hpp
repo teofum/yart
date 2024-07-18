@@ -51,8 +51,8 @@ public:
   bool twoSided = false;
 
   AreaLight(
-    const TrianglePositions* tri,
-    const TriangleData* data,
+    const Triangle* tri,
+    const Mesh* mesh,
     const float3& emission,
     const Transform& transform
   ) noexcept;
@@ -75,8 +75,8 @@ public:
   ) const noexcept override;
 
 private:
-  const TrianglePositions* m_tri;
-  const TriangleData* m_data;
+  const Triangle* m_tri;
+  const Mesh* m_mesh;
 
   float m_area;
   float3 m_emission;

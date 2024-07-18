@@ -14,20 +14,17 @@ const Transform& Light::transform() const noexcept {
 }
 
 AreaLight::AreaLight(
-  const TrianglePositions* tri,
-  const TriangleData* data,
+  const Triangle* tri,
+  const Mesh* mesh,
   const float3& emission,
   const Transform& transform
 ) noexcept
-  : Light(transform), m_tri(tri), m_data(data), m_emission(emission) {
-  // Get triangle areas and total surface area
+  : Light(transform), m_tri(tri), m_mesh(mesh), m_emission(emission) {
+  float3 t0 = transform(m_mesh->vertex(tri->i0), Transform::Type::Point);
+  float3 t1 = transform(m_mesh->vertex(tri->i1), Transform::Type::Point);
+  float3 t2 = transform(m_mesh->vertex(tri->i2), Transform::Type::Point);
 
-  TrianglePositions transformed;
-  transformed.p0 = transform(m_tri->p0, Transform::Type::Point);
-  transformed.p1 = transform(m_tri->p1, Transform::Type::Point);
-  transformed.p2 = transform(m_tri->p2, Transform::Type::Point);
-
-  m_area = transformed.area();
+  m_area = triangleArea(t0, t1, t2);
 }
 
 Light::Type AreaLight::type() const noexcept {
@@ -49,9 +46,12 @@ LightSample AreaLight::sample(
   float uc
 ) const noexcept {
   const float3 b = samplers::sampleTriUniform(u);
-  float3 pos = b[0] * m_tri->p0 + b[1] * m_tri->p1 + b[2] * m_tri->p2;
-  float3 normal =
-    b[0] * m_data->n[0] + b[1] * m_data->n[1] + b[2] * m_data->n[2];
+  float3 pos = b[0] * m_mesh->vertex(m_tri->i0) +
+               b[1] * m_mesh->vertex(m_tri->i1) +
+               b[2] * m_mesh->vertex(m_tri->i2);
+  float3 normal = b[0] * m_mesh->vertexData(m_tri->i0).normal +
+                  b[1] * m_mesh->vertexData(m_tri->i1).normal +
+                  b[2] * m_mesh->vertexData(m_tri->i2).normal;
 
   pos = m_transform(pos, Transform::Type::Point);
   normal = m_transform(normal, Transform::Type::Normal);

@@ -50,8 +50,9 @@ protected:
     const Ray& ray,
     float tMin,
     Hit& hit,
-    const TrianglePositions& tri,
-    const TriangleData& d,
+    const Triangle& tri,
+    const std::vector<float3>& vertices,
+    const std::vector<VertexData>& vertexData,
     uint32_t idx,
     const BSDF& bsdf
   ) const;

@@ -21,9 +21,11 @@ struct BVHNode {
 class BVH {
 public:
   void init(
-    const std::vector<TrianglePositions>* tris,
+    const std::vector<float3>* vertices,
+    const std::vector<Triangle>* tris,
     const std::vector<float3>* centroids
   ) noexcept {
+    m_vertices = vertices;
     m_tris = tris;
     m_centroids = centroids;
 
@@ -48,7 +50,7 @@ public:
     return m_nodes[i];
   };
 
-  [[nodiscard]] constexpr const TrianglePositions& tri(size_t i) const {
+  [[nodiscard]] constexpr const Triangle& tri(size_t i) const {
     return (*m_tris)[m_indices[i]];
   };
 
@@ -60,7 +62,8 @@ public:
 
 protected:
   // Pointers to mesh data
-  const std::vector<TrianglePositions>* m_tris = nullptr;
+  const std::vector<float3>* m_vertices = nullptr;
+  const std::vector<Triangle>* m_tris = nullptr;
   const std::vector<float3>* m_centroids = nullptr;
 
   // Internal BVH data
@@ -74,11 +77,11 @@ protected:
   constexpr void updateBounds(BVHNode& node) {
     size_t first = node.first;
     for (size_t i = 0; i < node.span; i++) {
-      const TrianglePositions& leafTri = (*m_tris)[m_indices[first + i]];
+      const Triangle& leafTri = (*m_tris)[m_indices[first + i]];
       fbounds3 tribounds = fbounds3::fromPoints(
-        leafTri.p0,
-        leafTri.p1,
-        leafTri.p2
+        (*m_vertices)[leafTri.i0],
+        (*m_vertices)[leafTri.i1],
+        (*m_vertices)[leafTri.i2]
       );
       node.bounds = fbounds3::join(
         node.bounds,
@@ -218,12 +221,12 @@ private:
       Bin bins[nBins];
       float scale = float(nBins) / bsize;
       for (uint32_t i = 0; i < node.span; i++) {
-        const TrianglePositions& tri = (*m_tris)[m_indices[node.first + i]];
+        const Triangle& tri = (*m_tris)[m_indices[node.first + i]];
         const float3& centroid = (*m_centroids)[m_indices[node.first + i]];
         auto triBounds = fbounds3::fromPoints(
-          tri.p0,
-          tri.p1,
-          tri.p2
+          (*m_vertices)[tri.i0],
+          (*m_vertices)[tri.i1],
+          (*m_vertices)[tri.i2]
         );
 
         auto b = std::min(

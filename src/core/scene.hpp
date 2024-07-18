@@ -15,10 +15,8 @@ public:
   constexpr Node() noexcept = default;
 
   constexpr explicit Node(Mesh* mesh) noexcept: m_mesh(mesh) {
-    for (const TrianglePositions& tri: mesh->triangles()) {
-      m_meshBounds.expandToInclude(tri.p0);
-      m_meshBounds.expandToInclude(tri.p1);
-      m_meshBounds.expandToInclude(tri.p2);
+    for (const float3& v: mesh->vertices()) {
+      m_meshBounds.expandToInclude(v);
     }
     m_bounds = m_meshBounds;
   }
