@@ -11,102 +11,139 @@
 namespace yart {
 using namespace math;
 
-class Texture : public Buffer {
+enum class TextureType {
+  LinearRGB = 0,
+  sRGB,
+  NonColor
+};
+
+template<numeric T, std::size_t C>
+class Texture {
 public:
-  enum class Type {
-    LinearRGB = 0,
-    sRGB,
-    NonColor
+  std::vector<T> data;
+
+  constexpr Texture(unsigned width, unsigned height, TextureType type) noexcept
+    : data(width * height * C, T(0)),
+      m_width(width),
+      m_height(height),
+      m_channels(C),
+      m_type(type) {}
+
+  [[nodiscard]] vec<float, C> sample(float2 uv) const requires (C > 1);
+
+  [[nodiscard]] float sample(float2 uv) const requires (C == 1);
+
+  [[nodiscard]] constexpr TextureType type() const noexcept { return m_type; }
+
+  [[nodiscard]] constexpr const uint32_t& width() const {
+    return m_width;
+  }
+
+  [[nodiscard]] constexpr const uint32_t& height() const {
+    return m_height;
+  }
+
+private:
+  uint32_t m_width, m_height, m_channels;
+  TextureType m_type;
+};
+
+using HDRTexture = Texture<float, 3>;
+
+template<size_t C>
+using SDRTexture = Texture<uint8_t, C>;
+using MonoTexture = SDRTexture<1>;
+using RGBTexture = SDRTexture<3>;
+using RGBATexture = SDRTexture<4>;
+
+template<size_t C>
+SDRTexture<C> loadTexture(
+  const uint8_t* data,
+  int32_t len,
+  TextureType type,
+  std::array<uint32_t, C> channels
+) {
+  int32_t w, h;
+  const uint8_t* pixels = stbi_load_from_memory(data, len, &w, &h, nullptr, 4);
+
+  SDRTexture<C> texture(w, h, type);
+  for (uint32_t i = 0; i < w * h; i++) {
+    uint32_t iPixel = i * 4, iData = i * C;
+
+    for (uint32_t j = 0; j < C; j++)
+      texture.data[iData + j] = pixels[iPixel + channels[j]];
+  }
+
+  stbi_image_free((void*) pixels);
+  return texture;
+}
+
+template<size_t C>
+SDRTexture<C> loadTexture(const uint8_t* data, int32_t len, TextureType type) {
+  std::array<uint32_t, C> channels = {};
+  for (uint32_t i = 0; i < C; i++) channels[i] = i;
+  return loadTexture<C>(data, len, type, channels);
+}
+
+HDRTexture loadTextureHDR(const char* filename);
+
+uint2 getXY(float2& uv, uint32_t w, uint32_t h);
+
+template<std::integral T, std::size_t C>
+vec<float, C> getValue(const Texture<T, C>& tex, size_t idx) {
+  vec<float, C> val;
+  for (uint32_t i = 0; i < C; i++)
+    val[i] = float(tex.data[C * idx + i]) / 255.0f;
+
+  if (tex.type() == TextureType::sRGB) val = sRGBDecode(val);
+  return val;
+}
+
+template<std::floating_point T, std::size_t C>
+vec<float, C> getValue(const Texture<T, C>& tex, size_t idx) {
+  vec<float, C> val;
+  for (uint32_t i = 0; i < C; i++) val[i] = tex.data[C * idx + i];
+
+  return val;
+}
+
+template<numeric T, std::size_t C>
+vec<float, C> Texture<T, C>::sample(float2 uv) const requires (C > 1) {
+  uint2 xy = getXY(uv, m_width, m_height);
+
+  vec<float, C> samples[4] = {
+    getValue<T, C>(*this, xy[1] * m_width + xy[0]),
+    getValue<T, C>(*this, (xy[1] + 1) * m_width + xy[0]),
+    getValue<T, C>(*this, xy[1] * m_width + (xy[0] + 1)),
+    getValue<T, C>(*this, (xy[1] + 1) * m_width + (xy[0] + 1))
   };
 
-  static Texture load(const uint8_t* data, int32_t len, Type type) {
-    int32_t w, h;
-    const uint8_t* pixels =
-      stbi_load_from_memory(data, len, &w, &h, nullptr, 4);
+  return bilerp(samples[0], samples[1], samples[2], samples[3], uv.x(), uv.y());
+}
 
-    Texture texture(w, h);
-    for (uint32_t i = 0; i < w * h; i++) {
-      uint32_t iPixel = i * 4;
-      texture.m_data[i] = float4(
-        pixels[iPixel + 0],
-        pixels[iPixel + 1],
-        pixels[iPixel + 2],
-        pixels[iPixel + 3]
-      ) / 255.0f;
+template<std::integral T>
+float getValueF(const Texture<T, 1>& tex, size_t idx) {
+  return float(tex.data[idx]) / 255.0f;
+}
 
-      if (type == Type::sRGB)
-        texture.m_data[i] = sRGBDecode(texture.m_data[i]);
-    }
+template<std::floating_point T>
+float getValueF(const Texture<T, 1>& tex, size_t idx) {
+  return tex.data[idx];
+}
 
-    return texture;
-  }
+template<numeric T, std::size_t C>
+float Texture<T, C>::sample(float2 uv) const requires (C == 1) {
+  uint2 xy = getXY(uv, m_width, m_height);
 
-  static Texture load(const char* filename, Type type) {
-    int32_t w, h;
-    const uint8_t* pixels = stbi_load(filename, &w, &h, nullptr, 4);
+  float samples[4] = {
+    getValueF<T>(*this, C * (xy[1] * m_width + xy[0])),
+    getValueF<T>(*this, C * ((xy[1] + 1) * m_width + xy[0])),
+    getValueF<T>(*this, C * (xy[1] * m_width + (xy[0] + 1))),
+    getValueF<T>(*this, C * ((xy[1] + 1) * m_width + (xy[0] + 1)))
+  };
 
-    Texture texture(w, h);
-    for (uint32_t i = 0; i < w * h; i++) {
-      uint32_t iPixel = i * 4;
-      texture.m_data[i] = float4(
-        pixels[iPixel + 0],
-        pixels[iPixel + 1],
-        pixels[iPixel + 2],
-        pixels[iPixel + 3]
-      ) / 255.0f;
-
-      if (type == Type::sRGB)
-        texture.m_data[i] = sRGBDecode(texture.m_data[i]);
-    }
-
-    return texture;
-  }
-
-
-  static Texture loadHDR(const char* filename) {
-    int32_t w, h;
-    const float* pixels = stbi_loadf(filename, &w, &h, nullptr, 4);
-
-    Texture texture(w, h);
-    for (uint32_t i = 0; i < w * h; i++) {
-      uint32_t iPixel = i * 4;
-      texture.m_data[i] = float4(
-        pixels[iPixel + 0],
-        pixels[iPixel + 1],
-        pixels[iPixel + 2],
-        pixels[iPixel + 3]
-      );
-    }
-
-    return texture;
-  }
-
-  constexpr Texture(unsigned width, unsigned height) noexcept
-    : Buffer(width, height) {}
-
-  [[nodiscard]] constexpr float4 sample(float2 uv) const {
-    uv.x() -= std::floor(uv.x());
-    uv.y() -= std::floor(uv.y());
-
-    uv.x() *= float(m_width - 1);
-    uv.y() *= float(m_height - 1);
-
-    uint32_t x = min(m_width - 2, uv.x());
-    uint32_t y = min(m_height - 2, uv.y());
-
-    uv.x() -= x;
-    uv.y() -= y;
-
-    return bilerp(
-      m_data[y * m_width + x],
-      m_data[(y + 1) * m_width + x],
-      m_data[y * m_width + x + 1],
-      m_data[(y + 1) * m_width + x + 1],
-      uv.x(),
-      uv.y()
-    );
-  }
-};
+  return bilerp(samples[0], samples[1], samples[2], samples[3], uv.x(), uv.y());
+}
 
 }
 

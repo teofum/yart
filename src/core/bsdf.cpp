@@ -49,7 +49,7 @@ float3 BSDF::normal(
   float3 sn = n;
 
   if (m_normalTexture) {
-    float3 sampledNormal = float3(m_normalTexture->sample(uv)) * 2.0f - 1.0f;
+    float3 sampledNormal = m_normalTexture->sample(uv) * 2.0f - 1.0f;
     Frame normalMapFrame = Frame(n, float3(t), t.w());
     sn = normalized(normalMapFrame.ltw(sampledNormal));
   }

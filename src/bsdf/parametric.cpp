@@ -5,12 +5,12 @@ namespace yart {
 
 ParametricBSDF::ParametricBSDF(
   const float3& baseColor,
-  const Texture* baseTexture,
-  const Texture* mrTexture,
-  const Texture* transmissionTexture,
-  const Texture* normalTexture,
-  const Texture* clearcoatTexture,
-  const Texture* emissionTexture,
+  const RGBATexture* baseTexture,
+  const SDRTexture<2>* mrTexture,
+  const MonoTexture* transmissionTexture,
+  const RGBTexture* normalTexture,
+  const MonoTexture* clearcoatTexture,
+  const RGBTexture* emissionTexture,
   float metallic,
   float roughness,
   float transmission,
@@ -43,8 +43,9 @@ ParametricBSDF::ParametricBSDF(
   m_normalScale = normalScale;
 
   if (m_baseTexture)
-    for (const float4& i: m_baseTexture->dataVec())
-      if (i.w() < 1.0f) m_hasAlpha = true;
+    for (uint32_t i = 3; i < m_baseTexture->data.size(); i += 4)
+      if (m_baseTexture->data[i] < 255) m_hasAlpha = true;
+
   m_hasEmission = length2(m_emission) > 0.0f;
 }
 
@@ -75,11 +76,11 @@ float3 ParametricBSDF::fImpl(
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   float c = m_clearcoat, cr = m_clearcoatRoughness;
   if (m_mrTexture) {
-    float3 mr = float3(m_mrTexture->sample(uv));
-    r *= mr.y();
-    m *= mr.z();
+    float2 mr = m_mrTexture->sample(uv);
+    r *= mr.x();
+    m *= mr.y();
   }
-  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
+  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv);
   if (m_clearcoatTexture) {
     float2 ccr = float2(m_clearcoatTexture->sample(uv));
     c *= ccr.x();
@@ -123,11 +124,11 @@ float ParametricBSDF::pdfImpl(
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   float c = m_clearcoat, cr = m_clearcoatRoughness;
   if (m_mrTexture) {
-    float3 mr = float3(m_mrTexture->sample(uv));
-    r *= mr.y();
-    m *= mr.z();
+    float2 mr = m_mrTexture->sample(uv);
+    r *= mr.x();
+    m *= mr.y();
   }
-  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
+  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv);
   if (m_clearcoatTexture) {
     float2 ccr = float2(m_clearcoatTexture->sample(uv));
     c *= ccr.x();
@@ -173,11 +174,11 @@ BSDFSample ParametricBSDF::sampleImpl(
   float r = m_roughness, m = m_cMetallic, t = m_cTrans;
   float c = m_clearcoat, cr = m_clearcoatRoughness;
   if (m_mrTexture) {
-    float3 mr = float3(m_mrTexture->sample(uv));
-    r *= mr.y();
-    m *= mr.z();
+    float2 mr = m_mrTexture->sample(uv);
+    r *= mr.x();
+    m *= mr.y();
   }
-  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv).x();
+  if (m_transmissionTexture) t *= m_transmissionTexture->sample(uv);
   if (m_clearcoatTexture) {
     float2 ccr = float2(m_clearcoatTexture->sample(uv));
     c *= ccr.x();

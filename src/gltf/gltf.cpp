@@ -16,10 +16,12 @@ static float4x4 rotationFromQuat(std::array<float, 4> q) noexcept {
   return half * 2.0f;
 }
 
-static std::unique_ptr<Texture> loadTexture(
+template<size_t C>
+static std::unique_ptr<SDRTexture<C>> loadGLTFTexture(
   const fastgltf::Asset& asset,
   size_t index,
-  Texture::Type type
+  TextureType type,
+  std::array<uint32_t, C> channels
 ) {
   const fastgltf::Texture& gltfTex = asset.textures[index];
   if (!gltfTex.imageIndex) return nullptr;
@@ -41,7 +43,20 @@ static std::unique_ptr<Texture> loadTexture(
     reinterpret_cast<const uint8_t*>(&bytes->bytes[bv.byteOffset]);
   int32_t len = int32_t(bv.byteLength);
 
-  return std::make_unique<Texture>(Texture::load(data, len, type));
+  return std::make_unique<SDRTexture<C>>(
+    loadTexture(data, len, type, channels)
+  );
+}
+
+template<size_t C>
+static std::unique_ptr<SDRTexture<C>> loadGLTFTexture(
+  const fastgltf::Asset& asset,
+  size_t index,
+  TextureType type
+) {
+  std::array<uint32_t, C> channels = {};
+  for (uint32_t i = 0; i < C; i++) channels[i] = i;
+  return loadGLTFTexture<C>(asset, index, type, channels);
 }
 
 static std::unique_ptr<BSDF> processMaterial(
@@ -52,36 +67,36 @@ static std::unique_ptr<BSDF> processMaterial(
   // Base color
   const auto base = gltfMat.pbrData.baseColorFactor;
   const float3 baseColor = float3(base[0], base[1], base[2]);
-  const Texture* baseTexture = nullptr;
+  const RGBATexture* baseTexture = nullptr;
   if (gltfMat.pbrData.baseColorTexture) {
     uint32_t idx = gltfMat.pbrData.baseColorTexture.value().textureIndex;
     baseTexture = scene.addTexture(
-      loadTexture(asset, idx, Texture::Type::sRGB)
+      loadGLTFTexture<4>(asset, idx, TextureType::sRGB)
     );
   }
 
   // Roughness + metallic
   float roughness = gltfMat.pbrData.roughnessFactor;
   float metallic = gltfMat.pbrData.metallicFactor;
-  const Texture* mrTexture = nullptr;
+  const SDRTexture<2>* mrTexture = nullptr;
   if (gltfMat.pbrData.metallicRoughnessTexture) {
     uint32_t idx = gltfMat.pbrData.metallicRoughnessTexture.value()
                           .textureIndex;
     mrTexture = scene.addTexture(
-      loadTexture(asset, idx, Texture::Type::NonColor)
+      loadGLTFTexture<2>(asset, idx, TextureType::NonColor, {1, 2})
     );
   }
 
   // Transmission
   float transmission = 0.0f;
-  const Texture* transmissionTexture = nullptr;
+  const MonoTexture* transmissionTexture = nullptr;
   if (gltfMat.transmission) {
     transmission = gltfMat.transmission->transmissionFactor;
     if (gltfMat.transmission->transmissionTexture) {
       uint32_t idx = gltfMat.transmission->transmissionTexture.value()
                             .textureIndex;
       transmissionTexture = scene.addTexture(
-        loadTexture(asset, idx, Texture::Type::NonColor)
+        loadGLTFTexture<1>(asset, idx, TextureType::NonColor)
       );
     }
   }
@@ -105,23 +120,23 @@ static std::unique_ptr<BSDF> processMaterial(
 
   // Emission
   const auto em = gltfMat.emissiveFactor;
-  Texture* emissionTexture = nullptr;
+  RGBTexture* emissionTexture = nullptr;
   if (gltfMat.emissiveTexture) {
     uint32_t idx = gltfMat.emissiveTexture.value().textureIndex;
     emissionTexture = scene.addTexture(
-      loadTexture(asset, idx, Texture::Type::sRGB)
+      loadGLTFTexture<3>(asset, idx, TextureType::sRGB)
     );
   }
   const float3 emission =
     float3(em[0], em[1], em[2]) * gltfMat.emissiveStrength;
 
   // Normal maps
-  Texture* normalTexture = nullptr;
+  RGBTexture* normalTexture = nullptr;
   float normalScale = 1.0f;
   if (gltfMat.normalTexture) {
     uint32_t idx = gltfMat.normalTexture.value().textureIndex;
     normalTexture = scene.addTexture(
-      loadTexture(asset, idx, Texture::Type::NonColor)
+      loadGLTFTexture<3>(asset, idx, TextureType::NonColor)
     );
 
     normalScale = gltfMat.normalTexture.value().scale;

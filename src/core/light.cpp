@@ -124,7 +124,7 @@ float3 UniformInfiniteLight::Lavg() const noexcept {
 
 ImageInfiniteLight::ImageInfiniteLight(
   float sceneRadius,
-  const Texture* emissionTexture,
+  const HDRTexture* emissionTexture,
   fbounds2 bounds
 ) noexcept
   : Light({}),
@@ -136,6 +136,7 @@ ImageInfiniteLight::ImageInfiniteLight(
   uint32_t y0 = uint32_t(float(h) * bounds.min.y());
   uint32_t x1 = uint32_t(float(w) * bounds.max.x());
   uint32_t y1 = uint32_t(float(h) * bounds.max.y());
+  uint32_t wTexture = w;
   w = x1 - x0, h = y1 - y0;
 
   std::vector<float> d(w * h);
@@ -144,7 +145,10 @@ ImageInfiniteLight::ImageInfiniteLight(
     float z = 1.0f - v * 2.0f;
     float sinTheta = std::sqrt(1.0f - z * z);
     for (uint32_t x = 0; x < w; x++) {
-      float3 sampled = float3((*m_emissionTexture)(x + x0, y + y0));
+      float3 sampled = getValue(
+        *m_emissionTexture,
+        x + x0 + (y + y0) * wTexture
+      );
       float value = sum(sampled) / 3.0f;
       d[y * w + x] = value * sinTheta;
       m_Lavg += sampled;

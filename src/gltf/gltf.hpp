@@ -28,6 +28,10 @@ struct fastgltf::ElementTraits<float4>
 
 namespace yart::gltf {
 
+struct TextureData {
+
+};
+
 std::unique_ptr<Scene> load(const fs::path& path) noexcept;
 
 }

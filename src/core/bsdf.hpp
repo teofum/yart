@@ -82,7 +82,7 @@ public:
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
 
 protected:
-  const Texture* m_normalTexture = nullptr;
+  const RGBTexture* m_normalTexture = nullptr;
   float m_normalScale = 1.0f;
 
   [[nodiscard]] virtual float3 fImpl(

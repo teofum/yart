@@ -102,15 +102,32 @@ public:
     m_materials.push_back(std::move(matPtr));
   }
 
-  [[nodiscard]] constexpr const Texture& texture(size_t i) const noexcept {
-    return *(m_textures[i]);
+  constexpr MonoTexture* addTexture(std::unique_ptr<MonoTexture>&& tPtr) noexcept {
+    uint32_t i = m_texturesMono.size();
+    m_texturesMono.push_back(std::move(tPtr));
+
+    return m_texturesMono[i].get();
   }
 
-  constexpr Texture* addTexture(std::unique_ptr<Texture>&& tPtr) noexcept {
-    uint32_t i = m_textures.size();
-    m_textures.push_back(std::move(tPtr));
+  constexpr SDRTexture<2>* addTexture(std::unique_ptr<SDRTexture<2>>&& tPtr) noexcept {
+    uint32_t i = m_textures2Ch.size();
+    m_textures2Ch.push_back(std::move(tPtr));
 
-    return m_textures[i].get();
+    return m_textures2Ch[i].get();
+  }
+
+  constexpr RGBTexture* addTexture(std::unique_ptr<RGBTexture>&& tPtr) noexcept {
+    uint32_t i = m_texturesRGB.size();
+    m_texturesRGB.push_back(std::move(tPtr));
+
+    return m_texturesRGB[i].get();
+  }
+
+  constexpr RGBATexture* addTexture(std::unique_ptr<RGBATexture>&& tPtr) noexcept {
+    uint32_t i = m_texturesRGBA.size();
+    m_texturesRGBA.push_back(std::move(tPtr));
+
+    return m_texturesRGBA[i].get();
   }
 
   [[nodiscard]] constexpr size_t nLights() const noexcept {
@@ -143,8 +160,12 @@ private:
   std::unique_ptr<Node> m_root = nullptr;
   std::vector<std::unique_ptr<Mesh>> m_meshes;
   std::vector<std::unique_ptr<BSDF>> m_materials;
-  std::vector<std::unique_ptr<Texture>> m_textures;
   std::vector<std::unique_ptr<Light>> m_lights;
+
+  std::vector<std::unique_ptr<MonoTexture>> m_texturesMono;
+  std::vector<std::unique_ptr<SDRTexture<2>>> m_textures2Ch;
+  std::vector<std::unique_ptr<RGBTexture>> m_texturesRGB;
+  std::vector<std::unique_ptr<RGBATexture>> m_texturesRGBA;
 };
 
 }

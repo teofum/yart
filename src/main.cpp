@@ -21,15 +21,15 @@ int main() {
 //  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
-  yart::Buffer buffer(600, 400); // 3:2 small
-//  yart::Buffer buffer(900, 600); // 3:2 medium
+//  yart::Buffer buffer(600, 400); // 3:2 small
+  yart::Buffer buffer(900, 600); // 3:2 medium
 //  yart::Buffer buffer(1920, 1200); // 16:10 large
 //  yart::Buffer buffer(400, 400); // 1:1 small
 //  yart::Buffer buffer(1280, 1280); // 1:1 large
 
   yart::Camera camera({buffer.width(), buffer.height()}, 24.0f, 8.0f);
 //  camera.apertureSides = 7;
-//  camera.exposure = 5.0f;
+  camera.exposure = 1.0f;
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 5.0f, 0.0f}); // Cornell Box
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
@@ -51,7 +51,7 @@ int main() {
 
   std::unique_ptr<yart::Scene> scene = load("models/bistro.glb");
 
-  yart::Texture hdri = yart::Texture::loadHDR("hdris/rosendal_plains_2_oct.hdr");
+  yart::HDRTexture hdri = yart::loadTextureHDR("hdris/rosendal_plains_2_oct.hdr");
   auto envLight = yart::ImageInfiniteLight(100.0f, &hdri);
   envLight.transform = Transform::rotation(radians(270.0f), axis_y<float>);
   scene->addLight(std::move(envLight));
