@@ -3,6 +3,11 @@
 
 namespace yart {
 
+// Average Fresnel term over all angles for a given IOR, curve fit from KC2017
+static constexpr float FavgFit(float ior) noexcept {
+  return (ior - 1.0f) / (4.08567f + 1.00071f * ior);
+}
+
 ParametricBSDF::ParametricBSDF(
   const float3& baseColor,
   const RGBATexture* baseTexture,
@@ -37,15 +42,23 @@ ParametricBSDF::ParametricBSDF(
             m_transmissionTexture(transmissionTexture),
             m_clearcoatTexture(clearcoatTexture),
             m_emissionTexture(emissionTexture) {
+  // Create rotation matrices for anisotropy
   m_localRotation = float3x3(float4x4::rotation(-anisoRotation, axis_z<float>));
   m_invRotation = float3x3(float4x4::rotation(anisoRotation, axis_z<float>));
+
+  // Set base BSDF properties
   m_normalTexture = normalTexture;
   m_normalScale = normalScale;
 
+  // Check base texture and set alpha flag, this lets us skip expensive texture
+  // sampling in hot intersection code for most materials
   if (m_baseTexture)
     for (uint32_t i = 3; i < m_baseTexture->data.size(); i += 4)
       if (m_baseTexture->data[i] < 255) m_hasAlpha = true;
 
+  // Set emission flag based on emission strength
+  // Note partially emissive materials (ie with an emission texture) are considered
+  // fully emissive for sampling purposes, and some samples will be wasted
   m_hasEmission = length2(m_emission) > 0.0f;
 }
 
@@ -56,7 +69,7 @@ float ParametricBSDF::alpha(const float2& uv) const {
 }
 
 float3 ParametricBSDF::base(const float2& uv) const {
-  if (m_baseTexture) return float3(m_baseTexture->sample(uv));
+  if (m_baseTexture) return m_base * float3(m_baseTexture->sample(uv));
   return m_base;
 }
 
@@ -185,6 +198,8 @@ BSDFSample ParametricBSDF::sampleImpl(
     cr *= ccr.y();
   }
 
+  // Increase roughness for near-specular materials for regularized paths
+  // Helps reduce noise on diffuse -> specular -> light source bounces
   if (regularized) {
     r = roughen(r);
     cr = roughen(cr);
@@ -234,23 +249,27 @@ float3 ParametricBSDF::fMetallic(
   const float3& base,
   const GGX& mf
 ) const {
+  // Handle perfect specular case, f = 0 (delta dirac distrib.)
   if (mf.smooth()) return {};
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
   if (cosTheta_i == 0 || cosTheta_o == 0) return {};
 
+  // Get microfacet normal wm and make sure it's outward facing
   float3 wm = wo + wi;
   if (length2(wm) == 0.0f) return {};
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
+  // Single-scattering fresnel term and BSDF (Cook-Torrance)
   const float3 Fss = fresnelSchlick(base, absDot(wo, wm));
-  const float3 fss = Fss * mf.mdf(wm) * mf.g(wo, wi) /
+  const float3 Mss = Fss * mf.mdf(wm) * mf.g(wo, wi) /
                      (4 * cosTheta_o * cosTheta_i);
 
-  const float Ess = lut::E_ms(cosTheta_o, m_roughness);
-  const float3 fms = fss * base * (1.0f - Ess) / Ess;
+  // Multi-scattering BSDF term (E. Turquin)
+  const float Ess = lut::ggxE(cosTheta_o, m_roughness);
+  const float3 Mms = Mss * base * (1.0f - Ess) / Ess;
 
-  return fss + fms;
+  return Mss + Mms;
 }
 
 float ParametricBSDF::pdfMetallic(
@@ -258,12 +277,15 @@ float ParametricBSDF::pdfMetallic(
   const float3& wi,
   const GGX& mf
 ) const {
+  // Handle perfect specular case, p = 0 (delta dirac distrib.)
   if (mf.smooth()) return 0;
 
+  // Get microfacet normal wm and make sure it's outward facing
   float3 wm = wo + wi;
   if (length2(wm) == 0.0f) return 0;
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
+  // Eval visible microfacet distribution
   return mf.vmdf(wo, wm) / (4 * absDot(wo, wm));
 }
 
@@ -274,6 +296,7 @@ BSDFSample ParametricBSDF::sampleMetallic(
   const float2& u,
   float uc
 ) const {
+  // Handle perfect specular case
   if (mf.smooth()) {
     const float3 F = fresnelSchlick(base, wo.z());
 
@@ -287,18 +310,21 @@ BSDFSample ParametricBSDF::sampleMetallic(
     };
   }
 
+  // Sample GGX VMDF and calculate incident light direction
   float3 wm = mf.sampleVisibleMicrofacet(wo, u);
   float3 wi = reflect(wo, wm);
   if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
   const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm));
 
+  // Single-scattering fresnel term and BSDF (Cook-Torrance)
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
   const float3 Fss = fresnelSchlick(base, absDot(wo, wm));
-  const float3 Mss = mf.mdf(wm) * Fss * mf.g(wo, wi) /
+  const float3 Mss = Fss * mf.mdf(wm) * mf.g(wo, wi) /
                      (4 * cosTheta_o * cosTheta_i);
 
-  const float Ess = lut::E_ms(cosTheta_o, m_roughness);
+  // Multi-scattering BSDF term (E. Turquin)
+  const float Ess = lut::ggxE(cosTheta_o, m_roughness);
   const float3 Mms = Mss * base * (1.0f - Ess) / Ess;
 
   return {
@@ -317,13 +343,17 @@ float3 ParametricBSDF::fDielectric(
   const float3& base,
   const GGX& mf
 ) const {
+  // Handle perfect specular case, f = 0 (delta dirac distrib.)
   if (mf.smooth()) return {};
 
+  // Check for reflection/refraction, set relative ior if refraction
   const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
   const bool isReflection = cosTheta_o * cosTheta_i > 0.0f;
   float ior = 1.0f;
+  // TODO: assumes outside interface is air, should consider volumes
   if (!isReflection) ior = cosTheta_o > 0.0f ? m_ior : 1.0f / m_ior;
 
+  // Calculate microfacet normal
   float3 wm = ior * wi + wo;
   if (cosTheta_i == 0.0f || cosTheta_o == 0.0f || length2(wm) == 0.0f)
     return {};
@@ -336,6 +366,7 @@ float3 ParametricBSDF::fDielectric(
   const float Fss = fresnelDielectric(absDot(wo, wm), ior);
   const float T = 1.0f - Fss;
 
+  // Multi-scatter compensation term (E. Turquin)
   const float E_o = lut::ggxGlassE(ior, m_roughness, std::abs(cosTheta_o));
 
   if (isReflection) {
@@ -345,6 +376,7 @@ float3 ParametricBSDF::fDielectric(
 
     return float3(Fss * Mss / E_o);
   } else if (m_thinTransmission) {
+    // Handle thin transmission case
     float3 wip = reflect(-wi, axis_z<float>);
     wm = normalized(wip + wo);
     const float cosTheta_ip = std::abs(wip.z());
@@ -358,9 +390,9 @@ float3 ParametricBSDF::fDielectric(
     const float temp = dot(wi, wm) * ior + dot(wo, wm);
     const float dwm_dwi = absDot(wi, wm) * absDot(wo, wm) / (temp * temp);
 
-    const float Tss =
-      mf.mdf(wm) * mf.g(wo, wi) * dwm_dwi /
-      (std::abs(cosTheta_i * cosTheta_o));
+    // Single-scattering term
+    const float Tss = mf.mdf(wm) * mf.g(wo, wi) * dwm_dwi /
+                      (std::abs(cosTheta_i * cosTheta_o));
 
     return T * base * Tss / E_o;
   }
@@ -371,13 +403,16 @@ float ParametricBSDF::pdfDielectric(
   const float3& wi,
   const GGX& mf
 ) const {
+  // Handle perfect specular case, p = 0 (delta dirac distrib.)
   if (mf.smooth()) return 0;
 
+  // Check for reflection/refraction, set relative ior if refraction
   const float cosTheta_o = wo.z(), cosTheta_i = wi.z();
   const bool isReflection = cosTheta_o * cosTheta_i > 0.0f;
   float ior = 1.0f;
   if (!isReflection) ior = cosTheta_o > 0.0f ? m_ior : 1.0f / m_ior;
 
+  // Calculate microfacet normal
   float3 wm = ior * wi + wo;
   if (cosTheta_i == 0.0f || cosTheta_o == 0.0f || length2(wm) == 0.0f) return 0;
 
@@ -385,6 +420,7 @@ float ParametricBSDF::pdfDielectric(
   if (dot(wm, wi) * cosTheta_i < 0.0f || dot(wm, wo) * cosTheta_o < 0.0f)
     return 0; // Discard back-facing microsurfaces
 
+  // Single-scattering fresnel term
   const float F = fresnelDielectric(dot(wo, wm), m_ior);
   const float T = 1.0f - F;
 
@@ -392,6 +428,7 @@ float ParametricBSDF::pdfDielectric(
   if (isReflection) {
     pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * F;
   } else if (m_thinTransmission) {
+    // TODO: check this is correct
     float3 wip = reflect(-wi, axis_z<float>);
     wm = normalized(wip + wo);
 
@@ -411,6 +448,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
   const float2& u,
   float uc
 ) const {
+  // Get relative IOR
   const float ior = m_thinTransmission || wo.z() > 0.0f ? m_ior : 1.0f / m_ior;
 
   // Handle perfect specular case
@@ -419,6 +457,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
     float T = 1.0f - F;
 
     if (uc < F) {
+      // Specular reflection
       float3 wi(-wo.x(), -wo.y(), wo.z());
 
       return {
@@ -430,6 +469,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
         0.0f
       };
     } else {
+      // Specular refraction
       float3 wi;
       if (m_thinTransmission) wi = -wo;
       else if (!refract(wo, axis_z<float>, m_ior, wi))
@@ -446,16 +486,20 @@ BSDFSample ParametricBSDF::sampleDielectric(
     }
   }
 
+  // Sample GGX VMDF, calculate single-scattering fresnel term
   float3 wm = mf.sampleVisibleMicrofacet(wo, u);
   const float Fss = fresnelDielectric(absDot(wo, wm), ior);
 
+  // Multi-scatter compensation term (E. Turquin)
   const float cosTheta_o = std::abs(wo.z());
   const float E_o = lut::ggxGlassE(ior, m_roughness, cosTheta_o);
 
   if (uc < Fss) {
+    // Calculate reflected light direction
     const float3 wi = reflect(wo, wm);
     if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
+    // Single-scattering BSDF term
     const float cosTheta_i = std::abs(wi.z());
     const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                       (4 * cosTheta_o * cosTheta_i);
@@ -471,6 +515,8 @@ BSDFSample ParametricBSDF::sampleDielectric(
       m_roughness
     };
   } else if (m_thinTransmission) {
+    // Handle thin transmission case
+    // TODO: check this is correct
     const float3 wi = reflect(wo, wm) * float3(1, 1, -1);
 
     const float cosTheta_i = std::abs(wi.z());
@@ -487,6 +533,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
       m_roughness
     };
   } else {
+    // Calculate refracted light direction and handle total internal reflection
     float3 wi;
     const bool tir = !refract(wo, wm, m_ior, wi);
     if (tir || wo.z() * wi.z() > 0.0f || wi.z() == 0.0f)
@@ -496,6 +543,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
     const float dwm_dwi = absDot(wi, wm) / (temp * temp);
     const float pdf = mf.vmdf(wo, wm) * dwm_dwi * (1.0f - Fss);
 
+    // Single-scattering BSDF
     const float Tss =
       mf.mdf(wm) * mf.g(wo, wi) * std::abs(
         dot(wi, wm) * dot(wo, wm) / (wi.z() * wo.z() * temp * temp)
@@ -518,6 +566,7 @@ float3 ParametricBSDF::fGlossy(
   const float3& base,
   const GGX& mf
 ) const {
+  // Handle perfect specular case, f = 0 (delta dirac distrib.)
   if (mf.smooth()) return {};
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
@@ -527,26 +576,26 @@ float3 ParametricBSDF::fGlossy(
   if (length2(wm) == 0.0f) return {};
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
-  // Dielectric single scattering component
+  // Dielectric single-scattering component (Cook-Torrance)
   const float Fss = fresnelDielectric(dot(wo, wm), m_ior);
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
-  // Dielectric multiscatter component
-  const float Favg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
-  const float Eavg = lut::E_msAvg(m_roughness);
-  const float Mms = (1.0f - lut::E_ms(cosTheta_o, m_roughness)) *
-                    (1.0f - lut::E_ms(cosTheta_i, m_roughness)) /
+  // Dielectric multi-scattering component (C. Kulla, A. Conty)
+  const float Favg = FavgFit(m_ior);
+  const float Eavg = lut::ggxEavg(m_roughness);
+  const float Mms = (1.0f - lut::ggxE(cosTheta_o, m_roughness)) *
+                    (1.0f - lut::ggxE(cosTheta_i, m_roughness)) /
                     (float(pi) * (1.0f - Eavg));
   const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
-  // Diffuse component
+  // Diffuse component, compensated for energy conservation (C. Kulla, A. Conty)
   const float r = (1.0f - m_ior) / (1.0f + m_ior);
   const float F0 = r * r;
   const float cDiffuse =
-    (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
-    (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
-    (float(pi) * (1.0f - lut::Eb_msAvg(F0, m_roughness)));
+    (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_o)) *
+    (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_i)) /
+    (float(pi) * (1.0f - lut::ggxBaseEavg(F0, m_roughness)));
   const float3 diffuse = base * cDiffuse;
 
   // Final BSDF
@@ -558,6 +607,7 @@ float ParametricBSDF::pdfGlossy(
   const float3& wi,
   const GGX& mf
 ) const {
+  // Handle perfect specular case, p = 0 (delta dirac distrib.)
   if (mf.smooth()) return 0;
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
@@ -565,13 +615,15 @@ float ParametricBSDF::pdfGlossy(
   if (length2(wm) == 0.0f) return 0;
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
+  // Single-scattering fresnel
   const float Fss = fresnelDielectric(dot(wo, wm), m_ior);
 
-  const float FAvg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
-  const float EmsAvg = lut::E_msAvg(m_roughness);
-  const float Fms = FAvg * FAvg * EmsAvg / (1.0f - FAvg * (1.0f - EmsAvg));
-  const float Ems_o = lut::E_ms(cosTheta_o, m_roughness);
-  const float kappa = 1.0f - (FAvg * Ems_o + Fms * (1.0f - Ems_o));
+  // Diffuse term, compensated for energy conservation
+  const float Favg = FavgFit(m_ior);
+  const float EmsAvg = lut::ggxEavg(m_roughness);
+  const float Fms = Favg * Favg * EmsAvg / (1.0f - Favg * (1.0f - EmsAvg));
+  const float Ems_o = lut::ggxE(cosTheta_o, m_roughness);
+  const float kappa = 1.0f - (Favg * Ems_o + Fms * (1.0f - Ems_o));
 
   return (Fss + Fms) * mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) +
          cosTheta_i * kappa;
@@ -587,11 +639,13 @@ BSDFSample ParametricBSDF::sampleGlossy(
 ) const {
   const float cosTheta_o = wo.z();
 
-  const float Favg = (m_ior - 1.0f) / (4.08567f + 1.00071f * m_ior);
-  const float Eavg = lut::E_msAvg(m_roughness);
+  // Multi-scattering fresnel (C. Kulla, A. Conty)
+  const float Favg = FavgFit(m_ior);
+  const float Eavg = lut::ggxEavg(m_roughness);
   const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
-  const float E_o = lut::E_ms(cosTheta_o, m_roughness);
+  // Diffuse scattering compensation term
+  const float E_o = lut::ggxE(cosTheta_o, m_roughness);
   const float kappa = 1.0f - (Favg * E_o + Fms * (1.0f - E_o));
 
   // Diffuse scattering
@@ -604,9 +658,9 @@ BSDFSample ParametricBSDF::sampleGlossy(
     const float r = (1.0f - m_ior) / (1.0f + m_ior);
     const float F0 = r * r;
     const float cDiffuse =
-      (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_o)) *
-      (1.0f - lut::Eb_ms(F0, m_roughness, cosTheta_i)) /
-      (float(pi) * (1.0f - lut::Eb_msAvg(F0, m_roughness)));
+      (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_o)) *
+      (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_i)) /
+      (float(pi) * (1.0f - lut::ggxBaseEavg(F0, m_roughness)));
 
     return {
       BSDFSample::Reflected | BSDFSample::Diffuse |
@@ -640,12 +694,13 @@ BSDFSample ParametricBSDF::sampleGlossy(
   const float cosTheta_i = wi.z();
   if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
+  // Single-scattering fresnel and BSDF
   const float Fss = fresnelDielectric(dot(wo, wm), m_ior);
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
-  const float Mms = (1.0f - E_o) *
-                    (1.0f - lut::E_ms(cosTheta_i, m_roughness)) /
+  // Multi-scattering BSDF (C. Kulla, A. Conty)
+  const float Mms = (1.0f - E_o) * (1.0f - lut::ggxE(cosTheta_i, m_roughness)) /
                     (float(pi) * (1.0f - Eavg));
 
   const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
@@ -666,6 +721,7 @@ float3 ParametricBSDF::fClearcoat(
   const GGX& mf,
   float* Fc
 ) const {
+  // Handle perfect specular case, f = 0 (delta dirac distrib.)
   if (mf.smooth()) return {};
 
   const float cosTheta_o = std::abs(wo.z()), cosTheta_i = std::abs(wi.z());
@@ -675,12 +731,12 @@ float3 ParametricBSDF::fClearcoat(
   if (length2(wm) == 0.0f) return {};
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
-  // Dielectric single scattering component
+  // Dielectric single-scattering component
   const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
-  // Attenuation fresnel factor
+  // Underlying material attenuation fresnel factor
   *Fc = max(
     fresnelDielectric(cosTheta_o, 1.5f),
     fresnelDielectric(cosTheta_i, 1.5f)
@@ -696,12 +752,14 @@ float ParametricBSDF::pdfClearcoat(
   const GGX& mf,
   float* Fc
 ) const {
+  // Handle perfect specular case, p = 0 (delta dirac distrib.)
   if (mf.smooth()) return 0;
 
   float3 wm = wo + wi;
   if (length2(wm) == 0.0f) return 0;
   wm = normalized(wm.z() < 0.0f ? -wm : wm);
 
+  // Dielectric single-scattering component
   const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
 
   // Attenuation fresnel factor
@@ -742,6 +800,8 @@ BSDFSample ParametricBSDF::sampleClearcoat(
   const float cosTheta_i = wi.z();
   if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
+  // Single-scattering fresnel term and BSDF
+  // Clearcoat is not energy compensated for multiple scattering
   const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);

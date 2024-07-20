@@ -7,6 +7,10 @@
 namespace yart {
 using namespace math;
 
+/**
+ * Parametric PBR material that allows texture-driven control over most properties.
+ * Loosely based on Enterprise PBR, OpenPBR and Blender's Principled BSDF.
+ */
 class ParametricBSDF : public BSDF {
 public:
   explicit ParametricBSDF(
@@ -60,6 +64,7 @@ private:
   // Anisotropy data
   float3x3 m_localRotation, m_invRotation;
 
+  // BSDF implementation
   [[nodiscard]] float3 fImpl(
     const float3& wo,
     const float3& wi,
@@ -81,6 +86,7 @@ private:
     bool regularized
   ) const override;
 
+  // Functions for different material lobes
   [[nodiscard]] float3 fMetallic(
     const float3& wo,
     const float3& wi,

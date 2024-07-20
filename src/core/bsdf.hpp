@@ -10,7 +10,9 @@
 namespace yart {
 using namespace math;
 
-// Util functions
+/**
+ * Calculate material roughness for regularized paths
+ */
 [[nodiscard]] constexpr float roughen(float roughness) noexcept {
   return max(roughness, std::clamp(roughness * 2.0f, 0.1f, 0.3f));
 }
@@ -26,12 +28,12 @@ struct BSDFSample {
     Specular = 32
   };
 
-  int scatter;
-  float3 f;
-  float3 Le;
-  float3 wi;
-  float pdf;
-  float roughness;
+  int scatter;      // Scatter flags
+  float3 f;         // BSDF value
+  float3 Le;        // Emission at sampled point
+  float3 wi;        // Sampled incident light direction
+  float pdf;        // Sampled direction PDF
+  float roughness;  // Sampled point roughness, used for path regularization
 
   [[nodiscard]] constexpr bool is(int flag) const noexcept {
     return scatter & flag;
@@ -40,6 +42,15 @@ struct BSDFSample {
 
 class BSDF {
 public:
+  /**
+   * Evaluate the BSDF at a point for a reflected and incident light direction
+   * @param wo Reflected light direction
+   * @param wi Incident light direction
+   * @param n Surface (shading) normal
+   * @param t Surface (shading) tangent
+   * @param uv Texture coordinates
+   * @return BSDF value
+   */
   [[nodiscard]] float3 f(
     const float3& wo,
     const float3& wi,
@@ -48,6 +59,15 @@ public:
     const float2& uv
   ) const;
 
+  /**
+   * Evaluate the PDF at a point for a reflected and incident light direction
+   * @param wo Reflected light direction
+   * @param wi Incident light direction
+   * @param n Surface (shading) normal
+   * @param t Surface (shading) tangent
+   * @param uv Texture coordinates
+   * @return PDF value
+   */
   [[nodiscard]] float pdf(
     const float3& wo,
     const float3& wi,
@@ -56,6 +76,18 @@ public:
     const float2& uv
   ) const;
 
+  /**
+   * Sample the BSDF
+   * @param wo Reflected light direction
+   * @param n Surface (shading) normal
+   * @param t Surface (shading) tangent
+   * @param uv Texture coordinates
+   * @param u 2D sampled random value
+   * @param uc 1D sampled random value
+   * @param uc2 Aux. 1D sampled random value
+   * @param regularized true if path is regularized
+   * @return BSDF sample data including incident direction, value and pdf
+   */
   [[nodiscard]] BSDFSample sample(
     const float3& wo,
     const float3& n,
@@ -67,18 +99,42 @@ public:
     bool regularized = false
   ) const;
 
+  /**
+   * Get the surface shading normal at a point
+   * @param n Geometric normal
+   * @param t Geometric tangent
+   * @param uv Texture coordinates
+   * @return Surface normal
+   */
   [[nodiscard]] float3 normal(
     const float3& n,
     const float4& t,
     const float2& uv
   ) const noexcept;
 
+  /**
+   * Get alpha value at a point
+   * @param uv Texture coordinates
+   * @return Alpha value
+   */
   [[nodiscard]] virtual float alpha(const float2& uv) const = 0;
 
+  /**
+   * Get base color (albedo) at a point
+   * @param uv Texture coordinates
+   * @return Base color
+   */
   [[nodiscard]] virtual float3 base(const float2& uv) const = 0;
 
+  /**
+   * Check if material is transparent to NEE/occlusion rays
+   */
   [[nodiscard]] virtual bool transparent() const = 0;
 
+  /**
+   * Get material emission strength
+   * @return Emission strength (no texture), nullptr if not emissive
+   */
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
 
 protected:
@@ -107,6 +163,9 @@ protected:
   ) const = 0;
 };
 
+/**
+ * GGX microfacet distribution
+ */
 class GGX {
 public:
   constexpr explicit GGX(float roughness) noexcept {
