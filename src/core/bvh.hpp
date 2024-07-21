@@ -6,18 +6,36 @@
 #include "primitives.hpp"
 #include "utils.hpp"
 
+/**
+ * Useful resources:
+ * https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+ */
+
 #define MAX_LEAF_SIZE 20
 
 namespace yart {
 
+/**
+ * 32-byte BVH node, optimized for minimal memory footprint
+ */
 struct BVHNode {
   fbounds3 bounds;
   union {
+    // If span = 0 node is internal and left is the left child index (right
+    // child is always left + 1 and thus not needed)
+    // If span > 0 node is a leaf and first is an offset into triangle array
+    // These two properties are never needed at the same time so we can use a
+    // union and save 4 bytes
     uint32_t left, first = 0;
   };
+  // Number of tris in leaf, 0 if node is not a leaf
   uint32_t span = 0;
 };
 
+/**
+ * Abstract BVH base class. Handles most logic, node splitting for BVH build is
+ * handled in derived classes.
+ */
 class BVH {
 public:
   void init(
@@ -30,19 +48,21 @@ public:
     m_centroids = centroids;
 
     m_indices.resize(tris->size());
-    m_nodes.resize(tris->size() * 2 - 1);
+    m_nodes.resize(tris->size() * 2 - 1); // Max node count
 
     m_buildStart = std::chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < m_indices.size(); i++) {
-      m_indices[i] = i;
-    }
+    for (size_t i = 0; i < m_indices.size(); i++)
+      m_indices[i] = i; // Init indices to sequential
 
+    // Init root node
     BVHNode& root = m_nodes[m_rootIdx];
     root.first = 0;
     root.span = m_tris->size();
 
+    // Recursively build BVH
     updateBounds(root);
     subdivide(root);
+
     printStats();
   }
 
@@ -74,6 +94,10 @@ protected:
   // Perf data
   std::chrono::time_point<std::chrono::high_resolution_clock> m_buildStart;
 
+  /**
+   * Update a node's bounding box to contain all of its triangles. Assumes the
+   * bounding box is empty.
+   */
   constexpr void updateBounds(BVHNode& node) {
     size_t first = node.first;
     for (size_t i = 0; i < node.span; i++) {
@@ -90,6 +114,12 @@ protected:
     }
   }
 
+  /**
+   * Get bounding box containing the centroids of a group of triangles.
+   * @param first Offset into triangles array
+   * @param span Number of triangles
+   * @return Bounding box
+   */
   [[nodiscard]] constexpr fbounds3 getCentroidBounds(
     uint32_t first,
     uint32_t span
@@ -103,11 +133,17 @@ protected:
     return bounds;
   }
 
+  /**
+   * Recursively split a BVH node into children. Stops when the heuristic used
+   * decides not to split.
+   */
   constexpr void subdivide(BVHNode& node) {
+    // Get split axis and position, exit (leaf) if no split is necessary
     uint8_t axis = 0;
     float splitPos = 0;
     if (!getSplit(node, axis, splitPos)) return;
 
+    // Sort triangle indices by left/right split
     int64_t i = node.first;
     int64_t j = i + node.span - 1;
     while (i <= j) {
@@ -119,9 +155,12 @@ protected:
       }
     }
 
+    // Check for degenerate split (all tris on left or right child), and return
+    // as leaf if this is the case
     size_t leftCount = i - node.first;
     if (leftCount == 0 || leftCount == node.span) return;
 
+    // Init child nodes
     size_t leftIdx = m_nodesUsed++;
     size_t rightIdx = m_nodesUsed++;
 
@@ -132,9 +171,11 @@ protected:
     right.first = i;
     right.span = node.span - leftCount;
 
+    // Update parent node
     node.left = leftIdx;
-    node.span = 0;
+    node.span = 0; // Mark as non leaf
 
+    // Recursively split children
     updateBounds(left);
     updateBounds(right);
 
@@ -142,6 +183,9 @@ protected:
     subdivide(right);
   }
 
+  /**
+   * Print out some BVH build stats, useful for debugging and checking perf
+   */
   void printStats() const {
     auto buildEnd = std::chrono::high_resolution_clock::now();
     auto buildTime = toMillis(buildEnd - m_buildStart);
@@ -169,6 +213,13 @@ protected:
     std::cout << "\n";
   }
 
+  /**
+   * Decides whether to split or not, and split axis and position
+   * @param node Parent node
+   * @param axis (out) Split axis [0-2]
+   * @param splitPos (out) Split position
+   * @return true if node should split, false if it should remain a leaf
+   */
   virtual constexpr bool getSplit(
     const BVHNode& node,
     uint8_t& axis,
@@ -176,6 +227,13 @@ protected:
   ) const noexcept = 0;
 };
 
+/**
+ * Simple median split BVH: on each split, pick the longest axis of the parent
+ * node's bounds and split along the middle. If there are 2 or fewer triangles,
+ * leave the node as a leaf.
+ * Very fast, but produces a low quality BVH. Shouldn't be used other than as a
+ * baseline for comparing performance.
+ */
 class MedianSplitBVH : public BVH {
 private:
   constexpr bool getSplit(
@@ -186,6 +244,9 @@ private:
     if (node.span <= 2) return false;
     fbounds3 centroidBounds = getCentroidBounds(node.first, node.span);
 
+    // Pick the longest axis from the node's centroid bounds
+    // Very imoportant not to use triangle bounds, as it can result in a broken
+    // BVH with many degenerate nodes if the mesh has large triangles
     axis = 0;
     float3 size = centroidBounds.size();
     if (size.y() > size.x()) axis = 1;
@@ -196,6 +257,12 @@ private:
   }
 };
 
+/**
+ * Binned SAH (Surface Area Heuristic) BVH: checks a number of potential splits
+ * along each axis and chooses the best one according to the SAH.
+ * Slower, but builds a much better BVH resulting in faster renders. Build time
+ * vs quality can be tweaked by changing number of bins.
+ */
 class SahBVH : public BVH {
 private:
   struct Bin {
@@ -211,9 +278,12 @@ private:
     float minCost = std::numeric_limits<float>::infinity();
     fbounds3 centroidBounds = getCentroidBounds(node.first, node.span);
 
+    // Number of BVH bins for splitting. More bins is slower to build but gives
+    // a better quality BVH, 20 seems to strike a good balance.
     constexpr uint32_t nBins = 20;
     constexpr uint32_t nSplits = nBins - 1;
 
+    // Iterate over each axis
     for (uint8_t a = 0; a < 3; a++) {
       float bmin = centroidBounds.min[a], bsize = centroidBounds.size()[a];
 
@@ -221,6 +291,8 @@ private:
       Bin bins[nBins];
       float scale = float(nBins) / bsize;
       for (uint32_t i = 0; i < node.span; i++) {
+        // Add each triangle in the node to a bin depending on where its
+        // centroid lies along the relevant axis
         const Triangle& tri = (*m_tris)[m_indices[node.first + i]];
         const float3& centroid = (*m_centroids)[m_indices[node.first + i]];
         auto triBounds = fbounds3::fromPoints(
@@ -237,7 +309,8 @@ private:
         bins[b].bounds = fbounds3::join(bins[b].bounds, triBounds);
       }
 
-      // Compute costs for splitting
+      // Compute costs for splitting in two steps: for each possible split,
+      // consider the count and bounding area of both resulting children
       float costs[nSplits] = {0.0f};
       uint32_t countBelow = 0;
       fbounds3 boundsBelow;
@@ -255,6 +328,7 @@ private:
         costs[i - 1] += float(countAbove) * boundsAbove.area();
       }
 
+      // Pick the best bin and set its axis and split position
       for (uint32_t i = 0; i < nSplits; i++) {
         if (costs[i] < minCost) {
           minCost = costs[i];
@@ -264,6 +338,8 @@ private:
       }
     }
 
+    // Don't split if the cost of traversing both children would actually be
+    // greater than just testing every triangle in the leaf
     float leafCost = (float(node.span) - 0.5f) * node.bounds.area();
     if (node.span <= MAX_LEAF_SIZE && leafCost < minCost) return false;
 

@@ -6,6 +6,9 @@
 namespace yart {
 using namespace math;
 
+/**
+ * Simple RGBA32F buffer for writing images to
+ */
 class Buffer {
 protected:
   uint32_t m_width, m_height;
@@ -36,14 +39,8 @@ public:
     return m_data.size();
   }
 
-  [[nodiscard]] constexpr const std::vector<float4>& dataVec() const {
-    return m_data;
-  }
-
-  [[nodiscard]] constexpr const float4* data() const {
-    return m_data.data();
-  }
-
+  // Returns a raw pointer to buffer data at an offset, useful for drawing the
+  // buffer on screen with some graphics API
   [[nodiscard]] constexpr const float4* data(uint2 offset) const {
     return m_data.data() + offset.y() * m_width + offset.x();
   }
