@@ -9,9 +9,11 @@ using namespace math;
 
 class Camera {
 private:
-  uint2 m_imageSize;
-  float m_focalLength, m_fNumber;
-  float2 m_sensorSize;
+  uint2 m_imageSize;    // Image size in pixels, defines aspect ratio
+  float m_focalLength;  // Lens focal length in mm
+  float m_fNumber;      // Lens aperture as f-number (fraction of focal length)
+  float2 m_sensorSize;  // Sensor/film size in mm
+
   float3 m_position, m_forward, m_up;
   Frame m_cameraFrame;
 
@@ -19,11 +21,13 @@ private:
   float3 m_topLeftPixel;
   float3 m_pixelDeltaU, m_pixelDeltaV;
 
+  // Initialize the camera from basic properties
   constexpr void calcDerivedProperties() noexcept {
     // Calculate final (cropped) aspect ratio from sensor and image aspect
     float sensorAspect = m_sensorSize.x() / m_sensorSize.y();
     float croppedSensorHeight = m_sensorSize.x() / max(sensorAspect, m_aspect);
 
+    // Calculate viewport size
     m_focusDistance = length(m_forward);
     float vh = m_focusDistance * croppedSensorHeight / m_focalLength;
     float vw = vh * m_aspect;
@@ -55,9 +59,19 @@ private:
   }
 
 public:
-  float exposure = 0.0f;
-  uint32_t apertureSides = 0;
+  float exposure = 0.0f;      // Exposure compensation in stops (EV)
+  uint32_t apertureSides = 0; // Number of sides for aperture shape, 0 = circle
 
+  /**
+   * Create a new camera
+   * @param imageSize Image size in pixels, defines aspect ratio as crop of sensor aspect
+   * @param focalLength Lens focal length in mm
+   * @param fNumber Lens aperture as f-number (fraction of focal length), 0 disables DOF
+   * @param sensorSize Sensor/film size in mm, defaults to 36x24mm (35mm full frame)
+   * @param position Camera position
+   * @param forward Camera forward vector, direction camera is looking towards
+   * @param up Up direction vector, defines camera roll
+   */
   constexpr Camera(
     const uint2& imageSize,
     float focalLength,
@@ -114,11 +128,19 @@ public:
     setDirection(target - position, up);
   }
 
+  /**
+   * Spawn a ray from the camera towards some pixel
+   * @param pixelCoords Pixel coordinates in the sensor, origin at top left
+   * @param uvFilm Sampled 2D point for film (pixel) position
+   * @param uvLens Sampled 2D point for lens position
+   * @return Primary ray
+   */
   [[nodiscard]] constexpr Ray getRay(
     const uint2& pixelCoords,
     const float2& uvFilm,
     const float2& uvLens
   ) const noexcept {
+    // Get world space pixel position
     float2 jitter =
       samplers::pixelJitterGaussian(uvFilm, 0.3f) + float2(pixelCoords);
     float3 pixel = m_topLeftPixel
@@ -127,6 +149,7 @@ public:
 
     float3 origin = m_position;
 
+    // Get ray origin on lens from aperture
     if (m_apertureRadius > 0.0f) {
       float2 apertureSample =
         apertureSides == 0 ? samplers::sampleDiskUniform(uvLens)
