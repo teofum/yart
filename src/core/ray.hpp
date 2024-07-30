@@ -14,6 +14,7 @@ public:
 
   constexpr Ray(const float3& origin, const float3& dir) noexcept
     : origin(origin), dir(dir) {
+    // Precalculate terms for ray-aabb intersection
     idir = 1.0 / dir;
     odir = -origin / dir;
     sign = {

@@ -26,6 +26,7 @@ private:
 
   BVHType m_bvh;
 
+  // Fill in triangle data from the I/O face structs
   constexpr void buildTris(
     const std::vector<float3>& vertices,
     const std::vector<Face>& faces

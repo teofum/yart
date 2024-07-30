@@ -16,6 +16,9 @@ using RenderCallback = typename std::optional<std::function<void(Ts...)>>;
  */
 class Renderer {
 public:
+  /**
+   * General render data struct for progress reporting
+   */
   struct RenderData {
     const Buffer& buffer;
     size_t samplesTaken, totalSamples;
@@ -24,6 +27,9 @@ public:
     std::chrono::milliseconds totalTime;
   };
 
+  /**
+   * Wave data struct for progress reporting
+   */
   struct WaveData {
     size_t wave, waveSamples;
 
@@ -31,6 +37,9 @@ public:
     std::chrono::milliseconds time;
   };
 
+  /**
+   * Tile data for progress reporting
+   */
   struct TileData {
     uint2 offset;
     uint2 size;

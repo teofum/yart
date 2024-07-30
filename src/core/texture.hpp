@@ -48,6 +48,9 @@ private:
   TextureType m_type;
 };
 
+/**
+ * Type aliases
+ */
 using HDRTexture = Texture<float, 3>;
 
 template<size_t C>
@@ -73,8 +76,10 @@ SDRTexture<C> loadTexture(
     for (uint32_t j = 0; j < C; j++) {
       uint8_t pixel = pixels[iPixel + channels[j]];
       if (type == TextureType::sRGB) {
+        // Decode and re-encode with gamma 2. This preserves most detail, but is
+        // faster to decode on sample than sRGB
         float val = sRGBDecode(float(pixel) / 255.0f);
-        val = std::sqrt(val); // Gamma 2 encoding
+        val = std::sqrt(val);
         pixel = uint8_t(val * 255.0f);
       }
 

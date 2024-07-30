@@ -1,7 +1,6 @@
 #ifndef YART_CORE_HPP
 #define YART_CORE_HPP
 
-#include "types.hpp"
 #include "buffer.hpp"
 #include "texture.hpp"
 #include "camera.hpp"

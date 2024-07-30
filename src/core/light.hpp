@@ -14,25 +14,48 @@ struct LightSample {
   float pdf;
 };
 
+/**
+ * Light base class, provides basic interface for lights.
+ */
 class Light {
 public:
   explicit Light(Transform transform) noexcept;
 
   enum class Type {
-    Area,
-    Infinite
+    Area,     // Physical lights attached to geometry
+    Infinite  // Environment lights at (effective) infinity
   };
 
   [[nodiscard]] virtual Type type() const noexcept = 0;
 
+  /**
+   * Returns emitted light intensity at a given point.
+   */
   [[nodiscard]] virtual float3 Le(const float2& uv) const noexcept = 0;
 
+  /**
+   * Average light intensity over the light's surface
+   */
   [[nodiscard]] virtual float3 Lavg() const noexcept = 0;
 
+  /**
+   * Total emitted light power
+   */
   [[nodiscard]] virtual float power() const noexcept = 0;
 
+  /**
+   * Light sampling PDF for a given direction
+   */
   [[nodiscard]] virtual float pdf(const float3& wi) const noexcept = 0;
 
+  /**
+   * Sample a light source
+   * @param p Origin position
+   * @param n Origin normal
+   * @param u Sampled 2D value
+   * @param uc Sampled 1D value
+   * @return
+   */
   [[nodiscard]] virtual LightSample sample(
     const float3& p,
     const float3& n,
@@ -46,6 +69,10 @@ protected:
   Transform m_transform;
 };
 
+/**
+ * Physical light corresponding to a shape (triangle) somewhere in the world.
+ * Emits light uniformly from the triangle's surface.
+ */
 class AreaLight : public Light {
 public:
   bool twoSided = false;
@@ -82,6 +109,9 @@ private:
   float3 m_emission;
 };
 
+/**
+ * Uniform light at infinity.
+ */
 class UniformInfiniteLight : public Light {
 public:
   UniformInfiniteLight(float sceneRadius, const float3& emission) noexcept;
@@ -108,6 +138,9 @@ private:
   float3 m_emission;
 };
 
+/**
+ * Light at infinity with an image (environment map) using octahedral projection.
+ */
 class ImageInfiniteLight : public Light {
 public:
   Transform transform;

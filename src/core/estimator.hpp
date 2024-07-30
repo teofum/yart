@@ -6,6 +6,10 @@
 namespace yart {
 using namespace math;
 
+/**
+ * Base estimator abstract class, manages adding up individual samples to a
+ * final pixel value.
+ */
 class Estimator {
 public:
   virtual constexpr void addSample(const float3& sample) noexcept = 0;
@@ -19,13 +23,16 @@ protected:
   }
 };
 
+/**
+ * Simple estimator using the mean of all samples.
+ */
 class MeanEstimator : public Estimator {
 public:
   constexpr explicit MeanEstimator(size_t nSamples) noexcept
     : m_samples(nSamples) {}
 
   constexpr void addSample(const float3& sample) noexcept override {
-    if (hasnan(sample)) return;
+    if (hasnan(sample)) return; // Discard samples with NaN so they don't ruin the pixel
     m_acc += sample;
   }
 
@@ -38,6 +45,11 @@ private:
   float3 m_acc;
 };
 
+/**
+ * Median of means estimator. Splits samples into a number of "buckets", each
+ * taking the mean of its samples, and uses the median bucket. Helps eliminate
+ * outliers (fireflies) at the cost of increased variance.
+ */
 class MoNEstimator : public Estimator {
 public:
   constexpr explicit MoNEstimator(int32_t n, int32_t mMax) noexcept
@@ -75,6 +87,10 @@ private:
   std::vector<size_t> m_smp;
 };
 
+/**
+ * Binary GMoN estimator. Variation on median of means, uses the Gini function
+ * to detect outliers and uses mean or median of means depending on it.
+ */
 class GMoNbEstimator : public Estimator {
 public:
   constexpr explicit GMoNbEstimator(int32_t n, int32_t mMax) noexcept
@@ -124,6 +140,11 @@ private:
   std::vector<size_t> m_smp;
 };
 
+/**
+ * GMoN estimator. Uses the Gini function to define a number of buckets, then
+ * takes the mean of those buckets. This estimator has most of the benefit of
+ * median of means, and converges much faster.
+ */
 class GMoNEstimator : public Estimator {
 public:
   constexpr explicit GMoNEstimator(int32_t n, int32_t mMax) noexcept
@@ -161,6 +182,7 @@ public:
               float(m + 1) / float(m);
     if (G > 1.0f) G = 1.0f;
 
+    // Use more buckets when the Gini function is lower (higher confidence)
     auto c = size_t(G * float(m / 2)); // NOLINT(*-integer-division)
     sum = float3(0.0f);
     for (size_t i = c; i < m - c; i++) sum += m_acc[i];

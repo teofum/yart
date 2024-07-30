@@ -232,9 +232,9 @@ static std::unique_ptr<Mesh> processMesh(
 
     const size_t indexAccessorIdx = primitive.indicesAccessor.value();
     const auto& idxAccesor = asset.accessors[indexAccessorIdx];
-    const auto& idxIt = fastgltf::iterateAccessor<uint32>(asset, idxAccesor);
+    const auto& idxIt = fastgltf::iterateAccessor<uint32_t>(asset, idxAccesor);
     indices.reserve(idxAccesor.count);
-    for (const uint32& idx: idxIt) indices.push_back(idx + idxOffset);
+    for (const uint32_t& idx: idxIt) indices.push_back(idx + idxOffset);
 
     std::vector<Face> faces;
     faces.reserve(indices.size() / 3);

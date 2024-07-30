@@ -36,6 +36,8 @@ void PowerLightSampler::init(const Scene* scene) noexcept {
   m_lights.clear();
   m_infiniteLights.clear();
   m_totalPower = 0.0f;
+
+  // Separate lists for infinite and area lights
   for (const Light& light: scene->lights()) {
     if (light.type() == Light::Type::Infinite) {
       m_infiniteLights.push_back(&light);
@@ -52,6 +54,8 @@ SampledLight PowerLightSampler::sample(
   const float3& n,
   float u
 ) const {
+  // Handle infinite light sampling, makes sure environment and area lights
+  // are both sufficiently sampled
   size_t infCount = m_infiniteLights.size();
   float pInfinite = m_lights.empty() ? 1.0f
                                      : float(infCount) / float(infCount + 1);
