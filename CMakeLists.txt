@@ -46,8 +46,8 @@ add_subdirectory(fastgltf)
 include_directories(fastgltf/include)
 
 # SDL2
-include_directories(/opt/homebrew/Cellar/sdl2/2.30.4/include)
-link_directories(/opt/homebrew/Cellar/sdl2/2.30.4/lib)
+include_directories(/opt/homebrew/Cellar/sdl2/2.30.5/include)
+link_directories(/opt/homebrew/Cellar/sdl2/2.30.5/lib)
 
 # stb_image
 add_library(stb_image stb-image/impl.cpp stb-image/stb_image.h stb-image/stb_image_write.h)
@@ -68,7 +68,6 @@ set(SRC_MATH
 
 set(SRC_CORE
         src/core/buffer.hpp
-        src/core/types.hpp
         src/core/camera.hpp
         src/core/core.hpp
         src/core/mesh.hpp
