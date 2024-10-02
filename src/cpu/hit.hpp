@@ -13,6 +13,7 @@ public:
   const BSDF* bsdf = nullptr;
   int32_t lightIdx = -1;
   uint32_t idx;
+  bool backSide = false;
 };
 
 }

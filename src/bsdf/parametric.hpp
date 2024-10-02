@@ -31,7 +31,9 @@ public:
     float clearcoatRoughness = 0.0f,
     const float3& emission = float3(),
     float normalScale = 1.0f,
-    bool thinTransmission = false
+    bool thinTransmission = false,
+    const float3& volumeColor = float3(1),
+    const float volumeDensity = 0
   ) noexcept;
 
   [[nodiscard]] float alpha(const float2& uv) const override;
@@ -44,6 +46,8 @@ public:
 
   [[nodiscard]] bool transparent() const override;
 
+  [[nodiscard]] float3 attenuation(float d) const override;
+
 private:
   // Lobe weights
   float m_cTrans, m_cMetallic;
@@ -53,6 +57,10 @@ private:
   float m_ior, m_roughness, m_anisotropic;
   float m_clearcoat, m_clearcoatRoughness;
   bool m_thinTransmission, m_hasAlpha = false, m_hasEmission = false;
+
+  // Simple volume parameters
+  float3 m_volumeColor;
+  float m_volumeDensity;
 
   // Textures
   const RGBATexture* m_baseTexture;         // Base color

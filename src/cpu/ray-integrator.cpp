@@ -179,6 +179,7 @@ bool RayIntegrator::testTriangle(
   const float3 rayEdge2 = cross(ray.dir, edge2);
 
   const float det = dot(edge1, rayEdge2);
+  bool backSide = det < 0;
   // TODO: culling support
   if (std::abs(det) < epsilon) return false;
 
@@ -221,6 +222,7 @@ bool RayIntegrator::testTriangle(
   hit.uv = uv;
   hit.p = ray(t);
   hit.idx = idx;
+  hit.backSide = backSide;
   return true;
 }
 

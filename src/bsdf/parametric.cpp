@@ -26,7 +26,9 @@ ParametricBSDF::ParametricBSDF(
   float clearcoatRoughness,
   const float3& emission,
   float normalScale,
-  bool thinTransmission
+  bool thinTransmission,
+  const float3& volumeColor,
+  const float volumeDensity
 ) noexcept: m_cTrans(transmission),
             m_cMetallic(metallic),
             m_base(baseColor),
@@ -37,6 +39,8 @@ ParametricBSDF::ParametricBSDF(
             m_clearcoat(clearcoat),
             m_clearcoatRoughness(clearcoatRoughness),
             m_thinTransmission(thinTransmission),
+            m_volumeColor(volumeColor),
+            m_volumeDensity(volumeDensity),
             m_baseTexture(baseTexture),
             m_mrTexture(mrTexture),
             m_transmissionTexture(transmissionTexture),
@@ -817,6 +821,12 @@ BSDFSample ParametricBSDF::sampleClearcoat(
     pdf,
     m_roughness
   };
+}
+
+float3 ParametricBSDF::attenuation(float d) const {
+  if (m_thinTransmission) return float3(1.0f);
+
+  return exp((m_volumeColor - 1.0f) * d * m_volumeDensity);
 }
 
 }

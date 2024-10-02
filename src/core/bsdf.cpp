@@ -57,4 +57,8 @@ float3 BSDF::normal(
   return sn;
 }
 
+float3 BSDF::attenuation(float d) const {
+  return {1, 1, 1};
+}
+
 }

@@ -15,6 +15,7 @@ void Integrator::render() {
   for (size_t j = top; j < bottom; j++) {
     for (size_t i = left; i < right; i++) {
       GMoNEstimator estimator(int32_t(samples), 15);
+//      MeanEstimator estimator(samples);
       for (uint32_t s = 0; s < samples; s++) {
         m_sampler.startPixelSample({i + ox, j + oy}, s + sampleOffset);
 

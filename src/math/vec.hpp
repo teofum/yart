@@ -478,6 +478,13 @@ template<std::floating_point T, std::size_t N>
   return ret;
 }
 
+template<std::floating_point T, std::size_t N>
+[[nodiscard]] constexpr vec<T, N> exp(const vec<T, N>& v) noexcept {
+  vec<T, N> ret;
+  for (size_t i = 0; i < N; i++) ret[i] = std::exp(v[i]);
+  return ret;
+}
+
 template<std::floating_point T>
 [[nodiscard]] constexpr T angleBetween(
   const vec<T, 3>& lhs,

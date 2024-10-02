@@ -82,6 +82,9 @@ float3 MISIntegrator::Li(const Ray& r) {
     // Update state variables
     float3 fcos = res.f * absDot(res.wi, hit.n);
     attenuation *= fcos / res.pdf;
+    if (hit.backSide) {
+      attenuation *= hit.bsdf->attenuation(hit.t);
+    }
     ray = Ray(hit.p, res.wi);
 
     specularBounce = res.is(BSDFSample::Specular);

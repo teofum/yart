@@ -137,6 +137,12 @@ public:
    */
   [[nodiscard]] constexpr virtual const float3* emission() const noexcept = 0;
 
+  /**
+   * Returns volumetric attenuation factor for a given distance traveled
+   * inside the medium
+   */
+  [[nodiscard]] virtual float3 attenuation(float d) const;
+
 protected:
   const RGBTexture* m_normalTexture = nullptr;
   float m_normalScale = 1.0f;

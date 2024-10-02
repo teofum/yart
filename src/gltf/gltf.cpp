@@ -102,7 +102,7 @@ static std::unique_ptr<BSDF> processMaterial(
   }
 
   // Abuse of the glTF doubleSided property to enable thin dielectrics
-  bool thinTransmission = !gltfMat.doubleSided;
+  bool thinTransmission = false; //!gltfMat.doubleSided;
 
   // Anisotropy
   float anisotropic = 0.0f, anisoRotation = 0.0f;
@@ -142,13 +142,20 @@ static std::unique_ptr<BSDF> processMaterial(
     normalScale = gltfMat.normalTexture.value().scale;
   }
 
+  float3 volumeColor(1);
+  float volumeDensity = 0;
+  if (gltfMat.volume) {
+    volumeColor = float3(gltfMat.volume->attenuationColor);
+    volumeDensity = 1.0f / gltfMat.volume->attenuationDistance;
+  }
+
   ParametricBSDF bsdf(
     baseColor,
     baseTexture,
     mrTexture,
     transmissionTexture,
     normalTexture,
-    nullptr,
+    nullptr,    // TODO clearcoat texture
     emissionTexture,
     metallic,
     roughness,
@@ -160,7 +167,9 @@ static std::unique_ptr<BSDF> processMaterial(
     clearcoatRoughness,
     emission,
     normalScale,
-    thinTransmission
+    thinTransmission,
+    volumeColor,
+    volumeDensity
   );
 
   return std::make_unique<ParametricBSDF>(std::move(bsdf));
@@ -312,7 +321,8 @@ std::unique_ptr<Scene> load(const fs::path& path) noexcept {
     fastgltf::Extensions::KHR_materials_transmission |
     fastgltf::Extensions::KHR_materials_ior |
     fastgltf::Extensions::KHR_materials_anisotropy |
-    fastgltf::Extensions::KHR_materials_clearcoat
+    fastgltf::Extensions::KHR_materials_clearcoat |
+    fastgltf::Extensions::KHR_materials_volume
   );
   auto result = parser.loadGltf(
     &buffer,
