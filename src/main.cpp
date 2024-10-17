@@ -51,7 +51,7 @@ int main() {
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
   std::unique_ptr<yart::Scene> scene = load(
-    "models/cornell_glassdragon_color.glb"
+    "models/cornell_dragon2.glb"
   );
 
 //  yart::HDRTexture hdri = yart::loadTextureHDR("hdris/rosendal_plains_2_oct.hdr");
@@ -67,9 +67,7 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 2048;
-  renderer.firstWaveSamples = 2048;
-  renderer.maxWaveSamples = 2048;
+  renderer.samples = 64;
   renderer.tonemapper = &tonemapper;
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);

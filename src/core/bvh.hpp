@@ -204,13 +204,13 @@ protected:
 
     avgSize = float(totalCount) / float(leafCount);
 
-    std::cout << "Built in " << buildTime << "\n";
-    std::cout << "  Total primitives: " << totalCount << "\n";
-    std::cout << "  Node count: " << m_nodesUsed << "\n";
-    std::cout << "  Leaf count: " << leafCount << "\n";
-    std::cout << "  Max leaf size: " << maxSize << "\n";
-    std::cout << "  Avg leaf size: " << avgSize << "\n";
-    std::cout << "\n";
+    std::cout << "Built in " << buildTime << "\n"
+              << "  Total primitives: " << totalCount << "\n"
+              << "  Node count: " << m_nodesUsed << "\n"
+              << "  Leaf count: " << leafCount << "\n"
+              << "  Max leaf size: " << maxSize << "\n"
+              << "  Avg leaf size: " << avgSize << "\n"
+              << "\n";
   }
 
   /**
