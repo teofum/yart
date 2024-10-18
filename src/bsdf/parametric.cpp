@@ -213,8 +213,17 @@ BSDFSample ParametricBSDF::sampleImpl(
   GGX mfCoat(cr);
   float3 wmCoat = mfCoat.sampleVisibleMicrofacet(_wo, u);
 
+  // Multi-scattering clearcoat fresnel (C. Kulla, A. Conty)
+  const float Favg = FavgFit(1.5f);
+  const float Eavg = lut::ggxEavg(cr);
+  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
+
+  // Underlying lobe scattering compensation term
+  const float E_o = lut::ggxE(absDot(_wo, wmCoat), cr);
+  const float kappa = 1.0f - (Favg * E_o + Fms * (1.0f - E_o));
+
   // Calculate probabilities of sampling each lobe
-  const float pClearcoat = c * fresnelDielectric(absDot(_wo, wmCoat), 1.5f);
+  const float pClearcoat = c * (1.0 - kappa);
   const float pMetallic = (1.0f - pClearcoat) * m;
   const float pDielectric = (1.0f - pClearcoat) * (m + (1.0f - m) * t);
 

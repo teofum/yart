@@ -51,14 +51,15 @@ int main() {
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
-  std::unique_ptr<yart::Scene> scene = load(
-    "models/furnace_coat.glb"
-  );
+  auto scene = load("models/furnace_coat.glb");
 
 //  yart::HDRTexture hdri = yart::loadTextureHDR("hdris/rosendal_plains_2_oct.hdr");
 //  auto envLight = yart::ImageInfiniteLight(100.0f, &hdri);
 //  envLight.transform = Transform::rotation(radians(270.0f), axis_y<float>);
 //  scene->addLight(std::move(envLight));
+
+  yart::UniformInfiniteLight envLight(100.0f, float3(0.8));
+  scene->addLight(std::move(envLight));
 
   yart::tonemap::AgX tonemapper;
   tonemapper.look = yart::tonemap::AgX::none;
@@ -70,7 +71,6 @@ int main() {
   renderer.scene = scene.get();
   renderer.samples = 128;
   renderer.tonemapper = &tonemapper;
-  renderer.backgroundColor = {0.8, 0.8, 0.8};
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);
   frontend.start();
