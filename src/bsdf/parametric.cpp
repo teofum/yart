@@ -209,18 +209,19 @@ BSDFSample ParametricBSDF::sampleImpl(
     cr = roughen(cr);
   }
 
+  // Init GGX microfacet distribution for sampled clearcoat roughness
+  GGX mfCoat(cr);
+  float3 wmCoat = mfCoat.sampleVisibleMicrofacet(_wo, u);
+
   // Calculate probabilities of sampling each lobe
-  const float pClearcoat = c * fresnelDielectric(std::abs(_wo.z()), 1.5f);
+  const float pClearcoat = c * fresnelDielectric(absDot(_wo, wmCoat), 1.5f);
   const float pMetallic = (1.0f - pClearcoat) * m;
   const float pDielectric = (1.0f - pClearcoat) * (m + (1.0f - m) * t);
 
   // Sample the BSDF
   BSDFSample sample;
   if (uc2 < pClearcoat) {
-    // Init GGX microfacet distribution for sampled clearcoat roughness
-    GGX mfClearcoat(cr);
-
-    sample = sampleClearcoat(_wo, mfClearcoat, u, uc);
+    sample = sampleClearcoat(_wo, mfCoat, u, uc);
   } else {
     // Init GGX microfacet distribution for sampled roughness
     GGX mf(r, m_anisotropic);

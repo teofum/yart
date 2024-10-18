@@ -18,8 +18,8 @@ using Integrator = yart::cpu::MISIntegrator;
 
 int main() {
 //  yart::Buffer buffer(1600, 1200);
-  yart::Buffer buffer(800, 400); // Material test
-//  yart::Buffer buffer(1600, 800);
+//  yart::Buffer buffer(800, 400); // Material test
+  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
 //  yart::Buffer buffer(600, 400); // 3:2 small
 //  yart::Buffer buffer(900, 600); // 3:2 medium
@@ -33,7 +33,8 @@ int main() {
 //  camera.exposure = -1.0f;
 
 //  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 5.0f, 0.0f}); // Cornell Box
-  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
+//  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
+  camera.moveAndLookAt({0.0f, 0.0f, 15.0f}, {0.0f, 0.0f, 0.0f}); // Furnace
 //  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
 //  camera.moveAndLookAt({8.5f, 1.8f, 0}, {0, 3.2f, 0}); // New Sponza
 //  camera.moveAndLookAt({-32.2f, 3.5f, -14.1f}, {-8.2f, 6.1f, -0.95f}); // Bistro
@@ -51,7 +52,7 @@ int main() {
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
   std::unique_ptr<yart::Scene> scene = load(
-    "models/cornell_mat_coat_metal.glb"
+    "models/furnace_coat.glb"
   );
 
 //  yart::HDRTexture hdri = yart::loadTextureHDR("hdris/rosendal_plains_2_oct.hdr");
@@ -67,8 +68,9 @@ int main() {
     camera
   );
   renderer.scene = scene.get();
-  renderer.samples = 64;
+  renderer.samples = 128;
   renderer.tonemapper = &tonemapper;
+  renderer.backgroundColor = {0.8, 0.8, 0.8};
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);
   frontend.start();
