@@ -11,7 +11,7 @@ using namespace math;
  * Parametric PBR material that allows texture-driven control over most properties.
  * Loosely based on Enterprise PBR, OpenPBR and Blender's Principled BSDF.
  */
-class ParametricBSDF : public BSDF {
+class ParametricBSDF final : public BSDF {
 public:
   explicit ParametricBSDF(
     const float3& baseColor,
@@ -36,17 +36,17 @@ public:
     const float volumeDensity = 0
   ) noexcept;
 
-  [[nodiscard]] float alpha(const float2& uv) const override;
+  [[nodiscard]] float alpha(const float2& uv) const final;
 
-  [[nodiscard]] float3 base(const float2& uv) const override;
+  [[nodiscard]] float3 base(const float2& uv) const final;
 
-  [[nodiscard]] constexpr const float3* emission() const noexcept override {
+  [[nodiscard]] constexpr const float3* emission() const noexcept final {
     return m_hasEmission > 0.0f ? &m_emission : nullptr;
   }
 
-  [[nodiscard]] bool transparent() const override;
+  [[nodiscard]] bool transparent() const final;
 
-  [[nodiscard]] float3 attenuation(float d) const override;
+  [[nodiscard]] float3 attenuation(float d) const final;
 
 private:
   // Lobe weights
@@ -77,13 +77,13 @@ private:
     const float3& wo,
     const float3& wi,
     const float2& uv
-  ) const override;
+  ) const final;
 
   [[nodiscard]] float pdfImpl(
     const float3& wo,
     const float3& wi,
     const float2& uv
-  ) const override;
+  ) const final;
 
   [[nodiscard]] BSDFSample sampleImpl(
     const float3& wo,
@@ -92,7 +92,7 @@ private:
     float uc,
     float uc2,
     bool regularized
-  ) const override;
+  ) const final;
 
   // Functions for different material lobes
   [[nodiscard]] float3 fMetallic(

@@ -211,8 +211,8 @@ BSDFSample ParametricBSDF::sampleImpl(
 
   // Calculate probabilities of sampling each lobe
   const float pClearcoat = c * fresnelDielectric(std::abs(_wo.z()), 1.5f);
-  const float pMetallic = (1.0f - c) * m;
-  const float pDielectric = (1.0f - c) * (m + (1.0f - m) * t);
+  const float pMetallic = (1.0f - pClearcoat) * m;
+  const float pDielectric = (1.0f - pClearcoat) * (m + (1.0f - m) * t);
 
   // Sample the BSDF
   BSDFSample sample;

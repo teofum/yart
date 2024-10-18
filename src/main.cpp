@@ -18,22 +18,22 @@ using Integrator = yart::cpu::MISIntegrator;
 
 int main() {
 //  yart::Buffer buffer(1600, 1200);
-//  yart::Buffer buffer(800, 400); // Material test
+  yart::Buffer buffer(800, 400); // Material test
 //  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
 //  yart::Buffer buffer(600, 400); // 3:2 small
 //  yart::Buffer buffer(900, 600); // 3:2 medium
 //  yart::Buffer buffer(1920, 1200); // 16:10 large
 //  yart::Buffer buffer(400, 400); // 1:1 small
-  yart::Buffer buffer(800, 800); // 1:1 medium
+//  yart::Buffer buffer(800, 800); // 1:1 medium
 //  yart::Buffer buffer(1280, 1280); // 1:1 large
 
-  yart::Camera camera({buffer.width(), buffer.height()}, 24.0f, 8.0f);
+  yart::Camera camera({buffer.width(), buffer.height()}, 50.0f, 8.0f);
 //  camera.apertureSides = 7;
 //  camera.exposure = -1.0f;
 
-  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 5.0f, 0.0f}); // Cornell Box
-//  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
+//  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 5.0f, 0.0f}); // Cornell Box
+  camera.moveAndLookAt({0.0f, 5.0f, 15.0f}, {0.0f, 1.0f, 0.0f}); // Mat test
 //  camera.moveAndLookAt({5.28f, 0.96f, 0.0f}, {2.57f, 1.09f, 1.1f}); // Sponza
 //  camera.moveAndLookAt({8.5f, 1.8f, 0}, {0, 3.2f, 0}); // New Sponza
 //  camera.moveAndLookAt({-32.2f, 3.5f, -14.1f}, {-8.2f, 6.1f, -0.95f}); // Bistro
@@ -51,7 +51,7 @@ int main() {
 //  camera.moveAndLookAt({11.07f, -0.98f, 10.62f}, {0.0f, 0.28f, 1.55f});
 
   std::unique_ptr<yart::Scene> scene = load(
-    "models/cornell_dragon2.glb"
+    "models/cornell_mat_coat_metal.glb"
   );
 
 //  yart::HDRTexture hdri = yart::loadTextureHDR("hdris/rosendal_plains_2_oct.hdr");
