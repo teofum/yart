@@ -117,6 +117,8 @@ bool RayIntegrator::testBVH(
             idx,
             bsdf
           );
+
+          if (ray.nee && didHit) break;
         }
         if (stackIdx == 0) break;
         node = stack[--stackIdx];
