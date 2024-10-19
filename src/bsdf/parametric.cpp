@@ -750,14 +750,6 @@ float3 ParametricBSDF::fClearcoat(
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
-  // Dielectric multi-scattering component (C. Kulla, A. Conty)
-  const float Favg = FavgFit(1.5f);
-  const float Eavg = lut::ggxEavg(m_clearcoatRoughness);
-  const float Mms = (1.0f - lut::ggxE(cosTheta_o, m_clearcoatRoughness)) *
-                    (1.0f - lut::ggxE(cosTheta_i, m_clearcoatRoughness)) /
-                    (float(pi) * (1.0f - Eavg));
-  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
-
   // Underlying material attenuation fresnel factor
   *Fc = max(
     fresnelDielectric(cosTheta_o, 1.5f),
@@ -765,7 +757,7 @@ float3 ParametricBSDF::fClearcoat(
   );
 
   // Final BSDF
-  return float3(Fss * Mss + Fms * Mms);
+  return float3(Fss * Mss);
 }
 
 float ParametricBSDF::pdfClearcoat(
@@ -783,9 +775,6 @@ float ParametricBSDF::pdfClearcoat(
 
   // Dielectric single-scattering component
   const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
-  const float Favg = FavgFit(1.5f);
-  const float EmsAvg = lut::ggxEavg(m_clearcoatRoughness);
-  const float Fms = Favg * Favg * EmsAvg / (1.0f - Favg * (1.0f - EmsAvg));
 
   // Attenuation fresnel factor
   *Fc = max(
@@ -793,7 +782,7 @@ float ParametricBSDF::pdfClearcoat(
     fresnelDielectric(std::abs(wi.z()), 1.5f)
   );
 
-  return (Fss + Fms) * mf.vmdf(wo, wm) / (4 * absDot(wo, wm));
+  return Fss * mf.vmdf(wo, wm) / (4 * absDot(wo, wm));
 }
 
 BSDFSample ParametricBSDF::sampleClearcoat(
@@ -830,21 +819,11 @@ BSDFSample ParametricBSDF::sampleClearcoat(
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
-  // Multi-scattering fresnel (C. Kulla, A. Conty)
-  const float Favg = FavgFit(1.5f);
-  const float Eavg = lut::ggxEavg(m_clearcoatRoughness);
-  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
-
-  const float E_o = lut::ggxE(cosTheta_o, m_clearcoatRoughness);
-  const float Mms =
-    (1.0f - E_o) * (1.0f - lut::ggxE(cosTheta_i, m_clearcoatRoughness)) /
-    (float(pi) * (1.0f - Eavg));
-
-  const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * (Fss + Mms);
+  const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
 
   return {
     BSDFSample::Reflected | BSDFSample::Glossy,
-    float3(Fss * Mss + Fms * Mms),
+    float3(Fss * Mss),
     float3(),
     wi,
     pdf,
