@@ -111,7 +111,6 @@ float3 MISIntegrator::Li(const Ray& r) {
 float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   if (scene->nLights() == 0) return {};
 
-  m_rayCounter++;
   float uc = m_sampler.get1D();
   float2 u = m_sampler.get2D();
 
@@ -124,6 +123,7 @@ float3 MISIntegrator::Ld(const float3& wo, const Hit& hit) {
   float3 f = hit.bsdf->f(wo, ls.wi, hit.n, hit.tg, hit.uv);
   float3 att(1.0f);
   if (length2(f) == 0.0f || !unoccluded(hit.p, ls.p, &att)) return {};
+  m_rayCounter++;
 
   float pdfBSDF = hit.bsdf->pdf(wo, ls.wi, hit.n, hit.tg, hit.uv);
   float pdfLight = l.p * ls.pdf / absDot(ls.n, ls.wi);

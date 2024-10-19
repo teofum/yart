@@ -104,7 +104,10 @@ float UniformInfiniteLight::power() const noexcept {
 }
 
 float UniformInfiniteLight::pdf(const float3& wi) const noexcept {
-  return 0.25f * float(invPi); // 1 / 4pi
+  // Disable sampling for this light type, as it won't meaningfully contribute
+  return 0;
+
+  // return 0.25f * float(invPi); // 1 / 4pi
 }
 
 LightSample UniformInfiniteLight::sample(
@@ -113,15 +116,18 @@ LightSample UniformInfiniteLight::sample(
   const float2& u,
   float uc
 ) const noexcept {
-  float3 wi = samplers::sampleSphereUniform(u);
-  float pdf = 0.25f * float(invPi);
-  return {
-    m_emission,
-    wi,
-    wi * m_sceneRadius,
-    -wi,
-    pdf
-  };
+  // Disable sampling for this light type, as it won't meaningfully contribute
+  return {};
+
+  // float3 wi = samplers::sampleSphereUniform(u);
+  // float pdf = 0.25f * float(invPi);
+  // return {
+  //   m_emission,
+  //   wi,
+  //   wi * m_sceneRadius,
+  //   -wi,
+  //   pdf
+  // };
 }
 
 float3 UniformInfiniteLight::Lavg() const noexcept {

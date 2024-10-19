@@ -56,7 +56,6 @@ namespace yart::math {
   if (sin2Theta_t >= 1.0f) return 1.0f;
 
   float cosTheta_t = std::sqrt(1.0f - sin2Theta_t);
-
   float r_prl = (ior * cosTheta - cosTheta_t) / (ior * cosTheta + cosTheta_t);
   float r_per = (cosTheta - ior * cosTheta_t) / (cosTheta + ior * cosTheta_t);
   return (r_prl * r_prl + r_per * r_per) * 0.5f;

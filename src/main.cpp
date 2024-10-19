@@ -18,8 +18,8 @@ using Integrator = yart::cpu::MISIntegrator;
 
 int main() {
 //  yart::Buffer buffer(1600, 1200);
-//  yart::Buffer buffer(800, 400); // Material test
-  yart::Buffer buffer(1600, 800);
+  yart::Buffer buffer(800, 400); // Material test
+//  yart::Buffer buffer(1600, 800);
 //  yart::Buffer buffer(400, 400); // Furnace test
 //  yart::Buffer buffer(600, 400); // 3:2 small
 //  yart::Buffer buffer(900, 600); // 3:2 medium
@@ -28,7 +28,7 @@ int main() {
 //  yart::Buffer buffer(800, 800); // 1:1 medium
 //  yart::Buffer buffer(1280, 1280); // 1:1 large
 
-  yart::Camera camera({buffer.width(), buffer.height()}, 50.0f, 8.0f);
+  yart::Camera camera({buffer.width(), buffer.height()}, 35.0f, 8.0f);
 //  camera.apertureSides = 7;
 //  camera.exposure = -1.0f;
 
@@ -46,6 +46,7 @@ int main() {
 //  camera.moveAndLookAt({-10.3f, 1.0f, 9.9f}, {0.14f, 0.67f, 0.96f}); // Porsche
 //  camera.moveAndLookAt({2.16f, 0.68f, -0.72f}, {1.7f, 0.82f, 0.17f}); // Porsche
 //  camera.moveAndLookAt({-1.9f, 0.68f, 0.37f}, {-0.11f, 0.64f, 0.3f}); // Porsche
+//  camera.moveAndLookAt({5.69f, 0.84f, 0.37f}, {4.0f, 0.67f, 0.09f}); // Mclaren
 //  camera.moveAndLookAt({-0.17f, 0.88f, 3.76f}, {-0.2f, 0.95f, 0.3f}); // JS
 //  camera.moveAndLookAt({-1.07f, 0.68f, 3.35f}, {-0.91f, 0.64f, 0.85f}); // Wh
 //  camera.moveAndLookAt({5.0f, 50.0f, 5.0f}, {}); // City
@@ -53,7 +54,7 @@ int main() {
 
   auto scene = load("models/furnace_coat.glb");
 
-//  yart::HDRTexture hdri = yart::loadTextureHDR("hdris/rosendal_plains_2_oct.hdr");
+//  yart::HDRTexture hdri = yart::loadTextureHDR("hdris/canary_wharf_oct.hdr");
 //  auto envLight = yart::ImageInfiniteLight(100.0f, &hdri);
 //  envLight.transform = Transform::rotation(radians(270.0f), axis_y<float>);
 //  scene->addLight(std::move(envLight));
@@ -70,7 +71,8 @@ int main() {
   );
   renderer.scene = scene.get();
   renderer.samples = 128;
-  renderer.tonemapper = &tonemapper;
+//  renderer.tonemapper = &tonemapper;
+//  renderer.backgroundColor = float3(0.8);
 
   yart::frontend::MetalSDLFrontend frontend(&renderer);
   frontend.start();

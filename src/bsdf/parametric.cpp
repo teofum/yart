@@ -280,7 +280,7 @@ float3 ParametricBSDF::fMetallic(
                      (4 * cosTheta_o * cosTheta_i);
 
   // Multi-scattering BSDF term (E. Turquin)
-  const float Ess = lut::ggxE(cosTheta_o, m_roughness);
+  const float Ess = lut::ggxE(cosTheta_o, mf.r());
   const float3 Mms = Mss * base * (1.0f - Ess) / Ess;
 
   return Mss + Mms;
@@ -338,7 +338,7 @@ BSDFSample ParametricBSDF::sampleMetallic(
                      (4 * cosTheta_o * cosTheta_i);
 
   // Multi-scattering BSDF term (E. Turquin)
-  const float Ess = lut::ggxE(cosTheta_o, m_roughness);
+  const float Ess = lut::ggxE(cosTheta_o, mf.r());
   const float3 Mms = Mss * base * (1.0f - Ess) / Ess;
 
   return {
@@ -381,7 +381,7 @@ float3 ParametricBSDF::fDielectric(
   const float T = 1.0f - Fss;
 
   // Multi-scatter compensation term (E. Turquin)
-  const float E_o = lut::ggxGlassE(ior, m_roughness, std::abs(cosTheta_o));
+  const float E_o = lut::ggxGlassE(ior, mf.r(), std::abs(cosTheta_o));
 
   if (isReflection) {
     // Single-scattering term
@@ -506,7 +506,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
 
   // Multi-scatter compensation term (E. Turquin)
   const float cosTheta_o = std::abs(wo.z());
-  const float E_o = lut::ggxGlassE(ior, m_roughness, cosTheta_o);
+  const float E_o = lut::ggxGlassE(ior, mf.r(), cosTheta_o);
 
   if (uc < Fss) {
     // Calculate reflected light direction
@@ -526,7 +526,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
       float3(),
       wi,
       pdf,
-      m_roughness
+      mf.r()
     };
   } else if (m_thinTransmission) {
     // Handle thin transmission case
@@ -544,7 +544,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
       float3(),
       wi,
       pdf,
-      m_roughness
+      mf.r()
     };
   } else {
     // Calculate refracted light direction and handle total internal reflection
@@ -569,7 +569,7 @@ BSDFSample ParametricBSDF::sampleDielectric(
       float3(),
       wi,
       pdf,
-      m_roughness
+      mf.r()
     };
   }
 }
@@ -597,9 +597,9 @@ float3 ParametricBSDF::fGlossy(
 
   // Dielectric multi-scattering component (C. Kulla, A. Conty)
   const float Favg = FavgFit(m_ior);
-  const float Eavg = lut::ggxEavg(m_roughness);
-  const float Mms = (1.0f - lut::ggxE(cosTheta_o, m_roughness)) *
-                    (1.0f - lut::ggxE(cosTheta_i, m_roughness)) /
+  const float Eavg = lut::ggxEavg(mf.r());
+  const float Mms = (1.0f - lut::ggxE(cosTheta_o, mf.r())) *
+                    (1.0f - lut::ggxE(cosTheta_i, mf.r())) /
                     (float(pi) * (1.0f - Eavg));
   const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
@@ -607,9 +607,9 @@ float3 ParametricBSDF::fGlossy(
   const float r = (1.0f - m_ior) / (1.0f + m_ior);
   const float F0 = r * r;
   const float cDiffuse =
-    (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_o)) *
-    (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_i)) /
-    (float(pi) * (1.0f - lut::ggxBaseEavg(F0, m_roughness)));
+    (1.0f - lut::ggxBaseE(F0, mf.r(), cosTheta_o)) *
+    (1.0f - lut::ggxBaseE(F0, mf.r(), cosTheta_i)) /
+    (float(pi) * (1.0f - lut::ggxBaseEavg(F0, mf.r())));
   const float3 diffuse = base * cDiffuse;
 
   // Final BSDF
@@ -634,9 +634,9 @@ float ParametricBSDF::pdfGlossy(
 
   // Diffuse term, compensated for energy conservation
   const float Favg = FavgFit(m_ior);
-  const float EmsAvg = lut::ggxEavg(m_roughness);
+  const float EmsAvg = lut::ggxEavg(mf.r());
   const float Fms = Favg * Favg * EmsAvg / (1.0f - Favg * (1.0f - EmsAvg));
-  const float Ems_o = lut::ggxE(cosTheta_o, m_roughness);
+  const float Ems_o = lut::ggxE(cosTheta_o, mf.r());
   const float kappa = 1.0f - (Favg * Ems_o + Fms * (1.0f - Ems_o));
 
   return (Fss + Fms) * mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) +
@@ -655,11 +655,11 @@ BSDFSample ParametricBSDF::sampleGlossy(
 
   // Multi-scattering fresnel (C. Kulla, A. Conty)
   const float Favg = FavgFit(m_ior);
-  const float Eavg = lut::ggxEavg(m_roughness);
+  const float Eavg = lut::ggxEavg(mf.r());
   const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
 
   // Diffuse scattering compensation term
-  const float E_o = lut::ggxE(cosTheta_o, m_roughness);
+  const float E_o = lut::ggxE(cosTheta_o, mf.r());
   const float kappa = 1.0f - (Favg * E_o + Fms * (1.0f - E_o));
 
   // Diffuse scattering
@@ -672,9 +672,9 @@ BSDFSample ParametricBSDF::sampleGlossy(
     const float r = (1.0f - m_ior) / (1.0f + m_ior);
     const float F0 = r * r;
     const float cDiffuse =
-      (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_o)) *
-      (1.0f - lut::ggxBaseE(F0, m_roughness, cosTheta_i)) /
-      (float(pi) * (1.0f - lut::ggxBaseEavg(F0, m_roughness)));
+      (1.0f - lut::ggxBaseE(F0, mf.r(), cosTheta_o)) *
+      (1.0f - lut::ggxBaseE(F0, mf.r(), cosTheta_i)) /
+      (float(pi) * (1.0f - lut::ggxBaseEavg(F0, mf.r())));
 
     return {
       BSDFSample::Reflected | BSDFSample::Diffuse |
@@ -714,7 +714,7 @@ BSDFSample ParametricBSDF::sampleGlossy(
                     (4 * cosTheta_o * cosTheta_i);
 
   // Multi-scattering BSDF (C. Kulla, A. Conty)
-  const float Mms = (1.0f - E_o) * (1.0f - lut::ggxE(cosTheta_i, m_roughness)) /
+  const float Mms = (1.0f - E_o) * (1.0f - lut::ggxE(cosTheta_i, mf.r())) /
                     (float(pi) * (1.0f - Eavg));
 
   const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * Fss;
@@ -725,7 +725,7 @@ BSDFSample ParametricBSDF::sampleGlossy(
     float3(),
     wi,
     pdf,
-    m_roughness
+    mf.r()
   };
 }
 
@@ -750,6 +750,14 @@ float3 ParametricBSDF::fClearcoat(
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
+  // Dielectric multi-scattering component (C. Kulla, A. Conty)
+  const float Favg = FavgFit(1.5f);
+  const float Eavg = lut::ggxEavg(m_clearcoatRoughness);
+  const float Mms = (1.0f - lut::ggxE(cosTheta_o, m_clearcoatRoughness)) *
+                    (1.0f - lut::ggxE(cosTheta_i, m_clearcoatRoughness)) /
+                    (float(pi) * (1.0f - Eavg));
+  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
+
   // Underlying material attenuation fresnel factor
   *Fc = max(
     fresnelDielectric(cosTheta_o, 1.5f),
@@ -757,7 +765,7 @@ float3 ParametricBSDF::fClearcoat(
   );
 
   // Final BSDF
-  return float3(Fss * Mss);
+  return float3(Fss * Mss + Fms * Mms);
 }
 
 float ParametricBSDF::pdfClearcoat(
@@ -775,6 +783,9 @@ float ParametricBSDF::pdfClearcoat(
 
   // Dielectric single-scattering component
   const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
+  const float Favg = FavgFit(1.5f);
+  const float EmsAvg = lut::ggxEavg(m_clearcoatRoughness);
+  const float Fms = Favg * Favg * EmsAvg / (1.0f - Favg * (1.0f - EmsAvg));
 
   // Attenuation fresnel factor
   *Fc = max(
@@ -782,7 +793,7 @@ float ParametricBSDF::pdfClearcoat(
     fresnelDielectric(std::abs(wi.z()), 1.5f)
   );
 
-  return Fss * mf.vmdf(wo, wm) / (4 * absDot(wo, wm));
+  return (Fss + Fms) * mf.vmdf(wo, wm) / (4 * absDot(wo, wm));
 }
 
 BSDFSample ParametricBSDF::sampleClearcoat(
@@ -815,21 +826,29 @@ BSDFSample ParametricBSDF::sampleClearcoat(
   if (wo.z() * wi.z() < 0.0f) return {BSDFSample::Absorbed};
 
   // Single-scattering fresnel term and BSDF
-  // Clearcoat is not energy compensated for multiple scattering
   const float Fss = fresnelDielectric(dot(wo, wm), 1.5f);
   const float Mss = mf.mdf(wm) * mf.g(wo, wi) /
                     (4 * cosTheta_o * cosTheta_i);
 
-  const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) *
-                    fresnelDielectric(cosTheta_o, 1.5f);
+  // Multi-scattering fresnel (C. Kulla, A. Conty)
+  const float Favg = FavgFit(1.5f);
+  const float Eavg = lut::ggxEavg(m_clearcoatRoughness);
+  const float Fms = Favg * Favg * Eavg / (1.0f - Favg * (1.0f - Eavg));
+
+  const float E_o = lut::ggxE(cosTheta_o, m_clearcoatRoughness);
+  const float Mms =
+    (1.0f - E_o) * (1.0f - lut::ggxE(cosTheta_i, m_clearcoatRoughness)) /
+    (float(pi) * (1.0f - Eavg));
+
+  const float pdf = mf.vmdf(wo, wm) / (4 * absDot(wo, wm)) * (Fss + Mms);
 
   return {
     BSDFSample::Reflected | BSDFSample::Glossy,
-    float3(Fss * Mss),
+    float3(Fss * Mss + Fms * Mms),
     float3(),
     wi,
     pdf,
-    m_roughness
+    m_clearcoatRoughness
   };
 }
 

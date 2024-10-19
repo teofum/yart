@@ -174,15 +174,20 @@ protected:
  */
 class GGX {
 public:
-  constexpr explicit GGX(float roughness) noexcept {
+  constexpr explicit GGX(float roughness) noexcept: m_roughness(roughness) {
     m_alphaX = m_alphaY = roughness * roughness;
   }
 
-  constexpr GGX(float roughness, float anisotropic) noexcept {
+  constexpr GGX(float roughness, float anisotropic) noexcept
+    : m_roughness(roughness) {
     float alpha = roughness * roughness;
     float aspect = std::sqrt(1.0f - 0.9f * anisotropic);
     m_alphaX = alpha / aspect;
     m_alphaY = alpha * aspect;
+  }
+
+  [[nodiscard]] constexpr float r() const noexcept {
+    return m_roughness;
   }
 
   // Microfacet distribution function
@@ -266,7 +271,7 @@ public:
   }
 
 private:
-  float m_alphaX = 0.0f, m_alphaY = 0.0f;
+  float m_alphaX = 0.0f, m_alphaY = 0.0f, m_roughness = 0.0f;
 
   [[nodiscard]] constexpr float lambda(const float3& w) const noexcept {
     const float cos2Theta = w.z() * w.z();
