@@ -102,7 +102,7 @@ static std::unique_ptr<BSDF> processMaterial(
   }
 
   // Abuse of the glTF doubleSided property to enable thin dielectrics
-  bool thinTransmission = !gltfMat.doubleSided;
+  bool thinTransmission = true; //!gltfMat.doubleSided;
 
   // Anisotropy
   float anisotropic = 0.0f, anisoRotation = 0.0f;
@@ -167,7 +167,7 @@ static std::unique_ptr<BSDF> processMaterial(
     clearcoatRoughness,
     emission,
     normalScale,
-    true,
+    thinTransmission,
     volumeColor,
     volumeDensity
   );
@@ -229,7 +229,11 @@ static std::unique_ptr<Mesh> processMesh(
       const auto& tanAccessor = asset.accessors[tangentIt->second];
       const auto& tanIt = fastgltf::iterateAccessor<float4>(asset, tanAccessor);
       size_t tIdx = 0;
-      for (const float4& tan: tanIt) vertexData[tIdx++].tangent = tan;
+      for (const float4& tan: tanIt) {
+        vertexData[tIdx++].tangent = tan;
+        // Not sure why some models load more tangents than we have vertices!
+        if (tIdx >= vertexData.size()) break;
+      }
     }
 
     meshVertices.reserve(meshVertices.size() + vertices.size());

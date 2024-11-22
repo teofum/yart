@@ -11,7 +11,7 @@ namespace yart::cpu {
 
 class RayIntegrator : public Integrator {
 public:
-  uint32_t maxDepth = 10;
+  uint32_t m_maxDepth = 30;
 
   RayIntegrator(
     Buffer& buffer,

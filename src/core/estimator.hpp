@@ -152,7 +152,8 @@ public:
       m_acc(m), m_smp(m) {}
 
   constexpr void addSample(const float3& sample) noexcept override {
-    if (!hasnan(sample)) {
+    if (!hasnan(sample) && sample.x() >= 0.0f && sample.y() >= 0.0f &&
+        sample.z() >= 0.0f) {
       m_acc[m_idx] += sample;
       m_smp[m_idx]++;
     }

@@ -17,7 +17,7 @@ float3 NaiveIntegrator::LiImpl(
   const Node& root,
   uint32_t depth
 ) {
-  if (depth > maxDepth) return {};
+  if (depth > m_maxDepth) return {};
   m_rayCounter++;
 
   Hit hit;

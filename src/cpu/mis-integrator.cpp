@@ -18,7 +18,7 @@ float3 MISIntegrator::Li(const Ray& r) {
   float lastPdf = 0.0f, accRoughness = 0.0f;
   Ray ray(r);
 
-  while (depth < maxDepth) {
+  while (depth < m_maxDepth) {
     m_rayCounter++;
 
     // Test scene for intersection and return if none
